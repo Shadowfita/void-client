@@ -59,6 +59,22 @@ jobs:
           gh release create "${{ github.ref_name }}" \
             --repo 2011Scape/void-client-releases \
             --title "${{ github.ref_name }}" \
-            --notes "Automated release for ${{ github.ref_name }} from ${{ github.repository }}@${{ github.sha }}" \
+            --notes-file "release-notes/${{ github.ref_name }}.md" \
             "${{ steps.artifact.outputs.jar }}" \
             "${{ steps.artifact.outputs.sha }}"
+
+      - name: Purge older releases from public repo
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          current="${{ github.ref_name }}"
+          gh api "repos/2011Scape/void-client-releases/releases?per_page=100" \
+            --jq ".[] | select(.tag_name != \"$current\") | [.id, .tag_name] | @tsv" |
+          while IFS=$'\t' read -r release_id release_tag; do
+            if [ -z "$release_id" ] || [ -z "$release_tag" ]; then
+              continue
+            fi
+
+            gh api --method DELETE "repos/2011Scape/void-client-releases/releases/${release_id}"
+            gh api --method DELETE "repos/2011Scape/void-client-releases/git/refs/tags/${release_tag}" || true
+          done
