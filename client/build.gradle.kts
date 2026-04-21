@@ -1,6 +1,17 @@
+import proguard.gradle.ProGuardTask
+
 plugins {
     application
     id("com.gradleup.shadow") version "8.3.10"
+}
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.guardsquare:proguard-gradle:7.7.0")
+    }
 }
 
 group = "world.gregs.void"
@@ -58,6 +69,30 @@ application {
 tasks.shadowJar {
     archiveBaseName.set("void-client")
     archiveClassifier.set("")
+}
+
+val proguardJar by tasks.registering(ProGuardTask::class) {
+    dependsOn(tasks.shadowJar)
+
+    val inputJar = tasks.shadowJar.flatMap { it.archiveFile }
+    val outputFile = layout.buildDirectory.file("libs/void-client-$version-release.jar")
+
+    injars(inputJar)
+    outjars(outputFile)
+
+    val javaHome = System.getProperty("java.home")
+    if (file("$javaHome/jmods").isDirectory) {
+        libraryjars(mapOf("jarfilter" to "!**.jar", "filter" to "!module-info.class"), "$javaHome/jmods")
+    } else {
+        libraryjars("$javaHome/lib/rt.jar")
+        libraryjars(fileTree("$javaHome/lib/ext") { include("*.jar") })
+    }
+
+    configuration("proguard-rules.pro")
+
+    printmapping(layout.buildDirectory.file("proguard/mapping.txt"))
+    printseeds(layout.buildDirectory.file("proguard/seeds.txt"))
+    printusage(layout.buildDirectory.file("proguard/usage.txt"))
 }
 
 val copyJarToOut by tasks.registering(Copy::class) {
