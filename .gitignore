@@ -1,0 +1,43 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IntelliJ (partial — track shared project config, ignore per-user state)
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/shelf/
+.idea/dictionaries/
+.idea/httpRequests/
+.idea/dataSources/
+.idea/dataSources.local.xml
+.idea/sonarlint/
+*.iml
+*.iws
+*.ipr
+
+# Eclipse / VSCode
+.classpath
+.project
+.settings/
+bin/
+.vscode/
+
+# IntelliJ compile output
+out/
+
+# JVM crash logs
+hs_err_pid*.log
+replay_pid*.log
+
+# OS cruft
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
+
+# Logs / tmp
+*.log
+*.tmp

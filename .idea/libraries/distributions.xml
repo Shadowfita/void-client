@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="distributions">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/client/build/distributions/client-1.2.0.zip!/" />
+      <root url="jar://$PROJECT_DIR$/client/build/distributions/client-shadow-1.2.0.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

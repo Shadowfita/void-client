@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="libs2">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/libs/graphics.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/clientlibs.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/trident-1.5.00.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
