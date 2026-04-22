@@ -59,6 +59,6 @@ jobs:
           gh release create "${{ github.ref_name }}" \
             --repo 2011Scape/void-client-releases \
             --title "${{ github.ref_name }}" \
-            --notes "Automated release for ${{ github.ref_name }} from ${{ github.repository }}@${{ github.sha }}" \
+            --notes-file "release-notes/${{ github.ref_name }}.md" \
             "${{ steps.artifact.outputs.jar }}" \
             "${{ steps.artifact.outputs.sha }}"
