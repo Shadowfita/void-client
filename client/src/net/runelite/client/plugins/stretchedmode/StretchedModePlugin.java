@@ -4,6 +4,7 @@ import com.GameClient;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 import com.google.inject.name.Named;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -24,6 +25,9 @@ public class StretchedModePlugin extends Plugin
 	private GameClient client;
 
 	@Inject
+	private ClientThread clientThread;
+
+	@Inject
 	private StretchedModeConfig config;
 
 	@Inject
@@ -41,20 +45,26 @@ public class StretchedModePlugin extends Plugin
 	{
 		if (safeMode)
 		{
-			client.setStretchedEnabled(false);
-			client.invalidateStretching(true);
+			clientThread.invoke(() ->
+			{
+				client.setStretchedEnabled(false);
+				client.invalidateStretching(true);
+			});
 			return;
 		}
 
-		client.setStretchedEnabled(true);
+		clientThread.invoke(() -> client.setStretchedEnabled(true));
 		updateConfig();
 	}
 
 	@Override
 	protected void shutDown()
 	{
-		client.setStretchedEnabled(false);
-		client.invalidateStretching(true);
+		clientThread.invoke(() ->
+		{
+			client.setStretchedEnabled(false);
+			client.invalidateStretching(true);
+		});
 	}
 
 	@Subscribe
@@ -72,15 +82,21 @@ public class StretchedModePlugin extends Plugin
 	{
 		if (safeMode)
 		{
-			client.setStretchedEnabled(false);
-			client.invalidateStretching(true);
+			clientThread.invoke(() ->
+			{
+				client.setStretchedEnabled(false);
+				client.invalidateStretching(true);
+			});
 			return;
 		}
 
-		client.setStretchedFast(config.increasedPerformance());
-		client.setStretchedIntegerScaling(config.integerScaling());
-		client.setStretchedKeepAspectRatio(config.keepAspectRatio());
-		client.setScalingFactor(config.scaling());
-		client.invalidateStretching(true);
+		clientThread.invoke(() ->
+		{
+			client.setStretchedFast(config.increasedPerformance());
+			client.setStretchedIntegerScaling(config.integerScaling());
+			client.setStretchedKeepAspectRatio(config.keepAspectRatio());
+			client.setScalingFactor(config.scaling());
+			client.invalidateStretching(true);
+		});
 	}
 }
