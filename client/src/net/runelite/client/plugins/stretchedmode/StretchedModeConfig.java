@@ -39,16 +39,16 @@ public interface StretchedModeConfig extends Config
 	}
 
 	@Range(
-		min = 25,
-		max = 300
+		min = 1,
+		max = 8
 	)
 	@ConfigItem(
-		keyName = "scaling",
-		name = "Resizable Scaling",
-		description = "Scales the game view by this percent."
+		keyName = "scalingFactor",
+		name = "Resizable Scale Factor",
+		description = "Scales the game view by this whole-number factor (1x, 2x, 3x, ...)."
 	)
 	default int scaling()
 	{
-		return 100;
+		return 1;
 	}
 }

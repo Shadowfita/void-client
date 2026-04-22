@@ -729,7 +729,7 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
         if (mode != 2) {
             return;
         }
-        double scale = Math.max(25, Math.min(300, applet.scalingFactor)) / 100.0;
+        double scale = Math.max(25, Math.min(800, applet.scalingFactor)) / 100.0;
         if (Math.abs(scale - 1.0) < 0.001) {
             return;
         }
@@ -793,7 +793,7 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
 
     @Override
     public void setScalingFactor(int factor) {
-        scalingFactor = Math.max(25, Math.min(300, factor));
+        scalingFactor = Math.max(25, Math.min(800, factor));
     }
 
     @Override
@@ -804,6 +804,24 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
     @Override
     public void invalidateStretching(boolean resize) {
         if (!resize) {
+            repaint();
+            return;
+        }
+
+        boolean onGameThread = currentThread != null && Thread.currentThread() == currentThread;
+        if (onGameThread) {
+            try {
+                Class367_Sub11.method3556(false);
+            } catch (Throwable ignored) {
+            }
+            Canvas canvas = getCanvas();
+            if (canvas != null) {
+                canvas.repaint();
+            }
+            Container parent = getParent();
+            if (parent != null) {
+                parent.invalidate();
+            }
             repaint();
             return;
         }
