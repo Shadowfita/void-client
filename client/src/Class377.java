@@ -1220,6 +1220,30 @@ final class Class377 extends ha_Sub3 {
 
     final int[] na(int i, int i_90_, int i_91_, int i_92_) {
         anInt9820++;
+        if (Applet_Sub1.shouldScaleOpenGLFrame() && Class305.aCanvas3869 != null) {
+            Dimension dimension = Class305.aCanvas3869.getSize();
+            int actualH = dimension.height;
+            double scaleX = (double) dimension.width / Math.max(1, this.anInt7931);
+            double scaleY = (double) actualH / Math.max(1, this.anInt7962);
+            int px = (int) Math.floor(i * scaleX);
+            int py = (int) Math.floor(i_90_ * scaleY);
+            int pw = Math.max(1, (int) Math.ceil(i_91_ * scaleX));
+            int ph = Math.max(1, (int) Math.ceil(i_92_ * scaleY));
+            int[] pixels = new int[pw * ph];
+            for (int r = 0; r < ph; r++)
+                OpenGL.glReadPixelsi(px, (-1 + (-r + -py) + actualH), pw, 1, 32993, this.anInt9918, pixels, pw * r);
+            int[] out = new int[i_91_ * i_92_];
+            for (int y = 0; y < i_92_; y++) {
+                int srcY = Math.min(ph - 1, (int) ((y + 0.5) * scaleY));
+                int rowOff = srcY * pw;
+                int dstOff = y * i_91_;
+                for (int x = 0; x < i_91_; x++) {
+                    int srcX = Math.min(pw - 1, (int) ((x + 0.5) * scaleX));
+                    out[dstOff + x] = pixels[rowOff + srcX];
+                }
+            }
+            return out;
+        }
         int[] is = new int[i_92_ * i_91_];
         for (int i_93_ = 0; i_93_ < i_92_; i_93_++)
             OpenGL.glReadPixelsi(i, (-1 + (-i_93_ + -i_90_) + this.anInt7962), i_91_, 1, 32993, this.anInt9918, is, i_91_ * i_93_);

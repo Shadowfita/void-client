@@ -681,42 +681,70 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
 
     @Override
     public Dimension getStretchedDimensions() {
-        Dimension base = new Dimension(Math.max(1, Class321.anInt4017), Math.max(1, Class348_Sub42_Sub8_Sub2.anInt10432));
+        int baseW = Math.max(1, Class321.anInt4017);
+        int baseH = Math.max(1, Class348_Sub42_Sub8_Sub2.anInt10432);
+        Dimension base = new Dimension(baseW, baseH);
         if (!shouldStretchCanvas()) {
             return base;
         }
 
-        double scale = Math.max(25, Math.min(300, scalingFactor)) / 100.0;
-
+        int contW;
+        int contH;
         Container parent = Class305.aCanvas3869 != null ? Class305.aCanvas3869.getParent() : getParent();
         if (parent != null && parent.getWidth() > 0 && parent.getHeight() > 0) {
-            Dimension available = parent.getSize();
-            if (stretchedKeepAspectRatio) {
-                scale = Math.min(available.getWidth() / base.getWidth(), available.getHeight() / base.getHeight());
-            } else {
-                int width = Math.max(base.width, available.width);
-                int height = Math.max(base.height, available.height);
-                return new Dimension(width, height);
-            }
+            Insets insets = parent.getInsets();
+            contW = Math.max(1, parent.getWidth() - insets.left - insets.right);
+            contH = Math.max(1, parent.getHeight() - insets.top - insets.bottom);
+        } else {
+            contW = Math.max(1, Class272.anInt3473);
+            contH = Math.max(1, Class348_Sub22.anInt6857);
         }
+
+        double fit = Math.min((double) contW / baseW, (double) contH / baseH);
 
         if (stretchedIntegerScaling) {
-            double roundedScale = Math.rint(scale);
-            if (roundedScale > scale && roundedScale - scale <= 0.03) {
-                scale = roundedScale;
-            } else {
-                scale = Math.floor(scale);
-            }
+            double rounded = Math.rint(fit);
+            double scale = (rounded > fit && rounded - fit <= 0.03) ? rounded : Math.floor(fit);
             scale = Math.max(1.0, scale);
+            int width = (int) Math.round(baseW * scale);
+            int height = (int) Math.round(baseH * scale);
+            return new Dimension(Math.min(contW, Math.max(1, width)), Math.min(contH, Math.max(1, height)));
         }
 
-        int width = Math.max(base.width, (int) Math.round(base.width * scale));
-        int height = Math.max(base.height, (int) Math.round(base.height * scale));
-        return new Dimension(width, height);
+        if (stretchedKeepAspectRatio) {
+            int width = (int) Math.round(baseW * fit);
+            int height = (int) Math.round(baseH * fit);
+            return new Dimension(Math.max(1, width), Math.max(1, height));
+        }
+
+        return new Dimension(contW, contH);
+    }
+
+    static void applyStretchedLogicalSize() {
+        Applet_Sub1 applet = Class348_Sub40_Sub9.anApplet_Sub1_9169;
+        if (applet == null || !applet.stretchedEnabled) {
+            return;
+        }
+        int mode = Class348_Sub42_Sub12.method3229(-86);
+        if (mode != 2) {
+            return;
+        }
+        double scale = Math.max(25, Math.min(300, applet.scalingFactor)) / 100.0;
+        if (Math.abs(scale - 1.0) < 0.001) {
+            return;
+        }
+        int logicalW = Math.max(256, (int) Math.round(Class321.anInt4017 / scale));
+        int logicalH = Math.max(192, (int) Math.round(Class348_Sub42_Sub8_Sub2.anInt10432 / scale));
+        Class321.anInt4017 = logicalW;
+        Class348_Sub42_Sub8_Sub2.anInt10432 = logicalH;
     }
 
     private boolean shouldStretchCanvas() {
-        return stretchedEnabled && Class348_Sub42_Sub12.method3229(-86) == 1;
+        if (!stretchedEnabled) {
+            return false;
+        }
+        int mode = Class348_Sub42_Sub12.method3229(-86);
+        return mode == 1 || mode == 2;
     }
 
     @Override
@@ -778,6 +806,11 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
         if (!resize) {
             repaint();
             return;
+        }
+
+        int mode = Class348_Sub42_Sub12.method3229(-86);
+        if (mode == 2) {
+            Class286_Sub5.method2158((byte) 56);
         }
 
         Dimension size = stretchedEnabled ? getStretchedDimensions() : new Dimension(Class321.anInt4017, Class348_Sub42_Sub8_Sub2.anInt10432);
