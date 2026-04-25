@@ -60,16 +60,22 @@ public abstract class PluginPanel extends JPanel
 			setBorder(BORDER_PADDING);
 			setLayout(new DynamicGridLayout(0, 1, 0, 3));
 			setBackground(ColorScheme.DARK_GRAY_COLOR);
+			setOpaque(false);
 
 			final JPanel northPanel = new JPanel();
 			northPanel.setLayout(new BorderLayout());
 			northPanel.add(this, BorderLayout.NORTH);
 			northPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+			northPanel.setOpaque(false);
 
 			scrollPane = new JScrollPane(northPanel);
 			scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+			scrollPane.setOpaque(false);
+			scrollPane.getViewport().setOpaque(false);
+			scrollPane.setBorder(null);
 
 			wrappedPanel = new JPanel();
+			wrappedPanel.setOpaque(false);
 
 			// Adjust the preferred size to expand to width of scrollbar to
 			// to preven scrollbar overlapping over contents

@@ -15,7 +15,7 @@ buildscript {
 }
 
 group = "world.gregs.void"
-version = "0.0.4"
+version = "0.1.0"
 
 repositories {
     mavenCentral()
@@ -40,7 +40,7 @@ dependencies {
         "../libs/clientlibs.jar",
         "../libs/graphics.jar",
         "../libs/trident-1.5.00.jar"
-    ))
+        ))
 
     compileOnly("org.projectlombok:lombok:1.18.30")
     annotationProcessor("org.projectlombok:lombok:1.18.30")

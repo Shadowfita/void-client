@@ -734,7 +734,10 @@ final class Class348_Sub42_Sub8_Sub2 extends Class348_Sub42_Sub8 {
             Class318_Sub1_Sub1_Sub1.method2397((byte) -127);
             Class348_Sub36 class348_sub36 = new Class348_Sub36();
             class348_sub36.anObjectArray6987 = objects;
+            net.runelite.client.game.GameEventBridgeHooks.postScriptPreFired(((Integer) objects[0]).intValue());
+            net.runelite.client.game.GameEventBridgeHooks.postScriptCallbackEvent(class348_sub36, String.valueOf(objects[0]));
             Class66.method705(class348_sub36);
+            net.runelite.client.game.GameEventBridgeHooks.postScriptPostFired(((Integer) objects[0]).intValue());
             Class348_Sub3.aClass114_6584 = null;
             return true;
         }
@@ -822,6 +825,7 @@ final class Class348_Sub42_Sub8_Sub2 extends Class348_Sub42_Sub8 {
                         if (i_92_ != 1) Class318_Sub1_Sub3_Sub5.method2477(player.method2450(false, -121), string, (byte) -126, i_95_, player.method2456(true, 255), null, i_96_, 0, player.aString10537);
                         else Class318_Sub1_Sub3_Sub5.method2477("<img=0>" + player.method2450(false, -93), string, (byte) -111, i_95_, "<img=0>" + player.method2456(true, 255), null, i_96_, 0, player.aString10537);
                     } else Class318_Sub1_Sub3_Sub5.method2477("<img=1>" + player.method2450(false, -95), string, (byte) -120, i_95_, "<img=1>" + player.method2456(true, 255), null, i_96_, 0, player.aString10537);
+                    net.runelite.client.game.GameEventBridgeHooks.postChatMessage(i_96_, player.method2450(false, -121), string, player.aString10537, Class367_Sub11.anInt7396);
                 }
             }
             Class348_Sub3.aClass114_6584 = null;
@@ -1611,6 +1615,7 @@ final class Class348_Sub42_Sub8_Sub2 extends Class348_Sub42_Sub8 {
             int i_218_ = Class299.aClass348_Sub49_Sub2_3813.readUnsignedByteSubtract((byte) 70);
             boolean bool_219_ = (0x1 & i_218_) == 1;
             Class348_Sub40_Sub3.method3054(bool_219_, i, -128);
+            net.runelite.client.game.GameEventBridgeHooks.postVarbitChanged(-1, i, bool_219_ ? 1 : 0);
             Class199.anIntArray2633[Class139.method1166(31, Class106.anInt1631++)] = i;
             Class348_Sub3.aClass114_6584 = null;
             return true;
@@ -1629,6 +1634,7 @@ final class Class348_Sub42_Sub8_Sub2 extends Class348_Sub42_Sub8 {
                 }
                 Canvas_Sub1.method121(i, -364570972, bool_221_, i_222_, i_224_, -1 + i_223_);
             }
+            net.runelite.client.game.GameEventBridgeHooks.postItemContainerChanged(i, null);
             Class199.anIntArray2633[Class139.method1166(31, Class106.anInt1631++)] = i;
             Class348_Sub3.aClass114_6584 = null;
             return true;

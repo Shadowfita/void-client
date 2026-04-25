@@ -27,18 +27,18 @@ package net.runelite.client.ui;
 import java.applet.Applet;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.image.BufferedImage;
 import javax.annotation.Nullable;
-import javax.swing.JPanel;
 import net.runelite.api.Constants;
 
-final class ClientPanel extends JPanel
+final class ClientPanel extends BackgroundPanel
 {
-	public ClientPanel(@Nullable Applet client)
+	public ClientPanel(@Nullable Applet client, BufferedImage background)
 	{
+		super(new BorderLayout(), background);
 		setSize(Constants.GAME_FIXED_SIZE);
 		setMinimumSize(Constants.GAME_FIXED_SIZE);
 		setPreferredSize(Constants.GAME_FIXED_SIZE);
-		setLayout(new BorderLayout());
 		setBackground(Color.black);
 
 		if (client == null)

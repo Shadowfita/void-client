@@ -53,6 +53,8 @@ import javax.swing.*;
 import java.applet.Applet;
 import java.awt.*;
 import net.runelite.api.Point;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -71,8 +73,10 @@ public class ClientUI
 	private static final String CONFIG_CLIENT_BOUNDS = "clientBounds";
 	private static final String CONFIG_CLIENT_MAXIMIZED = "clientMaximized";
 	private static final String CONFIG_CLIENT_SIDEBAR_CLOSED = "clientSidebarClosed";
-	private static final int TITLEBAR_WINDOW_CONTROLS_WIDTH = 112;
+	private static final String CONFIG_CLIENT_SIDEBAR_INITIALIZED = "clientSidebarInitialized";
+	private static final Dimension DEFAULT_COMPACT_CLIENT_BOUNDS = new Dimension(900, 560);
 	public static final BufferedImage ICON = ImageUtil.loadImageResource(ClientUI.class, "/icon-256.png");
+	private static final BufferedImage CLIENT_BACKGROUND = ImageUtil.loadImageResource(ClientUI.class, "client-background.png");
 
 	@Getter
 	private TrayIcon trayIcon;
@@ -112,6 +116,9 @@ public class ClientUI
 	private JButton sidebarNavigationJButton;
 	private Dimension lastClientSize;
 	private Cursor defaultCursor;
+	private Rectangle lastNormalClientBounds;
+	private boolean applyingStoredBounds;
+	private boolean windowPersistenceReady;
 
 	@Inject
 	private ClientUI(
@@ -136,7 +143,7 @@ public class ClientUI
 		//this.clientThreadProvider = clientThreadProvider;
 		this.eventBus = eventBus;
 		this.safeMode = safeMode;
-		this.title = title + " " + version;
+		this.title = title + "(" + version + ")";
 	}
 
 	@Subscribe
@@ -342,8 +349,23 @@ public class ClientUI
 					}
 				}
 			});
+			frame.addComponentListener(new ComponentAdapter()
+			{
+				@Override
+				public void componentMoved(ComponentEvent event)
+				{
+					saveClientBoundsConfig();
+				}
 
-			container = new JPanel(new BorderLayout());
+				@Override
+				public void componentResized(ComponentEvent event)
+				{
+					saveClientBoundsConfig();
+				}
+			});
+			frame.addWindowStateListener(event -> saveClientBoundsConfig());
+
+			container = new BackgroundPanel(new BorderLayout(), CLIENT_BACKGROUND);
 			container.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
 
@@ -356,7 +378,7 @@ public class ClientUI
 			frame.revalidateMinimumSize();
 
 
-			navContainer = new JPanel();
+			navContainer = new BackgroundPanel(CLIENT_BACKGROUND);
 			navContainer.setLayout(cardLayout);
 			navContainer.setMinimumSize(new Dimension(0, 0));
 			navContainer.setMaximumSize(new Dimension(0, 0));
@@ -365,12 +387,11 @@ public class ClientUI
 
 			// To reduce substance's colorization (tinting)
 			navContainer.putClientProperty(SubstanceSynapse.COLORIZATION_FACTOR, 1.0);
-			clientPanel = new ClientPanel(client);
+			clientPanel = new ClientPanel(client, CLIENT_BACKGROUND);
 
-			pluginToolbar = new ClientPluginToolbar();
-			sidebarContainer = new JPanel();
+			pluginToolbar = new ClientPluginToolbar(CLIENT_BACKGROUND);
+			sidebarContainer = new BackgroundPanel(CLIENT_BACKGROUND);
 			sidebarContainer.setLayout(new BoxLayout(sidebarContainer, BoxLayout.X_AXIS));
-			sidebarContainer.setOpaque(false);
 			titleToolbar = new ClientTitleToolbar();
 			updateSidebarLayout();
 
@@ -459,7 +480,7 @@ public class ClientUI
 					{
 						delegate.layoutContainer(parent);
 						final int width = titleToolbar.getPreferredSize().width;
-						final int availableWidth = Math.max(0, titleBar.getWidth() - TITLEBAR_WINDOW_CONTROLS_WIDTH);
+						final int availableWidth = getTitlebarControlsLeft(titleBar, titleToolbar);
 						titleToolbar.setBounds(Math.max(0, availableWidth - width), 0, Math.min(width, availableWidth), titleBar.getHeight());
 					}
 				});
@@ -488,12 +509,30 @@ public class ClientUI
 
 			titleToolbar.addComponent(sidebarNavigationButton, sidebarNavigationJButton);
 
-			// Open sidebar if the config closed state is unset
-			if (configManager.getConfiguration(CONFIG_GROUP, CONFIG_CLIENT_SIDEBAR_CLOSED) == null)
-			{
-				toggleSidebar();
-			}
+			restoreSidebarState();
 		});
+	}
+
+	private static int getTitlebarControlsLeft(Container titleBar, Component extraToolbar)
+	{
+		int controlsLeft = titleBar.getWidth();
+		int rightHalf = titleBar.getWidth() / 2;
+
+		for (Component component : titleBar.getComponents())
+		{
+			if (component == extraToolbar || !component.isVisible())
+			{
+				continue;
+			}
+
+			Rectangle bounds = component.getBounds();
+			if (bounds.width > 0 && bounds.x >= rightHalf)
+			{
+				controlsLeft = Math.min(controlsLeft, bounds.x);
+			}
+		}
+
+		return Math.max(0, controlsLeft);
 	}
 
 	public void show()
@@ -516,7 +555,7 @@ public class ClientUI
 						CONFIG_GROUP, CONFIG_CLIENT_BOUNDS, Rectangle.class);
 					if (clientBounds != null)
 					{
-						frame.setBounds(clientBounds);
+						applyWindowBounds(clientBounds);
 
 						// frame.getGraphicsConfiguration().getBounds() returns the bounds for the primary display.
 						// We have to find the correct graphics configuration by using the client boundaries.
@@ -536,20 +575,20 @@ public class ClientUI
 									clientBounds.getHeight() / scale);
 
 								frame.setMinimumSize(clientBounds.getSize());
-								frame.setBounds(clientBounds);
+								applyWindowBounds(clientBounds);
 							}
 						}
 						else
 						{
-							frame.setLocationRelativeTo(frame.getOwner());
+							applyDefaultCompactBounds();
 						}
 					}
 					else
 					{
-						frame.setLocationRelativeTo(frame.getOwner());
+						applyDefaultCompactBounds();
 					}
 
-					if (configManager.getConfiguration(CONFIG_GROUP, CONFIG_CLIENT_MAXIMIZED) != null)
+					if (Boolean.TRUE.equals(configManager.getConfiguration(CONFIG_GROUP, CONFIG_CLIENT_MAXIMIZED, Boolean.class)))
 					{
 						frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 					}
@@ -557,17 +596,18 @@ public class ClientUI
 				catch (Exception ex)
 				{
 					log.warn("Failed to set window bounds", ex);
-					frame.setLocationRelativeTo(frame.getOwner());
+					applyDefaultCompactBounds();
 				}
 			}
 			else
 			{
-				frame.setLocationRelativeTo(frame.getOwner());
+				applyDefaultCompactBounds();
 			}
 
 
 
 			// Show frame
+			windowPersistenceReady = true;
 			frame.setVisible(true);
 			frame.toFront();
 			requestFocus();
@@ -602,6 +642,69 @@ public class ClientUI
 		}
 
 		return null;
+	}
+
+	private void applyWindowBounds(Rectangle bounds)
+	{
+		applyingStoredBounds = true;
+		try
+		{
+			Rectangle sanitizedBounds = new Rectangle(bounds);
+			Dimension minimumSize = frame.getMinimumSize();
+			if (minimumSize != null)
+			{
+				sanitizedBounds.width = Math.max(sanitizedBounds.width, minimumSize.width);
+				sanitizedBounds.height = Math.max(sanitizedBounds.height, minimumSize.height);
+			}
+			frame.setBounds(sanitizedBounds);
+			lastNormalClientBounds = new Rectangle(sanitizedBounds);
+		}
+		finally
+		{
+			applyingStoredBounds = false;
+		}
+	}
+
+	private void applyDefaultCompactBounds()
+	{
+		Dimension minimumSize = frame.getMinimumSize();
+		int width = Math.max(DEFAULT_COMPACT_CLIENT_BOUNDS.width, minimumSize == null ? 0 : minimumSize.width);
+		int height = Math.max(DEFAULT_COMPACT_CLIENT_BOUNDS.height, minimumSize == null ? 0 : minimumSize.height);
+		Rectangle screenBounds = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+		Rectangle compactBounds = new Rectangle(
+			screenBounds.x + Math.max(0, (screenBounds.width - width) / 2),
+			screenBounds.y + Math.max(0, (screenBounds.height - height) / 2),
+			Math.min(width, screenBounds.width),
+			Math.min(height, screenBounds.height));
+		applyWindowBounds(compactBounds);
+	}
+
+	private void restoreSidebarState()
+	{
+		boolean firstRun = configManager.getConfiguration(CONFIG_GROUP, CONFIG_CLIENT_SIDEBAR_INITIALIZED) == null;
+		if (firstRun)
+		{
+			configManager.setConfiguration(CONFIG_GROUP, CONFIG_CLIENT_SIDEBAR_INITIALIZED, true);
+			configManager.setConfiguration(CONFIG_GROUP, CONFIG_CLIENT_SIDEBAR_CLOSED, true);
+			sidebarOpen = false;
+			pluginToolbar.setVisible(false);
+			sidebarNavigationJButton.setIcon(new ImageIcon(sidebarOpenIcon));
+			sidebarNavigationJButton.setToolTipText("Open SideBar");
+			updateSidebarLayout();
+			return;
+		}
+
+		if (configManager.getConfiguration(CONFIG_GROUP, CONFIG_CLIENT_SIDEBAR_CLOSED) == null)
+		{
+			toggleSidebar();
+			return;
+		}
+
+		sidebarOpen = false;
+		pluginToolbar.setVisible(false);
+		sidebarNavigationJButton.setIcon(new ImageIcon(sidebarOpenIcon));
+		sidebarNavigationJButton.setToolTipText("Open SideBar");
+		updateSidebarLayout();
 	}
 
 	private boolean showWarningOnExit()
@@ -1251,25 +1354,46 @@ public class ClientUI
 
 	private void saveClientBoundsConfig()
 	{
-		final Rectangle bounds = frame.getBounds();
-		if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH) != 0)
+		if (frame == null || !windowPersistenceReady || applyingStoredBounds || safeMode || !config.rememberScreenBounds())
 		{
-			configManager.setConfiguration(CONFIG_GROUP, CONFIG_CLIENT_BOUNDS, bounds);
-			configManager.setConfiguration(CONFIG_GROUP, CONFIG_CLIENT_MAXIMIZED, true);
+			return;
 		}
-		else
-		{
-			if (config.automaticResizeType() == ExpandResizeType.KEEP_GAME_SIZE)
-			{
-				// Try to contract plugin panel
-				if (pluginPanel != null)
-				{
-					bounds.width -= pluginPanel.getWrappedPanel().getPreferredSize().width;
-				}
-			}
 
-			configManager.unsetConfiguration(CONFIG_GROUP, CONFIG_CLIENT_MAXIMIZED);
-			configManager.setConfiguration(CONFIG_GROUP, CONFIG_CLIENT_BOUNDS, bounds);
+		boolean maximized = (frame.getExtendedState() & JFrame.MAXIMIZED_BOTH) == JFrame.MAXIMIZED_BOTH;
+		boolean iconified = (frame.getExtendedState() & JFrame.ICONIFIED) == JFrame.ICONIFIED;
+		if (maximized)
+		{
+			configManager.setConfiguration(CONFIG_GROUP, CONFIG_CLIENT_MAXIMIZED, true);
+			if (lastNormalClientBounds != null)
+			{
+				configManager.setConfiguration(CONFIG_GROUP, CONFIG_CLIENT_BOUNDS, lastNormalClientBounds);
+			}
+			return;
 		}
+
+		configManager.unsetConfiguration(CONFIG_GROUP, CONFIG_CLIENT_MAXIMIZED);
+		if (iconified)
+		{
+			return;
+		}
+
+		final Rectangle bounds = frame.getBounds();
+		if (bounds.width <= 0 || bounds.height <= 0)
+		{
+			return;
+		}
+
+		Rectangle normalBounds = new Rectangle(bounds);
+		if (config.automaticResizeType() == ExpandResizeType.KEEP_GAME_SIZE)
+		{
+			// Try to contract plugin panel
+			if (pluginPanel != null)
+			{
+				normalBounds.width -= pluginPanel.getWrappedPanel().getPreferredSize().width;
+			}
+		}
+
+		lastNormalClientBounds = new Rectangle(normalBounds);
+		configManager.setConfiguration(CONFIG_GROUP, CONFIG_CLIENT_BOUNDS, normalBounds);
 	}
 }

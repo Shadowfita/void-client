@@ -61,6 +61,7 @@ final class Canvas_Sub1 extends Canvas {
     public final void update(Graphics graphics) {
         anInt61++;
         aComponent64.update(graphics);
+        net.runelite.client.plugins.inventorygrid.InventoryGridCanvasOverlay.paint(graphics, this);
     }
 
     public static void method120(boolean bool) {
@@ -97,6 +98,7 @@ final class Canvas_Sub1 extends Canvas {
 
     public final void paint(Graphics graphics) {
         aComponent64.paint(graphics);
+        net.runelite.client.plugins.inventorygrid.InventoryGridCanvasOverlay.paint(graphics, this);
         anInt65++;
     }
 

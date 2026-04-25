@@ -1,8 +1,6 @@
 package net.runelite.client.plugins.xptracker;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
+import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -11,7 +9,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
-import javax.swing.SwingUtilities;
 import lombok.Value;
 import net.runelite.api.Skill;
 import net.runelite.api.events.StatChanged;
@@ -22,6 +19,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.ImageUtil;
 
 @PluginDescriptor(
 	name = "XP Tracker",
@@ -41,6 +39,9 @@ public class XpTrackerPlugin extends Plugin
 	private XpTrackerOverlay overlay;
 
 	@Inject
+	private XpTrackerConfig config;
+
+	@Inject
 	private ConfigManager configManager;
 
 	@Inject
@@ -49,20 +50,26 @@ public class XpTrackerPlugin extends Plugin
 	@Inject
 	private ClientToolbar clientToolbar;
 
-	private XpTrackerPanel panel;
+	private XpPanel panel;
 	private NavigationButton navButton;
 	private final Map<Skill, XpState> skills = new EnumMap<>(Skill.class);
 	private long startTime;
+
+	@Provides
+	XpTrackerConfig provideConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(XpTrackerConfig.class);
+	}
 
 	@Override
 	protected void startUp()
 	{
 		startTime = System.currentTimeMillis();
 		loadState();
-		panel = injector.getInstance(XpTrackerPanel.class);
+		panel = injector.getInstance(XpPanel.class);
 		navButton = NavigationButton.builder()
 			.tooltip("XP Tracker")
-			.icon(icon(new Color(70, 170, 210)))
+			.icon(icon())
 			.priority(5)
 			.panel(panel)
 			.build();
@@ -169,6 +176,11 @@ public class XpTrackerPlugin extends Plugin
 	private void loadState()
 	{
 		skills.clear();
+		if (!config.saveState())
+		{
+			return;
+		}
+
 		String saved = configManager.getConfiguration(CONFIG_GROUP, STATE_KEY);
 		if (saved == null || saved.isEmpty())
 		{
@@ -210,6 +222,12 @@ public class XpTrackerPlugin extends Plugin
 
 	private void saveState()
 	{
+		if (!config.saveState())
+		{
+			configManager.unsetConfiguration(CONFIG_GROUP, STATE_KEY);
+			return;
+		}
+
 		if (skills.isEmpty())
 		{
 			configManager.unsetConfiguration(CONFIG_GROUP, STATE_KEY);
@@ -248,22 +266,52 @@ public class XpTrackerPlugin extends Plugin
 		Collection<XpState> entries = getSkills();
 		int totalGained = getTotalGained();
 		int xpPerHour = getXpPerHour();
-		SwingUtilities.invokeLater(() -> panel.rebuild(entries, totalGained, xpPerHour));
+		panel.rebuild(entries, totalGained, xpPerHour);
 	}
 
-	private static BufferedImage icon(Color color)
+	void resetSkillState(Skill skill)
 	{
-		BufferedImage image = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D graphics = image.createGraphics();
-		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		graphics.setColor(new Color(0, 0, 0, 80));
-		graphics.fillRect(2, 11, 12, 3);
-		graphics.setColor(color);
-		graphics.fillRect(3, 7, 3, 7);
-		graphics.fillRect(7, 4, 3, 10);
-		graphics.fillRect(11, 2, 3, 12);
-		graphics.dispose();
-		return image;
+		if (skills.remove(skill) != null)
+		{
+			saveState();
+			refreshPanel();
+		}
+	}
+
+	void resetOtherSkillState(Skill skill)
+	{
+		skills.keySet().removeIf(existing -> existing != skill);
+		saveState();
+		refreshPanel();
+	}
+
+	void resetSkillPerHourState(Skill skill)
+	{
+		XpState state = skills.get(skill);
+		if (state == null)
+		{
+			return;
+		}
+
+		skills.put(skill, new XpState(
+			skill,
+			state.getCurrentXp(),
+			state.getCurrentXp(),
+			0,
+			state.getLevel(),
+			state.getBoostedLevel(),
+			0,
+			0,
+			System.currentTimeMillis()));
+		saveState();
+		refreshPanel();
+	}
+
+	private static BufferedImage icon()
+	{
+        final BufferedImage icon = ImageUtil.loadImageResource(XpTrackerPlugin.class, "/skill_icons/overall.png");
+
+        return icon;
 	}
 
 	@Value

@@ -28,6 +28,10 @@ package net.runelite.client.ui;
 import com.google.common.collect.ComparisonChain;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
 import java.util.Map;
 import java.util.TreeMap;
 import javax.swing.BorderFactory;
@@ -40,6 +44,7 @@ import javax.swing.JToolBar;
 public class ClientPluginToolbar extends JToolBar
 {
 	private static final int TOOLBAR_WIDTH = 36, TOOLBAR_HEIGHT = 503;
+	private final BufferedImage background;
 	private final Map<NavigationButton, Component> componentMap = new TreeMap<>((a, b) ->
 		ComparisonChain
 			.start()
@@ -51,9 +56,10 @@ public class ClientPluginToolbar extends JToolBar
 	/**
 	 * Instantiates a new Client plugin toolbar.
 	 */
-	ClientPluginToolbar()
+	ClientPluginToolbar(BufferedImage background)
 	{
 		super(JToolBar.VERTICAL);
+		this.background = background;
 		setFloatable(false);
 		setSize(new Dimension(TOOLBAR_WIDTH, TOOLBAR_HEIGHT));
 		setMinimumSize(new Dimension(TOOLBAR_WIDTH, TOOLBAR_HEIGHT));
@@ -61,6 +67,29 @@ public class ClientPluginToolbar extends JToolBar
 		setMaximumSize(new Dimension(TOOLBAR_WIDTH, Integer.MAX_VALUE));
 		setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		setBorder(BorderFactory.createMatteBorder(0, 1, 0, 1, ColorScheme.MEDIUM_GRAY_COLOR));
+	}
+
+	@Override
+	protected void paintComponent(Graphics graphics)
+	{
+		if (background == null || getWidth() <= 0 || getHeight() <= 0)
+		{
+			super.paintComponent(graphics);
+			return;
+		}
+
+		double scale = Math.max(
+			(double) getWidth() / background.getWidth(),
+			(double) getHeight() / background.getHeight());
+		int width = Math.max(1, (int) Math.round(background.getWidth() * scale));
+		int height = Math.max(1, (int) Math.round(background.getHeight() * scale));
+		int x = (getWidth() - width) / 2;
+		int y = (getHeight() - height) / 2;
+
+		Graphics2D graphics2d = (Graphics2D) graphics.create();
+		graphics2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		graphics2d.drawImage(background, x, y, width, height, null);
+		graphics2d.dispose();
 	}
 
 	void addComponent(final NavigationButton button, final Component c)

@@ -3,6 +3,7 @@
  */
 
 import java.io.InputStream;
+import net.runelite.client.game.GameEventBridgeHooks;
 
 final class InputStream_Sub2 extends InputStream {
     static int anInt80;
@@ -31,7 +32,10 @@ final class InputStream_Sub2 extends InputStream {
                 int i_5_ = Class299.aClass348_Sub49_Sub2_3813.readByteAdd((byte) 65);
                 int i_6_ = NPCTypeList.anInt3581 + (0x7 & i_5_ >> 4);
                 int i_7_ = Class73.anInt4786 - -(i_5_ & 0x7);
-                if (Class282.method2112(126, Class312.anInt3931) || (i_6_ >= 0 && i_7_ >= 0 && Class367_Sub4.anInt7319 > i_6_ && (i_7_ < Class348_Sub40_Sub3.anInt9109))) Class348_Sub12.method2800(Class348_Sub40_Sub12.anInt9200, 0, i_7_, -1, i_1_, i_3_, i_2_, i_4_, (byte) 121, i_6_);
+                if (Class282.method2112(126, Class312.anInt3931) || (i_6_ >= 0 && i_7_ >= 0 && Class367_Sub4.anInt7319 > i_6_ && (i_7_ < Class348_Sub40_Sub3.anInt9109))) {
+                    Class348_Sub12.method2800(Class348_Sub40_Sub12.anInt9200, 0, i_7_, -1, i_1_, i_3_, i_2_, i_4_, (byte) 121, i_6_);
+                    GameEventBridgeHooks.postTileObjectSpawned(i_4_, i_6_, i_7_, Class348_Sub40_Sub12.anInt9200, i_1_, i_2_, i_3_);
+                }
             } else if (class74 == Class348_Sub40_Sub38.aClass74_9475) {
                 int i_8_ = Class299.aClass348_Sub49_Sub2_3813.readUnsignedByte(i + 247);
                 int i_9_ = NPCTypeList.anInt3581 + ((0x7a & i_8_) >> 4);
@@ -47,6 +51,7 @@ final class InputStream_Sub2 extends InputStream {
                     if (i_17_ < 3 && NPCType.method802(i_10_, i_9_, true)) i_17_++;
                     Class318_Sub1_Sub3_Sub4 class318_sub1_sub3_sub4 = (new Class318_Sub1_Sub3_Sub4(i_11_, i_13_, Class367_Sub11.anInt7396, Class348_Sub40_Sub12.anInt9200, i_17_, i_15_, Class275.method2064(i_15_, Class348_Sub40_Sub12.anInt9200, 11219, i_16_) + -i_12_, i_16_, i_9_, i_9_, i_10_, i_10_, i_14_));
                     r_Sub2.aClass262_10492.method1999(new Class348_Sub42_Sub6(class318_sub1_sub3_sub4), -20180);
+                    GameEventBridgeHooks.postGraphicsObjectCreated(class318_sub1_sub3_sub4);
                 }
             } else if (class74 == Class91.aClass74_1519) {
                 int i_18_ = Class299.aClass348_Sub49_Sub2_3813.readUnsignedByte(255);
@@ -62,8 +67,10 @@ final class InputStream_Sub2 extends InputStream {
                 int i_27_ = Class299.aClass348_Sub49_Sub2_3813.readUnsignedShort(i + 842397936);
                 if (i_19_ >= 0 && i_20_ >= 0 && i_19_ < Class367_Sub4.anInt7319 && (i_20_ < Class348_Sub40_Sub3.anInt9109)) {
                     int i_28_ = 1 + i_23_;
-                    if (((Class132.aPlayer_1907.anIntArray10320[0]) >= i_19_ + -i_28_) && i_28_ + i_19_ >= (Class132.aPlayer_1907.anIntArray10320[0]) && ((Class132.aPlayer_1907.anIntArray10317[0]) >= -i_28_ + i_20_) && i_20_ + i_28_ >= (Class132.aPlayer_1907.anIntArray10317[0]))
+                    if (((Class132.aPlayer_1907.anIntArray10320[0]) >= i_19_ + -i_28_) && i_28_ + i_19_ >= (Class132.aPlayer_1907.anIntArray10320[0]) && ((Class132.aPlayer_1907.anIntArray10317[0]) >= -i_28_ + i_20_) && i_20_ + i_28_ >= (Class132.aPlayer_1907.anIntArray10317[0])) {
                         Class239_Sub10.method1760(i_21_, i_26_, false, ((i_20_ << 8) + (((Class348_Sub40_Sub12.anInt9200) << 24) + ((i_19_ << 16) - -i_23_))), (byte) -98, i_24_, i_27_, i_25_);
+                        GameEventBridgeHooks.postAreaSoundEffectPlayed(i_21_, i_19_, i_20_, i_23_, i_25_);
+                    }
                 }
             } else if (class74 == IntNode.aClass74_6977) {
                 int i_29_ = Class299.aClass348_Sub49_Sub2_3813.readUnsignedShort(842397944);
@@ -83,8 +90,10 @@ final class InputStream_Sub2 extends InputStream {
                 int i_40_ = Class299.aClass348_Sub49_Sub2_3813.readUnsignedShort(842397944);
                 if (i_32_ >= 0 && i_33_ >= 0 && i_32_ < Class367_Sub4.anInt7319 && i_33_ < Class348_Sub40_Sub3.anInt9109) {
                     int i_41_ = i_36_ + 1;
-                    if ((Class132.aPlayer_1907.anIntArray10320[0]) >= i_32_ - i_41_ && (Class132.aPlayer_1907.anIntArray10320[0]) <= i_41_ + i_32_ && ((Class132.aPlayer_1907.anIntArray10317[0]) >= -i_41_ + i_33_) && (i_33_ - -i_41_ >= (Class132.aPlayer_1907.anIntArray10317[0])))
+                    if ((Class132.aPlayer_1907.anIntArray10320[0]) >= i_32_ - i_41_ && (Class132.aPlayer_1907.anIntArray10320[0]) <= i_41_ + i_32_ && ((Class132.aPlayer_1907.anIntArray10317[0]) >= -i_41_ + i_33_) && (i_33_ - -i_41_ >= (Class132.aPlayer_1907.anIntArray10317[0]))) {
                         Class37.method358(i_37_, (i_36_ + (i_33_ << 8) + ((Class348_Sub40_Sub12.anInt9200 << 24) + (i_32_ << 16))), i_38_, i_39_, i_40_, i_34_, -29494);
+                        GameEventBridgeHooks.postAreaSoundEffectPlayed(i_34_, i_32_, i_33_, i_36_, i_38_);
+                    }
                 }
             } else if (Class265.aClass74_4689 == class74) {
                 int i_42_ = Class299.aClass348_Sub49_Sub2_3813.readShortLittle(false);
@@ -145,8 +154,10 @@ final class InputStream_Sub2 extends InputStream {
                         }
                     }
                     Class318_Sub1_Sub3_Sub5 class318_sub1_sub3_sub5 = (new Class318_Sub1_Sub3_Sub5(i_60_, Class348_Sub40_Sub12.anInt9200, Class348_Sub40_Sub12.anInt9200, i_51_, i_52_, i_61_, i_63_ - -Class367_Sub11.anInt7396, i_64_ + Class367_Sub11.anInt7396, i_65_, i_66_, i_58_, i_59_, i_62_, bool, i_55_));
-                    class318_sub1_sub3_sub5.method2471((byte) -103, (-i_62_ + Class275.method2064(i_56_, Class348_Sub40_Sub12.anInt9200, 11219, i_57_)), i_57_, i_63_ + Class367_Sub11.anInt7396, i_56_);
+                    int i_67_ = -i_62_ + Class275.method2064(i_56_, Class348_Sub40_Sub12.anInt9200, 11219, i_57_);
+                    class318_sub1_sub3_sub5.method2471((byte) -103, i_67_, i_57_, i_63_ + Class367_Sub11.anInt7396, i_56_);
                     Class348_Sub40_Sub17.aClass262_9240.method1999(new Class348_Sub42_Sub18(class318_sub1_sub3_sub5), -20180);
+                    GameEventBridgeHooks.postProjectileMoved(class318_sub1_sub3_sub5, i_56_ / 4, i_57_ / 4, i_67_);
                 }
             } else if (class74 == Class348_Sub42_Sub8_Sub2.aClass74_10437) {
                 int i_69_ = Class299.aClass348_Sub49_Sub2_3813.readShortAddLittle(-128);
@@ -191,7 +202,10 @@ final class InputStream_Sub2 extends InputStream {
                 int i_86_ = Class299.aClass348_Sub49_Sub2_3813.readUnsignedByte(i ^ 0xf7);
                 int i_87_ = NPCTypeList.anInt3581 + (i_86_ >> 4 & 0x7);
                 int i_88_ = Class73.anInt4786 - -(0x7 & i_86_);
-                if (Class282.method2112(i ^ 0x73, Class312.anInt3931) || (i_87_ >= 0 && i_88_ >= 0 && Class367_Sub4.anInt7319 > i_87_ && (i_88_ < Class348_Sub40_Sub3.anInt9109))) Class348_Sub12.method2800(Class348_Sub40_Sub12.anInt9200, 0, i_88_, -1, i_83_, i_85_, i_84_, -1, (byte) 125, i_87_);
+                if (Class282.method2112(i ^ 0x73, Class312.anInt3931) || (i_87_ >= 0 && i_88_ >= 0 && Class367_Sub4.anInt7319 > i_87_ && (i_88_ < Class348_Sub40_Sub3.anInt9109))) {
+                    Class348_Sub12.method2800(Class348_Sub40_Sub12.anInt9200, 0, i_88_, -1, i_83_, i_85_, i_84_, -1, (byte) 125, i_87_);
+                    GameEventBridgeHooks.postTileObjectDespawned(-1, i_87_, i_88_, Class348_Sub40_Sub12.anInt9200, i_83_, i_84_, i_85_);
+                }
             } else {
                 if (i != 8) aClass114_82 = null;
                 if (Class39.aClass74_515 == class74) {
@@ -262,8 +276,10 @@ final class InputStream_Sub2 extends InputStream {
                         i_106_ = i_106_ * 512 + 256;
                         i_112_ <<= 2;
                         Class318_Sub1_Sub3_Sub5 class318_sub1_sub3_sub5 = (new Class318_Sub1_Sub3_Sub5(i_111_, Class348_Sub40_Sub12.anInt9200, Class348_Sub40_Sub12.anInt9200, i_106_, i_107_, i_112_, i_114_ + Class367_Sub11.anInt7396, Class367_Sub11.anInt7396 + i_115_, i_116_, i_117_, 0, i_110_, i_113_, bool, -1));
-                        class318_sub1_sub3_sub5.method2471((byte) -103, Class275.method2064(i_108_, (Class348_Sub40_Sub12.anInt9200), 11219, i_109_) + -i_113_, i_109_, i_114_ + Class367_Sub11.anInt7396, i_108_);
+                        int i_118_ = Class275.method2064(i_108_, (Class348_Sub40_Sub12.anInt9200), 11219, i_109_) + -i_113_;
+                        class318_sub1_sub3_sub5.method2471((byte) -103, i_118_, i_109_, i_114_ + Class367_Sub11.anInt7396, i_108_);
                         Class348_Sub40_Sub17.aClass262_9240.method1999(new Class348_Sub42_Sub18(class318_sub1_sub3_sub5), -20180);
+                        GameEventBridgeHooks.postProjectileMoved(class318_sub1_sub3_sub5, i_108_ / 4, i_109_ / 4, i_118_);
                     }
                 } else if (Class186.aClass74_2491 == class74) {
                     Class299.aClass348_Sub49_Sub2_3813.readUnsignedByte(255);

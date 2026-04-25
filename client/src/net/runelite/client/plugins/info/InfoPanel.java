@@ -61,8 +61,6 @@ public class InfoPanel extends PluginPanel {
     private static final ImageIcon DISCORD_ICON;
     private static final ImageIcon FORUMS_ICON;
     private static final ImageIcon RULES_ICON;
-    private static final ImageIcon STORE_ICON;
-    private static final ImageIcon VOTE_ICON;
     private static final ImageIcon WIKI_ICON;
 
     private JPanel actionsContainer;
@@ -93,12 +91,6 @@ public class InfoPanel extends PluginPanel {
     @Named("void.rules.link")
     private String rulesLink;
 
-    @Inject
-    @Named("void.store.link")
-    private String storeLink;
-    @Inject
-    @Named("void.vote.link")
-    private String voteLink;
 
     @Inject
     @Named("void.wiki.link")
@@ -109,8 +101,6 @@ public class InfoPanel extends PluginPanel {
         DISCORD_ICON = new ImageIcon(ImageUtil.loadImageResource(InfoPanel.class, "discord_icon.png"));
         FORUMS_ICON = new ImageIcon(ImageUtil.loadImageResource(InfoPanel.class, "forums_icon.png"));
         RULES_ICON = new ImageIcon(ImageUtil.loadImageResource(InfoPanel.class, "rules_icon.png"));
-        STORE_ICON = new ImageIcon(ImageUtil.loadImageResource(InfoPanel.class, "store_icon.png"));
-        VOTE_ICON = new ImageIcon(ImageUtil.loadImageResource(InfoPanel.class, "vote_icon.png"));
         WIKI_ICON = new ImageIcon(ImageUtil.loadImageResource(InfoPanel.class, "wiki_icon.png"));
     }
 
@@ -151,8 +141,6 @@ public class InfoPanel extends PluginPanel {
 
         actionsContainer.add(buildLinkPanel(FORUMS_ICON, "Forums", forumsLink));
         actionsContainer.add(buildLinkPanel(DISCORD_ICON, "Discord", discordLink));
-        actionsContainer.add(buildLinkPanel(VOTE_ICON, "Vote", voteLink));
-        actionsContainer.add(buildLinkPanel(STORE_ICON, "Store", storeLink));
 
         add(versionPanel, BorderLayout.NORTH);
         add(actionsContainer, BorderLayout.CENTER);

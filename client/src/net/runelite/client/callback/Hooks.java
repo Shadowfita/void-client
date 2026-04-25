@@ -27,8 +27,11 @@ package net.runelite.client.callback;
 import com.GameClient;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.events.BeforeRender;
+import net.runelite.api.events.CanvasSizeChanged;
 import net.runelite.api.events.ClientTick;
+import net.runelite.api.events.FocusChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.PostClientTick;
 import net.runelite.api.hooks.Callbacks;
 import net.runelite.api.widgets.WidgetItem;
 import net.runelite.client.Notifier;
@@ -66,6 +69,8 @@ public class Hooks implements Callbacks {
     private static final ClientTick CLIENT_TICK = new ClientTick();
     private static final GameTick GAME_TICK = new GameTick();
     private static final BeforeRender BEFORE_RENDER = new BeforeRender();
+    private static final PostClientTick POST_CLIENT_TICK = new PostClientTick();
+    private static final CanvasSizeChanged CANVAS_SIZE_CHANGED = new CanvasSizeChanged();
 
     private final GameClient client;
     private final OverlayRenderer renderer;
@@ -84,6 +89,9 @@ public class Hooks implements Callbacks {
     private long lastCheck;
     private boolean ignoreNextNpcUpdate;
     private boolean shouldProcessGameTick;
+    private int lastCanvasWidth = -1;
+    private int lastCanvasHeight = -1;
+    private Boolean lastFocused;
 
     private static Object lastMainBufferProvider;
     private static Graphics2D lastGraphics;
@@ -94,21 +102,29 @@ public class Hooks implements Callbacks {
         }*/
         // FIXME(Walied): fullGameScreen probably doesn't work well in fixed?
       //  RSImageProducer bufferProvider = client.viewportImageProducer;
+        Graphics graphics = client.getCanvas() == null ? null : client.getCanvas().getGraphics();
+        if (graphics instanceof Graphics2D) {
+            return scaleGraphics((Graphics2D) graphics);
+        }
         return getGraphics(null);
     }
 
     private Graphics2D beginGraphics(Graphics graphics) {
         if (graphics instanceof Graphics2D) {
-            Graphics2D graphics2d = (Graphics2D) graphics.create();
-            Dimension logicalSize = new Dimension(Math.max(1, client.getCanvasWidth()), Math.max(1, client.getCanvasHeight()));
-            Dimension realSize = client.getRealDimensions();
-            if (realSize.width > 0 && realSize.height > 0
-                    && (realSize.width != logicalSize.width || realSize.height != logicalSize.height)) {
-                graphics2d.scale((double) realSize.width / logicalSize.width, (double) realSize.height / logicalSize.height);
-            }
-            return graphics2d;
+            return scaleGraphics((Graphics2D) graphics);
         }
         return beginGraphics();
+    }
+
+    private Graphics2D scaleGraphics(Graphics2D graphics) {
+        Graphics2D graphics2d = (Graphics2D) graphics.create();
+        Dimension logicalSize = new Dimension(Math.max(1, client.getCanvasWidth()), Math.max(1, client.getCanvasHeight()));
+        Dimension realSize = client.getRealDimensions();
+        if (realSize.width > 0 && realSize.height > 0
+                && (realSize.width != logicalSize.width || realSize.height != logicalSize.height)) {
+            graphics2d.scale((double) realSize.width / logicalSize.width, (double) realSize.height / logicalSize.height);
+        }
+        return graphics2d;
     }
 
     private void endGraphics(Graphics2D graphics) {
@@ -185,6 +201,7 @@ public class Hooks implements Callbacks {
     @Override
     public void clientMainLoop() {
         eventBus.post(CLIENT_TICK);
+        postPolledClientEvents();
 
         if (shouldProcessGameTick) {
             shouldProcessGameTick = false;
@@ -200,6 +217,8 @@ public class Hooks implements Callbacks {
         eventBus.post(BEFORE_RENDER);
 
         clientThread.invoke();
+
+        eventBus.post(POST_CLIENT_TICK);
 
         long now = System.nanoTime();
 
@@ -221,6 +240,25 @@ public class Hooks implements Callbacks {
             //checkWorldMap();
         } catch (Exception ex) {
             log.warn("error during main loop tasks", ex);
+        }
+    }
+
+    private void postPolledClientEvents() {
+        int canvasWidth = client.getCanvasWidth();
+        int canvasHeight = client.getCanvasHeight();
+        if (canvasWidth != lastCanvasWidth || canvasHeight != lastCanvasHeight) {
+            lastCanvasWidth = canvasWidth;
+            lastCanvasHeight = canvasHeight;
+            eventBus.post(CANVAS_SIZE_CHANGED);
+        }
+
+        Canvas canvas = client.getCanvas();
+        boolean focused = canvas != null && canvas.isFocusOwner();
+        if (lastFocused == null || lastFocused != focused) {
+            lastFocused = focused;
+            FocusChanged event = new FocusChanged();
+            event.setFocused(focused);
+            eventBus.post(event);
         }
     }
 
