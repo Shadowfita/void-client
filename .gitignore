@@ -41,3 +41,4 @@ $RECYCLE.BIN/
 # Logs / tmp
 *.log
 *.tmp
+/.idea/*
