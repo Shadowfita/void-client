@@ -16,7 +16,7 @@ import java.util.Properties;
 public abstract class GameClient extends Applet {
 
 
-    public static String local = "144.217.10.71"; // live
+    public static String local = "185.213.26.59"; // live
 
 
     public static void setParams(String ip) {
