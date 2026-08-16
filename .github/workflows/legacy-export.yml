@@ -1,0 +1,25 @@
+name: Legacy source export
+
+on:
+  push:
+    branches:
+      - internal/legacy-qol-source
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: legacy-qol-source
+          path: |
+            .
+            !.git
+            !**/build
+            !out
+          include-hidden-files: true
+          retention-days: 1
