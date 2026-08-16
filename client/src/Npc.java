@@ -2,6 +2,8 @@
  * Visit http://jode.sourceforge.net/
  */
 
+import net.runelite.client.plugins.entityhider.EntityHiderState;
+
 final class Npc extends Class318_Sub1_Sub3_Sub3 {
     static int anInt10493;
     static int anInt10494;
@@ -128,6 +130,7 @@ final class Npc extends Class318_Sub1_Sub3_Sub3 {
     }
 
     final Class318_Sub4 method2386(int i, ha var_ha) {
+        if (EntityHiderState.hideNpcs) return null;
         anInt10501++;
         if (this.definition == null || !method2447(i + 114, 2048, var_ha)) return null;
         Class101 class101 = var_ha.method3705();

@@ -58,8 +58,6 @@ import javax.swing.plaf.FontUIResource;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.NavigationButton;
-import net.runelite.client.ui.components.CustomScrollBarUI;
-import org.pushingpixels.substance.internal.SubstanceSynapse;
 
 /**
  * Various Swing utilities.
@@ -82,7 +80,6 @@ public class SwingUtil
 		UIManager.put("Button.foreground", Color.WHITE);
 		UIManager.put("MenuItem.foreground", Color.WHITE);
 		UIManager.put("Panel.background", ColorScheme.DARK_GRAY_COLOR);
-		UIManager.put("ScrollBarUI", CustomScrollBarUI.class.getName());
 		UIManager.put("TextField.selectionBackground", ColorScheme.BRAND_ORANGE_TRANSPARENT);
 		UIManager.put("TextField.selectionForeground", Color.WHITE);
 		UIManager.put("FormattedTextField.selectionBackground", ColorScheme.BRAND_ORANGE_TRANSPARENT);
@@ -205,7 +202,8 @@ public class SwingUtil
 		button.setSize(scaledImage.getWidth(), scaledImage.getHeight());
 		button.setToolTipText(navigationButton.getTooltip());
 		button.setIcon(new ImageIcon(scaledImage));
-		button.putClientProperty(SubstanceSynapse.FLAT_LOOK, Boolean.TRUE);
+		button.putClientProperty("JButton.buttonType", "borderless");
+		button.putClientProperty("FlatLaf.styleClass", "iconButton");
 		button.setFocusable(false);
 		button.addActionListener(e ->
 		{

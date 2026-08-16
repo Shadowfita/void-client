@@ -2,6 +2,8 @@
  * Visit http://jode.sourceforge.net/
  */
 
+import net.runelite.client.plugins.entityhider.EntityHiderState;
+
 import java.awt.*;
 
 final class Class318_Sub1_Sub3_Sub4 extends Class318_Sub1_Sub3 {
@@ -44,6 +46,7 @@ final class Class318_Sub1_Sub3_Sub4 extends Class318_Sub1_Sub3 {
     static int anInt10364;
 
     final Class318_Sub4 method2386(int i, ha var_ha) {
+        if (EntityHiderState.hideProjectiles) return null;
         anInt10352++;
         Class64 class64 = method2465(var_ha, anInt10355, (anInt10334 == 0 ? 0 : 5) | 0x800, (byte) -82);
         if (class64 == null) return null;
