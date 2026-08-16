@@ -22,6 +22,7 @@ jobs:
       - name: Reassemble and apply implementation
         shell: bash
         run: |
+          # Patch chunks are kept below connector write-size limits and concatenated exactly here.
           cat .tmp/native-ui-scale.patch.part* > /tmp/native-ui-scale.patch
           git apply --check /tmp/native-ui-scale.patch
           git apply /tmp/native-ui-scale.patch
