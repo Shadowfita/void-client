@@ -1,0 +1,47 @@
+name: Build downloadable release JAR
+
+on:
+  push:
+    branches:
+      - build/release-fbb44ab
+
+permissions:
+  contents: read
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build release JAR
+        run: ./gradlew :client:proguardJar --no-daemon --stacktrace
+
+      - name: Stage and verify artifact
+        run: |
+          set -euo pipefail
+          version=$(grep -oP 'version\s*=\s*"\K[^"]+' client/build.gradle.kts)
+          src="client/build/libs/void-client-${version}-release.jar"
+          mkdir -p release
+          cp "$src" "release/void-client-${version}-shadowfita-qol.jar"
+          (cd release && sha256sum "void-client-${version}-shadowfita-qol.jar" > "void-client-${version}-shadowfita-qol.jar.sha256")
+          unzip -p "release/void-client-${version}-shadowfita-qol.jar" META-INF/MANIFEST.MF | grep -q '^Main-Class: Loader'
+          jar tf "release/void-client-${version}-shadowfita-qol.jar" | grep -q '^Class373_Sub1.class$'
+          javap -classpath "release/void-client-${version}-shadowfita-qol.jar" -p Class373_Sub1 | grep -q 'Class373_Sub1(java.awt.Component, boolean);'
+
+      - name: Upload release JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: void-client-release-fbb44ab
+          path: release/
+          retention-days: 1
