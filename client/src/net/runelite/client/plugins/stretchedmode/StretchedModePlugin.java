@@ -95,7 +95,7 @@ public class StretchedModePlugin extends Plugin
 			client.setStretchedFast(config.increasedPerformance());
 			client.setStretchedIntegerScaling(config.integerScaling());
 			client.setStretchedKeepAspectRatio(config.keepAspectRatio());
-			client.setScalingFactor(config.scaling() * 100);
+			client.setScalingFactor((int) Math.round(config.scaling() * 100.0));
 			client.invalidateStretching(true);
 		});
 	}
