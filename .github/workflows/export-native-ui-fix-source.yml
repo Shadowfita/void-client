@@ -3,7 +3,9 @@ name: Export native UI scale fix source
 on:
   push:
     branches:
-      - fix/native-ui-scale-resize-layout
+      - main
+    paths:
+      - '.github/workflows/export-native-ui-fix-source.yml'
 
 permissions:
   contents: read
