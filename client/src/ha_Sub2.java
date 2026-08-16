@@ -721,7 +721,10 @@ final class ha_Sub2 extends ha {
         anInt7680++;
         if (aCanvas7575 != null) {
             Dimension dimension = aCanvas7575.getSize();
-            if (Applet_Sub1.shouldScaleOpenGLFrame()) {
+            if (Applet_Sub1.isInterfaceRenderScaleActive()) {
+                anInt7645 = Applet_Sub1.getInterfaceLogicalWidth();
+                anInt7523 = Applet_Sub1.getInterfaceLogicalHeight();
+            } else if (Applet_Sub1.shouldScaleOpenGLFrame()) {
                 anInt7645 = Class321.anInt4017;
                 anInt7523 = Class348_Sub42_Sub8_Sub2.anInt10432;
             } else {

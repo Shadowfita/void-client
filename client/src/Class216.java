@@ -30,8 +30,12 @@ final class Class216 implements Interface13 {
                     i_2_ = s_Sub3.method4008((byte) -128);
                     i_3_ = Class16.method260(false);
                 }
-                Class182.method1373(r.anInt9721, i_2_, i_2_, Class321.anInt4017 + i_2_, i_1_, i_0_, -1391, i_0_ + i_2_, Class348_Sub42_Sub8_Sub2.anInt10432 + i_3_, i_3_, i_3_ + i_1_, i_3_);
-                if (Class168.aClass46_2249 != null) Class228.method1630(0, i_3_ + i_1_, i_2_ + i_0_);
+                int interfaceWidth = interfaceScaled ? Applet_Sub1.getInterfaceLogicalWidth() : Class321.anInt4017;
+                int interfaceHeight = interfaceScaled ? Applet_Sub1.getInterfaceLogicalHeight() : Class348_Sub42_Sub8_Sub2.anInt10432;
+                int interfaceX = interfaceScaled ? Applet_Sub1.physicalToInterfaceX(i_2_) : i_2_;
+                int interfaceY = interfaceScaled ? Applet_Sub1.physicalToInterfaceY(i_3_) : i_3_;
+                Class182.method1373(r.anInt9721, interfaceX, interfaceX, interfaceWidth + interfaceX, i_1_, i_0_, -1391, i_0_ + interfaceX, interfaceHeight + interfaceY, interfaceY, interfaceY + i_1_, interfaceY);
+                if (Class168.aClass46_2249 != null) Class228.method1630(0, interfaceY + i_1_, interfaceX + i_0_);
             } finally {
                 if (interfaceScaled) {
                     Applet_Sub1.endInterfaceInputScale();

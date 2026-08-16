@@ -506,6 +506,7 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
     private boolean canUseNativeInterfaceScaling() {
         return !stretchedEnabled
                 && interfaceScalingFactor != 100
+                && Class348_Sub42_Sub12.method3229(-86) == 2
                 && Class348_Sub8.aHa6654 != null
                 && Class348_Sub8.aHa6654.supportsNativeInterfaceScaling();
     }
@@ -540,10 +541,8 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
             return false;
         }
         prepareInterfaceDimensions();
-        interfaceRenderScaleActive = true;
-        Class321.anInt4017 = interfaceLogicalWidth;
-        Class348_Sub42_Sub8_Sub2.anInt10432 = interfaceLogicalHeight;
         ensureInterfaceLayout();
+        interfaceRenderScaleActive = true;
         Class348_Sub8.aHa6654.refreshNativeInterfaceScaling();
         return true;
     }
@@ -552,8 +551,6 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
         if (!interfaceRenderScaleActive) {
             return;
         }
-        Class321.anInt4017 = interfaceNativeWidth;
-        Class348_Sub42_Sub8_Sub2.anInt10432 = interfaceNativeHeight;
         interfaceRenderScaleActive = false;
         if (Class348_Sub8.aHa6654 != null) {
             Class348_Sub8.aHa6654.refreshNativeInterfaceScaling();
@@ -564,8 +561,6 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
         if (!interfaceRenderScaleActive) {
             return false;
         }
-        Class321.anInt4017 = interfaceNativeWidth;
-        Class348_Sub42_Sub8_Sub2.anInt10432 = interfaceNativeHeight;
         interfaceRenderScaleActive = false;
         Class348_Sub8.aHa6654.refreshNativeInterfaceScaling();
         return true;
@@ -576,10 +571,48 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
         if (interfaceRenderScaleActive || applet == null || !applet.canUseNativeInterfaceScaling()) {
             return;
         }
-        Class321.anInt4017 = interfaceLogicalWidth;
-        Class348_Sub42_Sub8_Sub2.anInt10432 = interfaceLogicalHeight;
         interfaceRenderScaleActive = true;
         Class348_Sub8.aHa6654.refreshNativeInterfaceScaling();
+    }
+
+    static int getInterfaceLogicalWidth() {
+        return interfaceLogicalWidth > 0 ? interfaceLogicalWidth : Math.max(1, Class321.anInt4017);
+    }
+
+    static int getInterfaceLogicalHeight() {
+        return interfaceLogicalHeight > 0 ? interfaceLogicalHeight : Math.max(1, Class348_Sub42_Sub8_Sub2.anInt10432);
+    }
+
+    static int getConfiguredInterfaceLayoutWidth() {
+        Applet_Sub1 applet = activeApplet();
+        int nativeWidth = Math.max(1, Class321.anInt4017);
+        if (applet == null || !applet.canUseNativeInterfaceScaling()) {
+            return nativeWidth;
+        }
+        return calculateInterfaceLogicalSize(nativeWidth, applet.interfaceScalingFactor);
+    }
+
+    static int getConfiguredInterfaceLayoutHeight() {
+        Applet_Sub1 applet = activeApplet();
+        int nativeHeight = Math.max(1, Class348_Sub42_Sub8_Sub2.anInt10432);
+        if (applet == null || !applet.canUseNativeInterfaceScaling()) {
+            return nativeHeight;
+        }
+        return calculateInterfaceLogicalSize(nativeHeight, applet.interfaceScalingFactor);
+    }
+
+    static int physicalToInterfaceX(int x) {
+        int logical = currentInterfaceLogicalWidth();
+        int nativeSize = currentInterfaceNativeWidth();
+        int value = (int) Math.floor((double) x * logical / Math.max(1, nativeSize));
+        return Math.max(0, Math.min(logical - 1, value));
+    }
+
+    static int physicalToInterfaceY(int y) {
+        int logical = currentInterfaceLogicalHeight();
+        int nativeSize = currentInterfaceNativeHeight();
+        int value = (int) Math.floor((double) y * logical / Math.max(1, nativeSize));
+        return Math.max(0, Math.min(logical - 1, value));
     }
 
     static boolean isInterfaceRenderScaleActive() {
@@ -592,10 +625,8 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
             return false;
         }
         prepareInterfaceDimensions();
-        interfaceInputScaleActive = true;
-        Class321.anInt4017 = interfaceLogicalWidth;
-        Class348_Sub42_Sub8_Sub2.anInt10432 = interfaceLogicalHeight;
         ensureInterfaceLayout();
+        interfaceInputScaleActive = true;
         return true;
     }
 
@@ -603,25 +634,15 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
         if (!interfaceInputScaleActive) {
             return;
         }
-        Class321.anInt4017 = interfaceNativeWidth;
-        Class348_Sub42_Sub8_Sub2.anInt10432 = interfaceNativeHeight;
         interfaceInputScaleActive = false;
     }
 
     static int scaleInterfaceInputX(int x) {
-        if (!interfaceInputScaleActive) {
-            return x;
-        }
-        int value = (int) Math.floor((double) x * interfaceLogicalWidth / Math.max(1, interfaceNativeWidth));
-        return Math.max(0, Math.min(interfaceLogicalWidth - 1, value));
+        return interfaceInputScaleActive ? physicalToInterfaceX(x) : x;
     }
 
     static int scaleInterfaceInputY(int y) {
-        if (!interfaceInputScaleActive) {
-            return y;
-        }
-        int value = (int) Math.floor((double) y * interfaceLogicalHeight / Math.max(1, interfaceNativeHeight));
-        return Math.max(0, Math.min(interfaceLogicalHeight - 1, value));
+        return interfaceInputScaleActive ? physicalToInterfaceY(y) : y;
     }
 
     private static int currentInterfaceLogicalWidth() {
@@ -1021,16 +1042,35 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
         if (interfaceScalingFactor == clamped) {
             return;
         }
+
+        // Never let a config change leave the hardware renderer in its
+        // interface projection. Native scene projection is the resting state.
+        if (interfaceRenderScaleActive) {
+            interfaceRenderScaleActive = false;
+            if (Class348_Sub8.aHa6654 != null) {
+                Class348_Sub8.aHa6654.refreshNativeInterfaceScaling();
+            }
+        }
+        interfaceInputScaleActive = false;
+
         interfaceScalingFactor = clamped;
         lastInterfaceLayoutWidth = -1;
         lastInterfaceLayoutHeight = -1;
 
-        // Returning to 1x must also return the interface layout to the native
-        // canvas dimensions; otherwise widgets retain their previously scaled
-        // logical positions until the next window resize.
-        if (clamped == 100 && !interfaceRenderScaleActive && !interfaceInputScaleActive && r.anInt9721 != -1) {
+        if (r.anInt9721 != -1) {
             Class239.method1713(true, 520);
+            if (clamped != 100 && canUseNativeInterfaceScaling()) {
+                prepareInterfaceDimensions();
+                lastInterfaceLayoutWidth = interfaceLogicalWidth;
+                lastInterfaceLayoutHeight = interfaceLogicalHeight;
+            }
         }
+
+        Class49.aBoolean4726 = true;
+        for (int i = 0; i < Class152.aBooleanArray2076.length; i++) {
+            Class152.aBooleanArray2076[i] = true;
+        }
+
         Canvas canvas = getCanvas();
         if (canvas != null) {
             canvas.repaint();

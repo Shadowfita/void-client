@@ -56,9 +56,13 @@ final class Class88 {
                 i = s_Sub3.method4008((byte) -124);
                 i_1_ = Class16.method260(false);
             }
-            Class159.method1252(i_1_, r.anInt9721, i_1_, -1, i, i + Class321.anInt4017, i_1_ - -Class348_Sub42_Sub8_Sub2.anInt10432, (byte) 116, i);
+            int interfaceWidth = interfaceScaled ? Applet_Sub1.getInterfaceLogicalWidth() : Class321.anInt4017;
+            int interfaceHeight = interfaceScaled ? Applet_Sub1.getInterfaceLogicalHeight() : Class348_Sub42_Sub8_Sub2.anInt10432;
+            int interfaceX = interfaceScaled ? Applet_Sub1.physicalToInterfaceX(i) : i;
+            int interfaceY = interfaceScaled ? Applet_Sub1.physicalToInterfaceY(i_1_) : i_1_;
+            Class159.method1252(interfaceY, r.anInt9721, interfaceY, -1, interfaceX, interfaceX + interfaceWidth, interfaceY + interfaceHeight, (byte) 116, interfaceX);
             if (Class138.aClass46Array1942 != null) {
-                Class348_Sub40_Sub7.method3064(i, Class136.anInt4792, true, Class348_Sub1.anInt6555, i_1_, Class331.aClass46_4130.anInt760, i + Class321.anInt4017, false, Class138.aClass46Array1942, -1412584499, i_1_ - -Class348_Sub42_Sub8_Sub2.anInt10432);
+                Class348_Sub40_Sub7.method3064(interfaceX, Class136.anInt4792, true, Class348_Sub1.anInt6555, interfaceY, Class331.aClass46_4130.anInt760, interfaceX + interfaceWidth, false, Class138.aClass46Array1942, -1412584499, interfaceY + interfaceHeight);
                 Class138.aClass46Array1942 = null;
             }
         } finally {

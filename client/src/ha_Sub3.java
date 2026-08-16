@@ -2113,7 +2113,10 @@ abstract class ha_Sub3 extends ha {
         if (aCanvas7910 == null) anInt7958 = anInt7987 = 1;
         else {
             Dimension dimension = aCanvas7910.getSize();
-            if (Applet_Sub1.shouldScaleOpenGLFrame()) {
+            if (Applet_Sub1.isInterfaceRenderScaleActive()) {
+                anInt7987 = Applet_Sub1.getInterfaceLogicalHeight();
+                anInt7958 = Applet_Sub1.getInterfaceLogicalWidth();
+            } else if (Applet_Sub1.shouldScaleOpenGLFrame()) {
                 anInt7987 = Class348_Sub42_Sub8_Sub2.anInt10432;
                 anInt7958 = Class321.anInt4017;
             } else {

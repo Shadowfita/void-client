@@ -40,7 +40,9 @@ abstract class Class239 {
     abstract void method1712(int i, int i_2_);
 
     static final void method1713(boolean bool, int i) {
-        Class239_Sub3.method1728(Class348_Sub42_Sub8_Sub2.anInt10432, -1, r.anInt9721, bool, Class321.anInt4017);
+        int layoutWidth = Applet_Sub1.getConfiguredInterfaceLayoutWidth();
+        int layoutHeight = Applet_Sub1.getConfiguredInterfaceLayoutHeight();
+        Class239_Sub3.method1728(layoutHeight, -1, r.anInt9721, bool, layoutWidth);
         if (i == 520) anInt3137++;
     }
 
