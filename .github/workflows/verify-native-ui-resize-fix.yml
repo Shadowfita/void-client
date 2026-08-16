@@ -1,0 +1,80 @@
+name: Verify native UI scale resize fix
+
+on:
+  push:
+    branches:
+      - fix/native-ui-scale-resize-layout
+    paths:
+      - '.github/workflows/verify-native-ui-resize-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply corrective patch
+        shell: bash
+        run: |
+          git apply --check --ignore-space-change --ignore-whitespace .tmp/native-ui-scale-resize-fix.patch
+          git apply --ignore-space-change --ignore-whitespace .tmp/native-ui-scale-resize-fix.patch
+          git diff --check
+          git diff --stat
+          ! grep -q 'Class321.anInt4017 = interfaceLogicalWidth' client/src/Applet_Sub1.java
+          ! grep -q 'Class348_Sub42_Sub8_Sub2.anInt10432 = interfaceLogicalHeight' client/src/Applet_Sub1.java
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 8
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build release jar through ProGuard
+        run: ./gradlew :client:proguardJar --no-daemon --stacktrace
+
+      - name: Verify release jar
+        shell: bash
+        run: |
+          jar_path='client/build/libs/void-client-0.1.1-release.jar'
+          test -f "$jar_path"
+          unzip -p "$jar_path" META-INF/MANIFEST.MF | tr -d '\r' | grep -Fx 'Main-Class: Loader'
+          javap -classpath "$jar_path" -p Class373_Sub1 > /tmp/Class373_Sub1.txt
+          grep -F 'Class373_Sub1(java.awt.Component, boolean);' /tmp/Class373_Sub1.txt
+          grep -F 'java.awt.event.MouseWheelListener' /tmp/Class373_Sub1.txt
+
+      - name: Stage artifact
+        shell: bash
+        run: |
+          mkdir -p release
+          cp client/build/libs/void-client-0.1.1-release.jar release/void-client-native-ui-scale-v2.jar
+          (cd release && sha256sum void-client-native-ui-scale-v2.jar > void-client-native-ui-scale-v2.jar.sha256)
+
+      - name: Upload verified artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: void-client-native-ui-scale-v2
+          path: |
+            release/void-client-native-ui-scale-v2.jar
+            release/void-client-native-ui-scale-v2.jar.sha256
+          if-no-files-found: error
+
+      - name: Commit verified correction
+        shell: bash
+        run: |
+          git config user.name 'Ryan Palmer'
+          git config user.email 'www.ryan.palmer@hotmail.com'
+          git add client/src
+          git rm .tmp/native-ui-scale-resize-fix.patch
+          git rm .github/workflows/export-native-ui-fix-source.yml
+          git rm .github/workflows/verify-native-ui-resize-fix.yml
+          git commit -m 'Fix native UI scaling layout and resize state'
+          git push origin HEAD:fix/native-ui-scale-resize-layout
