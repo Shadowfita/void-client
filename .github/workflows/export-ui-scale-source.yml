@@ -1,24 +1,77 @@
-name: Export UI scale source
+name: Apply and verify native UI scale
 
 on:
   push:
     branches:
       - feature/native-ui-scale
+    paths:
+      - '.github/workflows/export-ui-scale-source.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  export:
+  apply:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Package source
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reassemble and apply implementation
+        shell: bash
         run: |
-          tar --exclude=.git --exclude=.gradle --exclude='**/build' -czf /tmp/void-client-source.tar.gz .
-      - name: Upload source
+          cat .tmp/native-ui-scale.patch.part* > /tmp/native-ui-scale.patch
+          git apply --check /tmp/native-ui-scale.patch
+          git apply /tmp/native-ui-scale.patch
+          git diff --stat
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 8
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build release jar through ProGuard
+        run: ./gradlew :client:proguardJar --no-daemon --stacktrace
+
+      - name: Verify release jar
+        shell: bash
+        run: |
+          jar_path='client/build/libs/void-client-0.1.1-release.jar'
+          test -f "$jar_path"
+          unzip -p "$jar_path" META-INF/MANIFEST.MF | tr -d '\r' | grep -Fx 'Main-Class: Loader'
+          javap -classpath "$jar_path" -p Class373_Sub1 > /tmp/Class373_Sub1.txt
+          grep -F 'Class373_Sub1(java.awt.Component, boolean);' /tmp/Class373_Sub1.txt
+          grep -F 'java.awt.event.MouseWheelListener' /tmp/Class373_Sub1.txt
+
+      - name: Stage verified artifact
+        shell: bash
+        run: |
+          mkdir -p release
+          cp client/build/libs/void-client-0.1.1-release.jar release/void-client-native-ui-scale.jar
+          (cd release && sha256sum void-client-native-ui-scale.jar > void-client-native-ui-scale.jar.sha256)
+
+      - name: Upload verified artifact
         uses: actions/upload-artifact@v4
         with:
-          name: void-client-ui-scale-source
-          path: /tmp/void-client-source.tar.gz
+          name: void-client-native-ui-scale
+          path: |
+            release/void-client-native-ui-scale.jar
+            release/void-client-native-ui-scale.jar.sha256
           if-no-files-found: error
+
+      - name: Commit verified implementation
+        shell: bash
+        run: |
+          git config user.name 'Ryan Palmer'
+          git config user.email 'www.ryan.palmer@hotmail.com'
+          git add client/src
+          git rm -r .tmp
+          git rm .github/workflows/export-ui-scale-source.yml
+          git commit -m 'Add native-resolution interface scaling'
+          git push origin HEAD:feature/native-ui-scale
