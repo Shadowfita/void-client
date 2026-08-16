@@ -39,11 +39,8 @@ import net.runelite.client.events.ClientShutdown;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.NavigationButtonAdded;
 import net.runelite.client.events.NavigationButtonRemoved;
-import net.runelite.client.ui.skin.SubstanceRuneLiteLookAndFeel;
+import net.runelite.client.ui.laf.RuneLiteLAF;
 import net.runelite.client.util.*;
-import org.pushingpixels.substance.internal.SubstanceSynapse;
-import org.pushingpixels.substance.internal.utils.SubstanceCoreUtilities;
-import org.pushingpixels.substance.internal.utils.SubstanceTitlePaneUtilities;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -298,14 +295,16 @@ public class ClientUI
 	{
 		SwingUtilities.invokeAndWait(() ->
 		{
-			// Set some sensible swing defaults
+			// Set sensible Swing defaults and install the modern RuneLite FlatLaf shell.
 			SwingUtil.setupDefaults();
+			RuneLiteLAF.setup();
 
-			// Use substance look and feel
-			SwingUtil.setTheme(new SubstanceRuneLiteLookAndFeel());
-
-			// Use custom UI font
+			// Use the RuneScape-style UI font without changing game-canvas scale.
 			SwingUtil.setFont(FontManager.getRunescapeFont());
+
+			// FlatLaf supplies cross-platform custom decorations when requested.
+			withTitleBar = config.enableCustomChrome();
+			JFrame.setDefaultLookAndFeelDecorated(withTitleBar);
 
 			// Create main window
 			frame = new ContainableFrame();
@@ -369,9 +368,7 @@ public class ClientUI
 			container.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
 
-			// Decorate window with custom chrome and titlebar if needed
-			withTitleBar = config.enableCustomChrome();
-			frame.setUndecorated(withTitleBar);
+			// Window decoration mode was selected before the frame was created.
 
 			// Layout frame
 			frame.pack();
@@ -385,14 +382,22 @@ public class ClientUI
 			navContainer.setPreferredSize(new Dimension(0, 0));
 			navContainer.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-			// To reduce substance's colorization (tinting)
-			navContainer.putClientProperty(SubstanceSynapse.COLORIZATION_FACTOR, 1.0);
 			clientPanel = new ClientPanel(client, CLIENT_BACKGROUND);
 
 			pluginToolbar = new ClientPluginToolbar(CLIENT_BACKGROUND);
 			sidebarContainer = new BackgroundPanel(CLIENT_BACKGROUND);
 			sidebarContainer.setLayout(new BoxLayout(sidebarContainer, BoxLayout.X_AXIS));
 			titleToolbar = new ClientTitleToolbar();
+			JPanel shellBar = new JPanel(new BorderLayout());
+			shellBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+			shellBar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.BORDER_COLOR));
+			JLabel shellTitle = new JLabel(title);
+			shellTitle.setForeground(ColorScheme.TEXT_COLOR);
+			shellTitle.setFont(shellTitle.getFont().deriveFont(Font.BOLD));
+			shellTitle.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+			shellBar.add(shellTitle, BorderLayout.WEST);
+			shellBar.add(titleToolbar, BorderLayout.EAST);
+			container.add(shellBar, BorderLayout.NORTH);
 			updateSidebarLayout();
 
 			frame.add(container);
@@ -438,53 +443,7 @@ public class ClientUI
 			mouseManager.registerMouseListener(mouseListener);*/
 
 
-			if (withTitleBar)
-			{
-				frame.getRootPane().setWindowDecorationStyle(JRootPane.FRAME);
-
-				final JComponent titleBar = SubstanceCoreUtilities.getTitlePaneComponent(frame);
-				titleToolbar.putClientProperty(SubstanceTitlePaneUtilities.EXTRA_COMPONENT_KIND, SubstanceTitlePaneUtilities.ExtraComponentKind.TRAILING);
-				titleBar.add(titleToolbar);
-
-				// Substance's default layout manager for the title bar only lays out substance's components
-				// This wraps the default manager and lays out the TitleToolbar as well.
-				LayoutManager delegate = titleBar.getLayout();
-				titleBar.setLayout(new LayoutManager()
-				{
-					@Override
-					public void addLayoutComponent(String name, Component comp)
-					{
-						delegate.addLayoutComponent(name, comp);
-					}
-
-					@Override
-					public void removeLayoutComponent(Component comp)
-					{
-						delegate.removeLayoutComponent(comp);
-					}
-
-					@Override
-					public Dimension preferredLayoutSize(Container parent)
-					{
-						return delegate.preferredLayoutSize(parent);
-					}
-
-					@Override
-					public Dimension minimumLayoutSize(Container parent)
-					{
-						return delegate.minimumLayoutSize(parent);
-					}
-
-					@Override
-					public void layoutContainer(Container parent)
-					{
-						delegate.layoutContainer(parent);
-						final int width = titleToolbar.getPreferredSize().width;
-						final int availableWidth = getTitlebarControlsLeft(titleBar, titleToolbar);
-						titleToolbar.setBounds(Math.max(0, availableWidth - width), 0, Math.min(width, availableWidth), titleBar.getHeight());
-					}
-				});
-			}
+			// FlatLaf owns the decorated title pane; client actions live in shellBar.
 
 			// Update config
 			updateFrameConfig(true);
@@ -511,28 +470,6 @@ public class ClientUI
 
 			restoreSidebarState();
 		});
-	}
-
-	private static int getTitlebarControlsLeft(Container titleBar, Component extraToolbar)
-	{
-		int controlsLeft = titleBar.getWidth();
-		int rightHalf = titleBar.getWidth() / 2;
-
-		for (Component component : titleBar.getComponents())
-		{
-			if (component == extraToolbar || !component.isVisible())
-			{
-				continue;
-			}
-
-			Rectangle bounds = component.getBounds();
-			if (bounds.width > 0 && bounds.x >= rightHalf)
-			{
-				controlsLeft = Math.min(controlsLeft, bounds.x);
-			}
-		}
-
-		return Math.max(0, controlsLeft);
 	}
 
 	public void show()

@@ -2,6 +2,8 @@
  * Visit http://jode.sourceforge.net/
  */
 
+import net.runelite.client.plugins.entityhider.EntityHiderState;
+
 import java.util.Arrays;
 import java.util.Hashtable;
 
@@ -320,6 +322,7 @@ final class Player extends Class318_Sub1_Sub3_Sub3 {
     }
 
     final Class318_Sub4 method2386(int i, ha var_ha) {
+        if (EntityHiderState.hideOtherPlayers && this != Class132.aPlayer_1907) return null;
         anInt10527++;
         if (this.aClass154_10536 == null || !method2459(2048, var_ha, -95)) return null;
         Class101 class101 = var_ha.method3705();

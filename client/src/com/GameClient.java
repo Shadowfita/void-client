@@ -171,6 +171,10 @@ public abstract class GameClient extends Applet {
 
     public abstract int getLocalPlayerSceneY();
 
+    public abstract int getLocalPlayerDestinationSceneX();
+
+    public abstract int getLocalPlayerDestinationSceneY();
+
     public abstract int getLocalPlayerSize();
 
     public abstract boolean hasLocalPlayer();
@@ -190,6 +194,25 @@ public abstract class GameClient extends Applet {
         return Collections.emptyList();
     }
 
+    public List<ItemContainerSnapshot> getItemContainers()
+    {
+        return Collections.emptyList();
+    }
+
+    public int getLocalPlayerAnimation()
+    {
+        return -1;
+    }
+
+    public OpponentInfo getOpponentInfo()
+    {
+        return null;
+    }
+
+    public String getObjectName(int id)
+    {
+        return "Object " + id;
+    }
     public abstract boolean isClientThread();
 
     public static final class GroundItemInfo
@@ -261,8 +284,10 @@ public abstract class GameClient extends Applet {
 
     public static final class NpcInfo
     {
+        private final int index;
         private final int id;
         private final String name;
+        private final int combatLevel;
         private final int localX;
         private final int localY;
         private final int plane;
@@ -270,12 +295,24 @@ public abstract class GameClient extends Applet {
 
         public NpcInfo(int id, String name, int localX, int localY, int plane, int height)
         {
+            this(-1, id, name, -1, localX, localY, plane, height);
+        }
+
+        public NpcInfo(int index, int id, String name, int combatLevel, int localX, int localY, int plane, int height)
+        {
+            this.index = index;
             this.id = id;
             this.name = name;
+            this.combatLevel = combatLevel;
             this.localX = localX;
             this.localY = localY;
             this.plane = plane;
             this.height = height;
+        }
+
+        public int getIndex()
+        {
+            return index;
         }
 
         public int getId()
@@ -286,6 +323,11 @@ public abstract class GameClient extends Applet {
         public String getName()
         {
             return name;
+        }
+
+        public int getCombatLevel()
+        {
+            return combatLevel;
         }
 
         public int getLocalX()
@@ -306,6 +348,149 @@ public abstract class GameClient extends Applet {
         public int getHeight()
         {
             return height;
+        }
+    }
+
+    public static final class ItemStackInfo
+    {
+        private final int id;
+        private final int quantity;
+        private final String name;
+        private final int price;
+        private final int slot;
+
+        public ItemStackInfo(int id, int quantity, String name, int price, int slot)
+        {
+            this.id = id;
+            this.quantity = quantity;
+            this.name = name;
+            this.price = price;
+            this.slot = slot;
+        }
+
+        public int getId()
+        {
+            return id;
+        }
+
+        public int getQuantity()
+        {
+            return quantity;
+        }
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public int getPrice()
+        {
+            return price;
+        }
+
+        public int getSlot()
+        {
+            return slot;
+        }
+
+        public int getStackValue()
+        {
+            long value = (long) Math.max(1, quantity) * Math.max(0, price);
+            return (int) Math.min(Integer.MAX_VALUE, value);
+        }
+    }
+
+    public static final class ItemContainerSnapshot
+    {
+        private final long id;
+        private final List<ItemStackInfo> items;
+        private final int capacity;
+
+        public ItemContainerSnapshot(long id, List<ItemStackInfo> items, int capacity)
+        {
+            this.id = id;
+            this.items = Collections.unmodifiableList(items);
+            this.capacity = capacity;
+        }
+
+        public long getId()
+        {
+            return id;
+        }
+
+        public List<ItemStackInfo> getItems()
+        {
+            return items;
+        }
+
+        public int getCapacity()
+        {
+            return capacity;
+        }
+
+        public int getOccupiedSlots()
+        {
+            return items.size();
+        }
+
+        public int getTotalValue()
+        {
+            long total = 0L;
+            for (ItemStackInfo item : items)
+            {
+                total += item.getStackValue();
+            }
+            return (int) Math.min(Integer.MAX_VALUE, total);
+        }
+    }
+
+    public static final class OpponentInfo
+    {
+        private final String name;
+        private final int combatLevel;
+        private final int localX;
+        private final int localY;
+        private final int plane;
+        private final boolean npc;
+
+        public OpponentInfo(String name, int combatLevel, int localX, int localY, int plane, boolean npc)
+        {
+            this.name = name;
+            this.combatLevel = combatLevel;
+            this.localX = localX;
+            this.localY = localY;
+            this.plane = plane;
+            this.npc = npc;
+        }
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public int getCombatLevel()
+        {
+            return combatLevel;
+        }
+
+        public int getLocalX()
+        {
+            return localX;
+        }
+
+        public int getLocalY()
+        {
+            return localY;
+        }
+
+        public int getPlane()
+        {
+            return plane;
+        }
+
+        public boolean isNpc()
+        {
+            return npc;
         }
     }
 

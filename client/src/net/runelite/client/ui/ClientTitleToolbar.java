@@ -52,6 +52,8 @@ class ClientTitleToolbar extends JPanel
 	 */
 	ClientTitleToolbar()
 	{
+		setOpaque(true);
+		setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		// The only other layout manager that would manage it's preferred size without padding
 		// was the GroupLayout manager, which doesn't work with dynamic layouts like this one.
 		// Primarily, it would not remove components unless it was immediately repainted.

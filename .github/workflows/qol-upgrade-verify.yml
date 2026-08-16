@@ -1,0 +1,44 @@
+name: QoL upgrade verification
+
+on:
+  push:
+    branches:
+      - main
+      - feature/runelite-qol-modern-shell
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Compile client
+        run: ./gradlew :client:compileJava --stacktrace
+
+      - name: Run tests
+        run: ./gradlew :client:test --stacktrace
+
+      - name: Build release jar
+        run: ./gradlew :client:proguardJar --stacktrace
+
+      - name: Upload release jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: void-client-qol-release
+          path: client/build/libs/*release.jar
+          if-no-files-found: error
+          retention-days: 7

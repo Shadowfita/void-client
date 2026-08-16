@@ -31,8 +31,7 @@ dependencies {
     implementation("com.google.inject:guice:5.1.0")
     implementation("net.sf.jopt-simple:jopt-simple:6.0-alpha-3")
     implementation("ch.qos.logback:logback-classic:1.2.10")
-    implementation("org.pushing-pixels:radiance-neon:1.0.2")
-    implementation("net.runelite.pushingpixels:substance:8.0.02")
+    implementation("com.formdev:flatlaf:3.2.5")
     implementation("org.slf4j:slf4j-api:1.7.7")
     implementation("com.google.code.findbugs:jsr305:3.0.2")
 

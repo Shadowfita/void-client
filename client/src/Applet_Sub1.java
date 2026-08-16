@@ -1164,21 +1164,31 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
 
     @Override
     public int getLocalPlayerLocalX() {
-        return Class132.aPlayer_1907 == null ? -1 : Class132.aPlayer_1907.x;
+        return Class132.aPlayer_1907 == null ? -1 : Class132.aPlayer_1907.x >> 2;
     }
 
     @Override
     public int getLocalPlayerLocalY() {
-        return Class132.aPlayer_1907 == null ? -1 : Class132.aPlayer_1907.y;
+        return Class132.aPlayer_1907 == null ? -1 : Class132.aPlayer_1907.y >> 2;
     }
 
     @Override
     public int getLocalPlayerSceneX() {
-        return Class132.aPlayer_1907 == null ? -1 : Class132.aPlayer_1907.anIntArray10320[0];
+        return Class132.aPlayer_1907 == null ? -1 : Class132.aPlayer_1907.x >> 9;
     }
 
     @Override
     public int getLocalPlayerSceneY() {
+        return Class132.aPlayer_1907 == null ? -1 : Class132.aPlayer_1907.y >> 9;
+    }
+
+    @Override
+    public int getLocalPlayerDestinationSceneX() {
+        return Class132.aPlayer_1907 == null ? -1 : Class132.aPlayer_1907.anIntArray10320[0];
+    }
+
+    @Override
+    public int getLocalPlayerDestinationSceneY() {
         return Class132.aPlayer_1907 == null ? -1 : Class132.aPlayer_1907.anIntArray10317[0];
     }
 
@@ -1263,7 +1273,7 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
                 continue;
             }
 
-            npcs.add(new NpcInfo(definition.id, definition.name, npc.x >> 2, npc.y >> 2, npc.plane, Math.max(64, definition.height >> 2)));
+            npcs.add(new NpcInfo((int) entry.key, definition.id, definition.name, definition.combatLevel, npc.x >> 2, npc.y >> 2, npc.plane, Math.max(64, definition.height >> 2)));
         }
         return npcs;
     }
@@ -1293,6 +1303,100 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
             ));
         }
         return snapshots;
+    }
+
+    @Override
+    public List<ItemContainerSnapshot> getItemContainers() {
+        if (Class348_Sub40.aClass356_7041 == null || Exception_Sub1.aClass255_112 == null) {
+            return Collections.emptyList();
+        }
+
+        int count = Class348_Sub40.aClass356_7041.method3474(1);
+        if (count <= 0) {
+            return Collections.emptyList();
+        }
+
+        Node[] nodes = new Node[count];
+        int actual = Class348_Sub40.aClass356_7041.method3477(3, nodes);
+        List<ItemContainerSnapshot> snapshots = new ArrayList<>(actual);
+        for (int nodeIndex = 0; nodeIndex < actual; nodeIndex++) {
+            Node node = nodes[nodeIndex];
+            if (!(node instanceof Class348_Sub13)) {
+                continue;
+            }
+
+            Class348_Sub13 container = (Class348_Sub13) node;
+            int capacity = Math.max(container.anIntArray6757.length, container.anIntArray6758.length);
+            List<ItemStackInfo> items = new ArrayList<>();
+            for (int slot = 0; slot < capacity; slot++) {
+                int id = slot < container.anIntArray6757.length ? container.anIntArray6757[slot] : -1;
+                if (id < 0) {
+                    continue;
+                }
+
+                int quantity = slot < container.anIntArray6758.length ? Math.max(1, container.anIntArray6758[slot]) : 1;
+                ObjType definition = Exception_Sub1.aClass255_112.getItemDefinitions(-115, id);
+                String name = definition == null || definition.name == null ? "Item " + id : definition.name;
+                int price = definition == null ? 0 : Math.max(0, definition.cost);
+                items.add(new ItemStackInfo(id, quantity, name, price, slot));
+            }
+            snapshots.add(new ItemContainerSnapshot(node.key, items, capacity));
+        }
+
+        return snapshots;
+    }
+
+    @Override
+    public int getLocalPlayerAnimation() {
+        return Class132.aPlayer_1907 == null ? -1 : Class132.aPlayer_1907.anInt10286;
+    }
+
+    @Override
+    public OpponentInfo getOpponentInfo() {
+        Player local = Class132.aPlayer_1907;
+        if (local == null || local.anInt10275 < 0) {
+            return null;
+        }
+
+        if (local.anInt10275 >= 32768) {
+            int index = local.anInt10275 - 32768;
+            if (Class294.aPlayerArray5058 == null || index < 0 || index >= Class294.aPlayerArray5058.length) {
+                return null;
+            }
+            Player player = Class294.aPlayerArray5058[index];
+            if (player == null) {
+                return null;
+            }
+            String name = player.method2450(false, -100);
+            return new OpponentInfo(name == null ? "Player" : name, player.anInt10516, player.x >> 2, player.y >> 2, player.plane, false);
+        }
+
+        if (Class282.aClass356_3654 == null) {
+            return null;
+        }
+        Class348_Sub22 entry = (Class348_Sub22) Class282.aClass356_3654.method3480(local.anInt10275, -6008);
+        if (entry == null || entry.aNpc_6859 == null || entry.aNpc_6859.definition == null) {
+            return null;
+        }
+        Npc npc = entry.aNpc_6859;
+        NPCType definition = npc.definition.multinpcs == null ? npc.definition : npc.definition.method794(Class318_Sub1_Sub3_Sub3.aClass170_10209, -1);
+        if (definition == null) {
+            return null;
+        }
+        String name = definition.name == null || definition.name.length() == 0 ? "NPC" : definition.name;
+        return new OpponentInfo(name, definition.combatLevel, npc.x >> 2, npc.y >> 2, npc.plane, true);
+    }
+
+    @Override
+    public String getObjectName(int id) {
+        if (Class348_Sub40_Sub12.aClass263_9195 == null || id < 0) {
+            return "Object " + id;
+        }
+        Class51 definition = Class348_Sub40_Sub12.aClass263_9195.method2005(0, id);
+        if (definition == null || definition.aString884 == null || "null".equalsIgnoreCase(definition.aString884)) {
+            return "Object " + id;
+        }
+        return definition.aString884;
     }
 
     @Override

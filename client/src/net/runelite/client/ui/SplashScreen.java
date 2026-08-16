@@ -44,9 +44,8 @@ import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicProgressBarUI;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.client.ui.skin.SubstanceRuneLiteLookAndFeel;
+import net.runelite.client.ui.laf.RuneLiteLAF;
 import net.runelite.client.util.ImageUtil;
-import org.pushingpixels.substance.internal.SubstanceSynapse;
 
 @Slf4j
 public class SplashScreen extends JFrame implements ActionListener
@@ -171,16 +170,11 @@ public class SplashScreen extends JFrame implements ActionListener
 
 				try
 				{
-					boolean hasLAF = UIManager.getLookAndFeel() instanceof SubstanceRuneLiteLookAndFeel;
-					if (!hasLAF)
+					if (!(UIManager.getLookAndFeel() instanceof RuneLiteLAF))
 					{
-						UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+						RuneLiteLAF.setup();
 					}
 					INSTANCE = new SplashScreen();
-					if (hasLAF)
-					{
-						INSTANCE.getRootPane().putClientProperty(SubstanceSynapse.COLORIZATION_FACTOR, 1.0);
-					}
 				}
 				catch (Exception e)
 				{

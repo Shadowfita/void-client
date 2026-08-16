@@ -86,11 +86,7 @@ public class PluginManager
 	 */
 	private static final String PLUGIN_PACKAGE = "net.runelite.client.plugins";
 	private static final String[] REMOVED_PLUGIN_PACKAGES = {
-		"net.runelite.client.plugins.grounditems.",
-		"net.runelite.client.plugins.loottracker.",
-		"net.runelite.client.plugins.npcnames.",
-		"net.runelite.client.plugins.pathtracing.",
-		"net.runelite.client.plugins.tileindicators."
+		"net.runelite.client.plugins.pathtracing."
 	};
 
 	private final boolean developerMode;
