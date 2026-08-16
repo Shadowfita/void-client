@@ -24,11 +24,32 @@ jobs:
         shell: bash
         run: |
           jar_path="client/build/libs/void-client-0.1.1-release.jar"
-          echo '=== matching Class373 entries ==='
-          jar tf "$jar_path" | grep 'Class373' || true
-          echo '=== direct Class373_Sub1 inspection ==='
-          if jar tf "$jar_path" | grep -qFx 'Class373_Sub1.class'; then
-            javap -classpath "$jar_path" -p Class373_Sub1 || true
-          else
-            echo 'Class373_Sub1.class is absent from ProGuard output'
+          mapping="client/build/proguard/mapping.txt"
+          usage="client/build/proguard/usage.txt"
+
+          echo '=== Class373_Sub1 mapping ==='
+          grep '^Class373_Sub1 -> ' "$mapping" || true
+          mapped=$(awk '$1 == "Class373_Sub1" && $2 == "->" { gsub(":", "", $3); print $3 }' "$mapping")
+          echo "mapped=$mapped"
+
+          echo '=== shrink usage references ==='
+          grep -A8 -B2 '^Class373_Sub1' "$usage" || true
+
+          if [ -z "$mapped" ]; then
+            echo 'No ProGuard mapping for Class373_Sub1; class was likely removed.'
+            exit 0
           fi
+
+          class_path="${mapped//.//}.class"
+          echo "class_path=$class_path"
+          if ! jar tf "$jar_path" | grep -qFx "$class_path"; then
+            echo 'Mapped Class373_Sub1 class is absent from output JAR.'
+            exit 0
+          fi
+
+          echo '=== javap mapped handler ==='
+          javap -classpath "$jar_path" -p "$mapped" | tee /tmp/wheel-handler.txt
+          echo '=== constructor check ==='
+          grep -F 'java.awt.Component, boolean' /tmp/wheel-handler.txt || echo 'MISSING Component/boolean constructor'
+          echo '=== wheel interface check ==='
+          grep -F 'java.awt.event.MouseWheelListener' /tmp/wheel-handler.txt || echo 'MISSING MouseWheelListener interface'
