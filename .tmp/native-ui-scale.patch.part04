@@ -1,0 +1,133 @@
++            if (Class138.aClass46Array1942 != null) {
++                Class348_Sub40_Sub7.method3064(i, Class136.anInt4792, true, Class348_Sub1.anInt6555, i_1_, Class331.aClass46_4130.anInt760, i + Class321.anInt4017, false, Class138.aClass46Array1942, -1412584499, i_1_ - -Class348_Sub42_Sub8_Sub2.anInt10432);
++                Class138.aClass46Array1942 = null;
++            }
++        } finally {
++            if (interfaceScaled) {
++                Applet_Sub1.endInterfaceRenderScale();
++            }
+         }
+     }
+ 
+diff --git a/client/src/client.java b/client/src/client.java
+index 06438527b779d624526abc27f9777f5ca99c4a2d..f019760845ad307e8a9c1e0d64a1318944e62585 100644
+--- a/client/src/client.java
++++ b/client/src/client.java
+@@ -1156,12 +1156,16 @@ public final class client extends Applet_Sub1 {
+                             if (class46.anInt765 != 0) {
+                                 if ((class46.anInt765 == Class239_Sub10.anInt5943) || (class46.anInt765 == Class312.anInt3932)) {
+                                     Class348_Sub1.aClass46_6561 = class46;
+-                                    if (Class259.aClass305_3304 != null) Class259.aClass305_3304.method2292(123, Class348_Sub8.aHa6654, class46.anInt789);
++                                    if (Class259.aClass305_3304 != null) Class259.aClass305_3304.method2292(123, Class348_Sub8.aHa6654, Applet_Sub1.interfaceHeightToPhysical(class46.anInt789));
+                                     if (class46.anInt765 == Class239_Sub10.anInt5943) {
+                                         if (!Class5_Sub1.aBoolean8335 && i_40_ >= i_45_ && i_41_ >= i_46_ && i_40_ < i_47_ && i_41_ < i_48_) {
+-                                            Class239_Sub24.method1823(Class348_Sub8.aHa6654, i_38_, i_39_, (byte) -50);
++                                            int physicalMouseX = Applet_Sub1.interfaceToPhysicalX(i_38_);
++                                            int physicalMouseY = Applet_Sub1.interfaceToPhysicalY(i_39_);
++                                            int physicalHitX = Applet_Sub1.interfaceToPhysicalX(i_40_);
++                                            int physicalHitY = Applet_Sub1.interfaceToPhysicalY(i_41_);
++                                            Class239_Sub24.method1823(Class348_Sub8.aHa6654, physicalMouseX, physicalMouseY, (byte) -50);
+                                             for (Class318_Sub6 class318_sub6 = ((Class318_Sub6) InputStream_Sub2.aClass243_83.method1872(8)); class318_sub6 != null; class318_sub6 = ((Class318_Sub6) (InputStream_Sub2.aClass243_83.method1878((byte) -67)))) {
+-                                                if (i_40_ >= (class318_sub6.anInt6429) && (i_40_ < (class318_sub6.anInt6426)) && (i_41_ >= (class318_sub6.anInt6427)) && (i_41_ < (class318_sub6.anInt6425))) {
++                                                if (physicalHitX >= (class318_sub6.anInt6429) && (physicalHitX < (class318_sub6.anInt6426)) && (physicalHitY >= (class318_sub6.anInt6427)) && (physicalHitY < (class318_sub6.anInt6425))) {
+                                                     Class64_Sub2.method661((byte) 107);
+                                                     Class239_Sub13.method1777(-3, (class318_sub6.aClass318_Sub1_Sub3_Sub3_6431));
+                                                 }
+diff --git a/client/src/com/GameClient.java b/client/src/com/GameClient.java
+index 52db768a504203fac73eef7993b36a17a57b9848..1120843092bb544382e1a93ae0d371238b99b77b 100644
+--- a/client/src/com/GameClient.java
++++ b/client/src/com/GameClient.java
+@@ -151,6 +151,12 @@ public abstract class GameClient extends Applet {
+ 
+     public abstract int getScalingFactor();
+ 
++    public abstract void setInterfaceScalingFactor(int factor);
++
++    public abstract int getInterfaceScalingFactor();
++
++    public abstract boolean isInterfaceScalingSupported();
++
+     public abstract void invalidateStretching(boolean resize);
+ 
+     public abstract void setAnimationSmoothingEnabled(boolean state);
+diff --git a/client/src/ha.java b/client/src/ha.java
+index f0efbc6b983759d60f75eeecc02d6929da4cbed7..58b0e886ebe262e5386c349bb591818350d2c3e7 100644
+--- a/client/src/ha.java
++++ b/client/src/ha.java
+@@ -368,6 +368,20 @@ abstract class ha {
+ 
+     abstract Class105 method3711(int[] is, int i, int i_212_, int i_213_, int i_214_, boolean bool);
+ 
++    /**
++     * Native interface scaling keeps the physical display surface at its full
++     * resolution while changing only the renderer's logical 2D coordinate space.
++     * Software renderers return false and continue to use legacy full-canvas
++     * stretching when explicitly requested.
++     */
++    boolean supportsNativeInterfaceScaling() {
++        return false;
++    }
++
++    void refreshNativeInterfaceScaling() {
++        /* Unsupported renderer. */
++    }
++
+     ha(d var_d) {
+         this.aD4579 = var_d;
+         int i = -1;
+diff --git a/client/src/ha_Sub2.java b/client/src/ha_Sub2.java
+index 57440ad7ae02337a231a842c03e22ea659fa6e7a..59aca14b28659123b188f6a79f661d69b413ae77 100644
+--- a/client/src/ha_Sub2.java
++++ b/client/src/ha_Sub2.java
+@@ -699,6 +699,16 @@ final class ha_Sub2 extends ha {
+         return true;
+     }
+ 
++    @Override
++    final boolean supportsNativeInterfaceScaling() {
++        return true;
++    }
++
++    @Override
++    final void refreshNativeInterfaceScaling() {
++        method3745((byte) 127);
++    }
++
+     final void method3744(float f, int i, float f_45_) {
+         if (i != 770) this.aFloat7792 = 0.31055084F;
+         anInt7571++;
+diff --git a/client/src/ha_Sub3.java b/client/src/ha_Sub3.java
+index bfd19aafa4f1d5e12a8d67a788501fddf212c96a..faa5e219796223eb0076aa1fca5b5821a373afe0 100644
+--- a/client/src/ha_Sub3.java
++++ b/client/src/ha_Sub3.java
+@@ -2099,6 +2099,16 @@ abstract class ha_Sub3 extends ha {
+         method3898(12);
+     }
+ 
++    @Override
++    final boolean supportsNativeInterfaceScaling() {
++        return true;
++    }
++
++    @Override
++    final void refreshNativeInterfaceScaling() {
++        method3917(false);
++    }
++
+     private final void method3917(boolean bool) {
+         if (aCanvas7910 == null) anInt7958 = anInt7987 = 1;
+         else {
+diff --git a/client/src/net/runelite/client/plugins/PluginManager.java b/client/src/net/runelite/client/plugins/PluginManager.java
+index e16705479d61a3244d0a87921d7a72eabf463727..d9fbea2a6cf3986eaa7731ba47adc80a66aa11b9 100644
+--- a/client/src/net/runelite/client/plugins/PluginManager.java
++++ b/client/src/net/runelite/client/plugins/PluginManager.java
+@@ -241,8 +241,6 @@ public class PluginManager
+ 
+ 	public void startPlugins()
+ 	{
+-		configManager.setConfiguration(RuneLiteConfig.GROUP_NAME, "stretchedmodeplugin", false);
+-
+ 		List<Plugin> scannedPlugins = new ArrayList<>(plugins);
+ 		int loaded = 0;
+ 		for (Plugin plugin : scannedPlugins)
+diff --git a/client/src/net/runelite/client/plugins/config/ConfigPanel.java b/client/src/net/runelite/client/plugins/config/ConfigPanel.java
