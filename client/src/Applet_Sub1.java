@@ -82,7 +82,17 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
     private boolean stretchedIntegerScaling;
     private boolean stretchedKeepAspectRatio = true;
     private int scalingFactor = 100;
+    private int interfaceScalingFactor = 100;
     private boolean animationSmoothingEnabled;
+
+    private static boolean interfaceRenderScaleActive;
+    private static boolean interfaceInputScaleActive;
+    private static int interfaceNativeWidth;
+    private static int interfaceNativeHeight;
+    private static int interfaceLogicalWidth;
+    private static int interfaceLogicalHeight;
+    private static int lastInterfaceLayoutWidth = -1;
+    private static int lastInterfaceLayoutHeight = -1;
     public static int anInt53;
     public static boolean aBoolean54;
     public static int anInt55;
@@ -474,14 +484,218 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
 
     static boolean shouldScaleOpenGLFrame() {
         Applet_Sub1 applet = Class348_Sub40_Sub9.anApplet_Sub1_9169;
-        return applet != null
-                && applet.shouldStretchCanvas()
-                && (Class348_Sub8.aHa6654 instanceof ha_Sub2 || Class348_Sub8.aHa6654 instanceof Class377);
+        if (applet == null || Class348_Sub8.aHa6654 == null) {
+            return false;
+        }
+        if (interfaceRenderScaleActive && Class348_Sub8.aHa6654.supportsNativeInterfaceScaling()) {
+            return true;
+        }
+        return applet.shouldStretchCanvas()
+                && (Class348_Sub8.aHa6654 instanceof ha_Sub2 || Class348_Sub8.aHa6654 instanceof ha_Sub3);
     }
 
     static boolean useFastCanvasScaling() {
         Applet_Sub1 applet = Class348_Sub40_Sub9.anApplet_Sub1_9169;
         return applet != null && applet.stretchedFast;
+    }
+
+    private static Applet_Sub1 activeApplet() {
+        return Class348_Sub40_Sub9.anApplet_Sub1_9169;
+    }
+
+    private boolean canUseNativeInterfaceScaling() {
+        return !stretchedEnabled
+                && interfaceScalingFactor != 100
+                && Class348_Sub8.aHa6654 != null
+                && Class348_Sub8.aHa6654.supportsNativeInterfaceScaling();
+    }
+
+    private static int calculateInterfaceLogicalSize(int nativeSize, int factor) {
+        return Math.max(1, (int) Math.round((double) nativeSize * 100.0 / factor));
+    }
+
+    private static void prepareInterfaceDimensions() {
+        Applet_Sub1 applet = activeApplet();
+        interfaceNativeWidth = Math.max(1, Class321.anInt4017);
+        interfaceNativeHeight = Math.max(1, Class348_Sub42_Sub8_Sub2.anInt10432);
+        interfaceLogicalWidth = calculateInterfaceLogicalSize(interfaceNativeWidth, applet.interfaceScalingFactor);
+        interfaceLogicalHeight = calculateInterfaceLogicalSize(interfaceNativeHeight, applet.interfaceScalingFactor);
+    }
+
+    private static void ensureInterfaceLayout() {
+        if (r.anInt9721 == -1) {
+            return;
+        }
+        if (lastInterfaceLayoutWidth == interfaceLogicalWidth && lastInterfaceLayoutHeight == interfaceLogicalHeight) {
+            return;
+        }
+        Class239_Sub3.method1728(interfaceLogicalHeight, -1, r.anInt9721, true, interfaceLogicalWidth);
+        lastInterfaceLayoutWidth = interfaceLogicalWidth;
+        lastInterfaceLayoutHeight = interfaceLogicalHeight;
+    }
+
+    static boolean beginInterfaceRenderScale() {
+        Applet_Sub1 applet = activeApplet();
+        if (applet == null || !applet.canUseNativeInterfaceScaling() || interfaceRenderScaleActive) {
+            return false;
+        }
+        prepareInterfaceDimensions();
+        interfaceRenderScaleActive = true;
+        Class321.anInt4017 = interfaceLogicalWidth;
+        Class348_Sub42_Sub8_Sub2.anInt10432 = interfaceLogicalHeight;
+        ensureInterfaceLayout();
+        Class348_Sub8.aHa6654.refreshNativeInterfaceScaling();
+        return true;
+    }
+
+    static void endInterfaceRenderScale() {
+        if (!interfaceRenderScaleActive) {
+            return;
+        }
+        Class321.anInt4017 = interfaceNativeWidth;
+        Class348_Sub42_Sub8_Sub2.anInt10432 = interfaceNativeHeight;
+        interfaceRenderScaleActive = false;
+        if (Class348_Sub8.aHa6654 != null) {
+            Class348_Sub8.aHa6654.refreshNativeInterfaceScaling();
+        }
+    }
+
+    static boolean suspendInterfaceRenderScale() {
+        if (!interfaceRenderScaleActive) {
+            return false;
+        }
+        Class321.anInt4017 = interfaceNativeWidth;
+        Class348_Sub42_Sub8_Sub2.anInt10432 = interfaceNativeHeight;
+        interfaceRenderScaleActive = false;
+        Class348_Sub8.aHa6654.refreshNativeInterfaceScaling();
+        return true;
+    }
+
+    static void resumeInterfaceRenderScale() {
+        Applet_Sub1 applet = activeApplet();
+        if (interfaceRenderScaleActive || applet == null || !applet.canUseNativeInterfaceScaling()) {
+            return;
+        }
+        Class321.anInt4017 = interfaceLogicalWidth;
+        Class348_Sub42_Sub8_Sub2.anInt10432 = interfaceLogicalHeight;
+        interfaceRenderScaleActive = true;
+        Class348_Sub8.aHa6654.refreshNativeInterfaceScaling();
+    }
+
+    static boolean isInterfaceRenderScaleActive() {
+        return interfaceRenderScaleActive;
+    }
+
+    static boolean beginInterfaceInputScale() {
+        Applet_Sub1 applet = activeApplet();
+        if (applet == null || !applet.canUseNativeInterfaceScaling() || interfaceInputScaleActive) {
+            return false;
+        }
+        prepareInterfaceDimensions();
+        interfaceInputScaleActive = true;
+        Class321.anInt4017 = interfaceLogicalWidth;
+        Class348_Sub42_Sub8_Sub2.anInt10432 = interfaceLogicalHeight;
+        ensureInterfaceLayout();
+        return true;
+    }
+
+    static void endInterfaceInputScale() {
+        if (!interfaceInputScaleActive) {
+            return;
+        }
+        Class321.anInt4017 = interfaceNativeWidth;
+        Class348_Sub42_Sub8_Sub2.anInt10432 = interfaceNativeHeight;
+        interfaceInputScaleActive = false;
+    }
+
+    static int scaleInterfaceInputX(int x) {
+        if (!interfaceInputScaleActive) {
+            return x;
+        }
+        int value = (int) Math.floor((double) x * interfaceLogicalWidth / Math.max(1, interfaceNativeWidth));
+        return Math.max(0, Math.min(interfaceLogicalWidth - 1, value));
+    }
+
+    static int scaleInterfaceInputY(int y) {
+        if (!interfaceInputScaleActive) {
+            return y;
+        }
+        int value = (int) Math.floor((double) y * interfaceLogicalHeight / Math.max(1, interfaceNativeHeight));
+        return Math.max(0, Math.min(interfaceLogicalHeight - 1, value));
+    }
+
+    private static int currentInterfaceLogicalWidth() {
+        if (interfaceRenderScaleActive || interfaceInputScaleActive) {
+            return Math.max(1, interfaceLogicalWidth);
+        }
+        Applet_Sub1 applet = activeApplet();
+        if (applet == null || !applet.canUseNativeInterfaceScaling()) {
+            return Math.max(1, Class321.anInt4017);
+        }
+        return calculateInterfaceLogicalSize(Math.max(1, Class321.anInt4017), applet.interfaceScalingFactor);
+    }
+
+    private static int currentInterfaceLogicalHeight() {
+        if (interfaceRenderScaleActive || interfaceInputScaleActive) {
+            return Math.max(1, interfaceLogicalHeight);
+        }
+        Applet_Sub1 applet = activeApplet();
+        if (applet == null || !applet.canUseNativeInterfaceScaling()) {
+            return Math.max(1, Class348_Sub42_Sub8_Sub2.anInt10432);
+        }
+        return calculateInterfaceLogicalSize(Math.max(1, Class348_Sub42_Sub8_Sub2.anInt10432), applet.interfaceScalingFactor);
+    }
+
+    private static int currentInterfaceNativeWidth() {
+        return (interfaceRenderScaleActive || interfaceInputScaleActive) ? interfaceNativeWidth : Math.max(1, Class321.anInt4017);
+    }
+
+    private static int currentInterfaceNativeHeight() {
+        return (interfaceRenderScaleActive || interfaceInputScaleActive) ? interfaceNativeHeight : Math.max(1, Class348_Sub42_Sub8_Sub2.anInt10432);
+    }
+
+    static int interfaceToPhysicalX(int x) {
+        int logical = currentInterfaceLogicalWidth();
+        int nativeSize = currentInterfaceNativeWidth();
+        return (int) Math.floor((double) x * nativeSize / logical);
+    }
+
+    static int interfaceToPhysicalY(int y) {
+        int logical = currentInterfaceLogicalHeight();
+        int nativeSize = currentInterfaceNativeHeight();
+        return (int) Math.floor((double) y * nativeSize / logical);
+    }
+
+    static int interfaceToPhysicalRight(int x) {
+        int logical = currentInterfaceLogicalWidth();
+        int nativeSize = currentInterfaceNativeWidth();
+        return (int) Math.ceil((double) x * nativeSize / logical);
+    }
+
+    static int interfaceToPhysicalBottom(int y) {
+        int logical = currentInterfaceLogicalHeight();
+        int nativeSize = currentInterfaceNativeHeight();
+        return (int) Math.ceil((double) y * nativeSize / logical);
+    }
+
+    static int interfaceWidthToPhysical(int width) {
+        return Math.max(1, interfaceToPhysicalRight(width));
+    }
+
+    static int interfaceHeightToPhysical(int height) {
+        return Math.max(1, interfaceToPhysicalBottom(height));
+    }
+
+    static void setInterfaceDirtyBounds(Rectangle rectangle, int x, int y, int width, int height) {
+        if (!interfaceRenderScaleActive) {
+            rectangle.setBounds(x, y, width, height);
+            return;
+        }
+        int left = interfaceToPhysicalX(x);
+        int top = interfaceToPhysicalY(y);
+        int right = interfaceToPhysicalRight(x + width);
+        int bottom = interfaceToPhysicalBottom(y + height);
+        rectangle.setBounds(left, top, Math.max(1, right - left), Math.max(1, bottom - top));
     }
 
     static void applyCanvasSize() {
@@ -799,6 +1013,38 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
     @Override
     public int getScalingFactor() {
         return scalingFactor;
+    }
+
+    @Override
+    public void setInterfaceScalingFactor(int factor) {
+        int clamped = Math.max(100, Math.min(300, factor));
+        if (interfaceScalingFactor == clamped) {
+            return;
+        }
+        interfaceScalingFactor = clamped;
+        lastInterfaceLayoutWidth = -1;
+        lastInterfaceLayoutHeight = -1;
+
+        // Returning to 1x must also return the interface layout to the native
+        // canvas dimensions; otherwise widgets retain their previously scaled
+        // logical positions until the next window resize.
+        if (clamped == 100 && !interfaceRenderScaleActive && !interfaceInputScaleActive && r.anInt9721 != -1) {
+            Class239.method1713(true, 520);
+        }
+        Canvas canvas = getCanvas();
+        if (canvas != null) {
+            canvas.repaint();
+        }
+    }
+
+    @Override
+    public int getInterfaceScalingFactor() {
+        return interfaceScalingFactor;
+    }
+
+    @Override
+    public boolean isInterfaceScalingSupported() {
+        return Class348_Sub8.aHa6654 != null && Class348_Sub8.aHa6654.supportsNativeInterfaceScaling();
     }
 
     @Override

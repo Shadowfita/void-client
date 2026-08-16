@@ -151,6 +151,12 @@ public abstract class GameClient extends Applet {
 
     public abstract int getScalingFactor();
 
+    public abstract void setInterfaceScalingFactor(int factor);
+
+    public abstract int getInterfaceScalingFactor();
+
+    public abstract boolean isInterfaceScalingSupported();
+
     public abstract void invalidateStretching(boolean resize);
 
     public abstract void setAnimationSmoothingEnabled(boolean state);

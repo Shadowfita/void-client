@@ -699,6 +699,16 @@ final class ha_Sub2 extends ha {
         return true;
     }
 
+    @Override
+    final boolean supportsNativeInterfaceScaling() {
+        return true;
+    }
+
+    @Override
+    final void refreshNativeInterfaceScaling() {
+        method3745((byte) 127);
+    }
+
     final void method3744(float f, int i, float f_45_) {
         if (i != 770) this.aFloat7792 = 0.31055084F;
         anInt7571++;

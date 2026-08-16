@@ -368,6 +368,20 @@ abstract class ha {
 
     abstract Class105 method3711(int[] is, int i, int i_212_, int i_213_, int i_214_, boolean bool);
 
+    /**
+     * Native interface scaling keeps the physical display surface at its full
+     * resolution while changing only the renderer's logical 2D coordinate space.
+     * Software renderers return false and continue to use legacy full-canvas
+     * stretching when explicitly requested.
+     */
+    boolean supportsNativeInterfaceScaling() {
+        return false;
+    }
+
+    void refreshNativeInterfaceScaling() {
+        /* Unsupported renderer. */
+    }
+
     ha(d var_d) {
         this.aD4579 = var_d;
         int i = -1;

@@ -118,7 +118,7 @@ final class Class373_Sub2 extends Class373 implements MouseListener, MouseMotion
     final int method3594(byte i) {
         anInt7430++;
         if (i <= 69) return -123;
-        return anInt7448;
+        return Applet_Sub1.scaleInterfaceInputY(anInt7448);
     }
 
     final Class348_Sub45 method3596(int i) {
@@ -207,7 +207,7 @@ final class Class373_Sub2 extends Class373 implements MouseListener, MouseMotion
     final int method3597(boolean bool) {
         if (bool != true) anInt7453 = -101;
         anInt7443++;
-        return anInt7442;
+        return Applet_Sub1.scaleInterfaceInputX(anInt7442);
     }
 
     public final synchronized void mousePressed(MouseEvent mouseevent) {

@@ -8,10 +8,34 @@ import net.runelite.client.config.Range;
 @ConfigGroup("stretchedmode")
 public interface StretchedModeConfig extends Config
 {
+	@Range(
+		min = 1,
+		max = 3
+	)
+	@ConfigItem(
+		keyName = "scalingFactor",
+		name = "Interface Scale",
+		description = "Scales the RuneScape HUD and interfaces while keeping the 3D scene at native resolution. Decimal values such as 1.3x and 1.5x are supported."
+	)
+	default double scaling()
+	{
+		return 1.0;
+	}
+
+	@ConfigItem(
+		keyName = "legacyFullCanvasStretch",
+		name = "Legacy Full-Canvas Stretch",
+		description = "Uses the old Stretched Mode behaviour, scaling the whole game including the 3D scene. Use this as a fallback for software rendering."
+	)
+	default boolean legacyFullCanvasStretch()
+	{
+		return false;
+	}
+
 	@ConfigItem(
 		keyName = "increasedPerformance",
-		name = "Increased Performance Mode",
-		description = "Uses faster stretching."
+		name = "Legacy Fast Scaling",
+		description = "Legacy full-canvas mode only. Uses nearest-neighbour scaling instead of bilinear filtering."
 	)
 	default boolean increasedPerformance()
 	{
@@ -20,8 +44,8 @@ public interface StretchedModeConfig extends Config
 
 	@ConfigItem(
 		keyName = "integerScaling",
-		name = "Integer Scaling",
-		description = "Uses a whole-number scale factor."
+		name = "Legacy Integer Scaling",
+		description = "Legacy full-canvas mode only. Restricts the physical game canvas to whole-number scale multiples."
 	)
 	default boolean integerScaling()
 	{
@@ -30,25 +54,11 @@ public interface StretchedModeConfig extends Config
 
 	@ConfigItem(
 		keyName = "keepAspectRatio",
-		name = "Keep Aspect Ratio",
-		description = "Keeps the game aspect ratio while stretching."
+		name = "Legacy Keep Aspect Ratio",
+		description = "Legacy full-canvas mode only. Keeps the game aspect ratio while stretching."
 	)
 	default boolean keepAspectRatio()
 	{
 		return true;
-	}
-
-	@Range(
-		min = 1,
-		max = 8
-	)
-	@ConfigItem(
-		keyName = "scalingFactor",
-		name = "Resizable Scale Factor",
-		description = "Scales the game view by this factor. Decimal values such as 1.1x, 1.5x and 1.75x are supported."
-	)
-	default double scaling()
-	{
-		return 1.0;
 	}
 }

@@ -21,7 +21,7 @@ final class Class348_Sub45_Sub1 extends Class348_Sub45 {
 
     final int method3311(int i) {
         int i_0_ = 48 % ((i - -61) / 40);
-        return this.anInt9725;
+        return Applet_Sub1.scaleInterfaceInputY(this.anInt9725);
     }
 
     final int method3315(int i) {
@@ -31,6 +31,6 @@ final class Class348_Sub45_Sub1 extends Class348_Sub45 {
 
     final int method3308(byte i) {
         if (i >= -126) return -80;
-        return this.anInt9729;
+        return Applet_Sub1.scaleInterfaceInputX(this.anInt9729);
     }
 }

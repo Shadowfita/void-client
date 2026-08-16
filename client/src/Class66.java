@@ -1766,7 +1766,9 @@ final class Class66 {
                 return;
             }
             if (i == 6203) {
-                Class348_Sub42_Sub3.method3174(0, 0, Class348_Sub1.aClass46_6561.anInt709, false, (byte) 74, Class348_Sub1.aClass46_6561.anInt789);
+                int viewportWidth = Applet_Sub1.interfaceWidthToPhysical(Class348_Sub1.aClass46_6561.anInt709);
+                int viewportHeight = Applet_Sub1.interfaceHeightToPhysical(Class348_Sub1.aClass46_6561.anInt789);
+                Class348_Sub42_Sub3.method3174(0, 0, viewportWidth, false, (byte) 74, viewportHeight);
                 anIntArray1149[anInt1173++] = Class127.anInt4656;
                 anIntArray1149[anInt1173++] = Class280.anInt3643;
                 return;

@@ -2099,6 +2099,16 @@ abstract class ha_Sub3 extends ha {
         method3898(12);
     }
 
+    @Override
+    final boolean supportsNativeInterfaceScaling() {
+        return true;
+    }
+
+    @Override
+    final void refreshNativeInterfaceScaling() {
+        method3917(false);
+    }
+
     private final void method3917(boolean bool) {
         if (aCanvas7910 == null) anInt7958 = anInt7987 = 1;
         else {

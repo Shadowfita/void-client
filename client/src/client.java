@@ -1156,12 +1156,16 @@ public final class client extends Applet_Sub1 {
                             if (class46.anInt765 != 0) {
                                 if ((class46.anInt765 == Class239_Sub10.anInt5943) || (class46.anInt765 == Class312.anInt3932)) {
                                     Class348_Sub1.aClass46_6561 = class46;
-                                    if (Class259.aClass305_3304 != null) Class259.aClass305_3304.method2292(123, Class348_Sub8.aHa6654, class46.anInt789);
+                                    if (Class259.aClass305_3304 != null) Class259.aClass305_3304.method2292(123, Class348_Sub8.aHa6654, Applet_Sub1.interfaceHeightToPhysical(class46.anInt789));
                                     if (class46.anInt765 == Class239_Sub10.anInt5943) {
                                         if (!Class5_Sub1.aBoolean8335 && i_40_ >= i_45_ && i_41_ >= i_46_ && i_40_ < i_47_ && i_41_ < i_48_) {
-                                            Class239_Sub24.method1823(Class348_Sub8.aHa6654, i_38_, i_39_, (byte) -50);
+                                            int physicalMouseX = Applet_Sub1.interfaceToPhysicalX(i_38_);
+                                            int physicalMouseY = Applet_Sub1.interfaceToPhysicalY(i_39_);
+                                            int physicalHitX = Applet_Sub1.interfaceToPhysicalX(i_40_);
+                                            int physicalHitY = Applet_Sub1.interfaceToPhysicalY(i_41_);
+                                            Class239_Sub24.method1823(Class348_Sub8.aHa6654, physicalMouseX, physicalMouseY, (byte) -50);
                                             for (Class318_Sub6 class318_sub6 = ((Class318_Sub6) InputStream_Sub2.aClass243_83.method1872(8)); class318_sub6 != null; class318_sub6 = ((Class318_Sub6) (InputStream_Sub2.aClass243_83.method1878((byte) -67)))) {
-                                                if (i_40_ >= (class318_sub6.anInt6429) && (i_40_ < (class318_sub6.anInt6426)) && (i_41_ >= (class318_sub6.anInt6427)) && (i_41_ < (class318_sub6.anInt6425))) {
+                                                if (physicalHitX >= (class318_sub6.anInt6429) && (physicalHitX < (class318_sub6.anInt6426)) && (physicalHitY >= (class318_sub6.anInt6427)) && (physicalHitY < (class318_sub6.anInt6425))) {
                                                     Class64_Sub2.method661((byte) 107);
                                                     Class239_Sub13.method1777(-3, (class318_sub6.aClass318_Sub1_Sub3_Sub3_6431));
                                                 }

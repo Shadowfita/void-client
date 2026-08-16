@@ -328,7 +328,18 @@ public final class Class378 extends ha_Sub3 {
 
     final void method3888(int i) {
         if (i != 6259) method3882((byte) -77);
-        this.anIDirect3DDevice9810.SetScissorRect(this.anInt8181 - -this.anInt8106, this.anInt8109 - -this.anInt8165, this.anInt8183, this.anInt8096);
+        if (Applet_Sub1.shouldScaleOpenGLFrame() && Class305.aCanvas3869 != null) {
+            Dimension dimension = Class305.aCanvas3869.getSize();
+            double scaleX = (double) dimension.width / Math.max(1, this.anInt7931);
+            double scaleY = (double) dimension.height / Math.max(1, this.anInt7962);
+            this.anIDirect3DDevice9810.SetScissorRect(
+                    this.anInt8181 + (int) Math.floor(this.anInt8106 * scaleX),
+                    this.anInt8109 + (int) Math.floor(this.anInt8165 * scaleY),
+                    this.anInt8181 + (int) Math.ceil(this.anInt8183 * scaleX),
+                    this.anInt8109 + (int) Math.ceil(this.anInt8096 * scaleY));
+        } else {
+            this.anIDirect3DDevice9810.SetScissorRect(this.anInt8181 - -this.anInt8106, this.anInt8109 - -this.anInt8165, this.anInt8183, this.anInt8096);
+        }
     }
 
     final void method3707(Rectangle[] rectangles, int i, int i_28_, int i_29_) throws Exception_Sub1 {
@@ -547,7 +558,12 @@ public final class Class378 extends ha_Sub3 {
 
     final void method3937(byte i) {
         if (i != -33) method3962(-41, null);
-        this.anIDirect3DDevice9810.SetViewport(this.anInt8181, this.anInt8109, this.anInt7931, this.anInt7962, 0.0F, 1.0F);
+        if (Applet_Sub1.shouldScaleOpenGLFrame() && Class305.aCanvas3869 != null) {
+            Dimension dimension = Class305.aCanvas3869.getSize();
+            this.anIDirect3DDevice9810.SetViewport(this.anInt8181, this.anInt8109, dimension.width, dimension.height, 0.0F, 1.0F);
+        } else {
+            this.anIDirect3DDevice9810.SetViewport(this.anInt8181, this.anInt8109, this.anInt7931, this.anInt7962, 0.0F, 1.0F);
+        }
     }
 
     final void method3959(int i, Class310_Sub3 class310_sub3) {

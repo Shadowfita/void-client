@@ -42,18 +42,29 @@ final class Class88 {
     static final void method842(boolean bool) {
         anInt1501++;
         Class138.aClass46Array1942 = null;
+
+        // This legacy fullscreen path renders the 3D scene before the interface.
+        // Keep it at native resolution, then enter the logical UI coordinate space.
         if (Class59_Sub1.aBoolean5300 && Class348_Sub42_Sub12.method3229(-82) != 1) OutputStream_Sub1.method132(106, (Class240.anInt4674 == 3) || Class240.anInt4674 == 7, za_Sub1.method3439(107), 0, Class348_Sub44.method3306((byte) -111), 0);
-        int i = 0;
-        if (bool != false) method847(null, -110);
-        int i_1_ = 0;
-        if (Class59_Sub1.aBoolean5300) {
-            i = s_Sub3.method4008((byte) -124);
-            i_1_ = Class16.method260(false);
-        }
-        Class159.method1252(i_1_, r.anInt9721, i_1_, -1, i, i + Class321.anInt4017, i_1_ - -Class348_Sub42_Sub8_Sub2.anInt10432, (byte) 116, i);
-        if (Class138.aClass46Array1942 != null) {
-            Class348_Sub40_Sub7.method3064(i, Class136.anInt4792, true, Class348_Sub1.anInt6555, i_1_, Class331.aClass46_4130.anInt760, i + Class321.anInt4017, false, Class138.aClass46Array1942, -1412584499, i_1_ - -Class348_Sub42_Sub8_Sub2.anInt10432);
-            Class138.aClass46Array1942 = null;
+
+        boolean interfaceScaled = Applet_Sub1.beginInterfaceRenderScale();
+        try {
+            int i = 0;
+            if (bool != false) method847(null, -110);
+            int i_1_ = 0;
+            if (Class59_Sub1.aBoolean5300) {
+                i = s_Sub3.method4008((byte) -124);
+                i_1_ = Class16.method260(false);
+            }
+            Class159.method1252(i_1_, r.anInt9721, i_1_, -1, i, i + Class321.anInt4017, i_1_ - -Class348_Sub42_Sub8_Sub2.anInt10432, (byte) 116, i);
+            if (Class138.aClass46Array1942 != null) {
+                Class348_Sub40_Sub7.method3064(i, Class136.anInt4792, true, Class348_Sub1.anInt6555, i_1_, Class331.aClass46_4130.anInt760, i + Class321.anInt4017, false, Class138.aClass46Array1942, -1412584499, i_1_ - -Class348_Sub42_Sub8_Sub2.anInt10432);
+                Class138.aClass46Array1942 = null;
+            }
+        } finally {
+            if (interfaceScaled) {
+                Applet_Sub1.endInterfaceRenderScale();
+            }
         }
     }
 

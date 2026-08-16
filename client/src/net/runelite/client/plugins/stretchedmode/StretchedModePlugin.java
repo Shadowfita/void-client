@@ -12,9 +12,9 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 
 @PluginDescriptor(
-	name = "Stretched Mode - Beta",
-	description = "Stretches the game in fixed and resizable modes.",
-	tags = {"resize", "ui", "interface", "stretch", "scaling", "fixed"},
+	name = "Interface Scaling - Beta",
+	description = "Scales the RuneScape HUD independently from the native-resolution 3D scene.",
+	tags = {"resize", "ui", "interface", "hud", "stretch", "scaling", "fixed"},
 	enabledByDefault = false,
 	loadInSafeMode = false,
 	loadWhenOutdated = true
@@ -43,17 +43,6 @@ public class StretchedModePlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
-		if (safeMode)
-		{
-			clientThread.invoke(() ->
-			{
-				client.setStretchedEnabled(false);
-				client.invalidateStretching(true);
-			});
-			return;
-		}
-
-		clientThread.invoke(() -> client.setStretchedEnabled(true));
 		updateConfig();
 	}
 
@@ -62,6 +51,8 @@ public class StretchedModePlugin extends Plugin
 	{
 		clientThread.invoke(() ->
 		{
+			client.setInterfaceScalingFactor(100);
+			client.setScalingFactor(100);
 			client.setStretchedEnabled(false);
 			client.invalidateStretching(true);
 		});
@@ -84,19 +75,33 @@ public class StretchedModePlugin extends Plugin
 		{
 			clientThread.invoke(() ->
 			{
+				client.setInterfaceScalingFactor(100);
+				client.setScalingFactor(100);
 				client.setStretchedEnabled(false);
 				client.invalidateStretching(true);
 			});
 			return;
 		}
 
+		final int factor = (int) Math.round(config.scaling() * 100.0);
 		clientThread.invoke(() ->
 		{
-			client.setStretchedFast(config.increasedPerformance());
-			client.setStretchedIntegerScaling(config.integerScaling());
-			client.setStretchedKeepAspectRatio(config.keepAspectRatio());
-			client.setScalingFactor((int) Math.round(config.scaling() * 100.0));
-			client.invalidateStretching(true);
+			if (config.legacyFullCanvasStretch())
+			{
+				client.setInterfaceScalingFactor(100);
+				client.setStretchedFast(config.increasedPerformance());
+				client.setStretchedIntegerScaling(config.integerScaling());
+				client.setStretchedKeepAspectRatio(config.keepAspectRatio());
+				client.setScalingFactor(factor);
+				client.setStretchedEnabled(true);
+				client.invalidateStretching(true);
+				return;
+			}
+
+			client.setStretchedEnabled(false);
+			client.setScalingFactor(100);
+			client.setInterfaceScalingFactor(factor);
+			client.invalidateStretching(false);
 		});
 	}
 }

@@ -56,7 +56,7 @@ final class Class348_Sub40_Sub7 extends Class348_Sub40 {
                         int i_22_ = class46.anInt789 + i_20_ - -1;
                         int i_23_;
                         if (i_13_ == -1) {
-                            Class180.aRectangleArray2371[Class348_Sub38.anInt7008].setBounds(i_11_ + class46.anInt800, i_10_ + class46.anInt750, class46.anInt709, class46.anInt789);
+                            Applet_Sub1.setInterfaceDirtyBounds(Class180.aRectangleArray2371[Class348_Sub38.anInt7008], i_11_ + class46.anInt800, i_10_ + class46.anInt750, class46.anInt709, class46.anInt789);
                             i_23_ = Class348_Sub38.anInt7008++;
                         } else i_23_ = i_13_;
                         class46.anInt794 = Class367_Sub11.anInt7396;
@@ -118,10 +118,34 @@ final class Class348_Sub40_Sub7 extends Class348_Sub40 {
                             if (i_31_ < i_34_ && i_32_ < i_33_) {
                                 if (class46.anInt765 != 0) {
                                     if ((Class239_Sub10.anInt5943 == class46.anInt765) || (class46.anInt765 == Class312.anInt3932)) {
-                                        Class5_Sub2.method198(class46, false, i_25_, i_24_);
-                                        if (!Class59_Sub1.aBoolean5300) {
-                                            OutputStream_Sub1.method132(124, (Class312.anInt3932 == (class46.anInt765)), class46.anInt709, i_24_, class46.anInt789, i_25_);
-                                            Class348_Sub8.aHa6654.KA(i, i_12_, i_14_, i_17_);
+                                        if (Applet_Sub1.isInterfaceRenderScaleActive()) {
+                                            int physicalX = Applet_Sub1.interfaceToPhysicalX(i_24_);
+                                            int physicalY = Applet_Sub1.interfaceToPhysicalY(i_25_);
+                                            int physicalRight = Applet_Sub1.interfaceToPhysicalRight(i_24_ + class46.anInt709);
+                                            int physicalBottom = Applet_Sub1.interfaceToPhysicalBottom(i_25_ + class46.anInt789);
+                                            int physicalWidth = Math.max(1, physicalRight - physicalX);
+                                            int physicalHeight = Math.max(1, physicalBottom - physicalY);
+
+                                            // The viewport widget participates in scaled UI layout, but the scene
+                                            // itself must render directly into its physical pixel rectangle.
+                                            Class5_Sub2.method198(class46, false, physicalY, physicalX);
+                                            if (!Class59_Sub1.aBoolean5300) {
+                                                boolean suspended = Applet_Sub1.suspendInterfaceRenderScale();
+                                                try {
+                                                    OutputStream_Sub1.method132(124, (Class312.anInt3932 == (class46.anInt765)), physicalWidth, physicalX, physicalHeight, physicalY);
+                                                } finally {
+                                                    if (suspended) {
+                                                        Applet_Sub1.resumeInterfaceRenderScale();
+                                                    }
+                                                }
+                                                Class348_Sub8.aHa6654.KA(i, i_12_, i_14_, i_17_);
+                                            }
+                                        } else {
+                                            Class5_Sub2.method198(class46, false, i_25_, i_24_);
+                                            if (!Class59_Sub1.aBoolean5300) {
+                                                OutputStream_Sub1.method132(124, (Class312.anInt3932 == (class46.anInt765)), class46.anInt709, i_24_, class46.anInt789, i_25_);
+                                                Class348_Sub8.aHa6654.KA(i, i_12_, i_14_, i_17_);
+                                            }
                                         }
                                         Class152.aBooleanArray2076[i_23_] = true;
                                         continue;

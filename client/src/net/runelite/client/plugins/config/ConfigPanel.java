@@ -401,7 +401,16 @@ public class ConfigPanel extends PluginPanel
 			{
 				double cost = configManager.getConfiguration(cd.getGroup().value(), cid.getItem().keyName(), double.class);
 
-				SpinnerModel model = new SpinnerNumberModel(cost, 0, Double.MAX_VALUE, 0.1);
+				Range range = cid.getRange();
+				double min = 0.0, max = Double.MAX_VALUE;
+				if (range != null)
+				{
+					min = range.min();
+					max = range.max();
+				}
+				cost = Math.max(min, Math.min(max, cost));
+
+				SpinnerModel model = new SpinnerNumberModel(cost, min, max, 0.1);
 				JSpinner spinner = new JSpinner(model);
 				Component editor = spinner.getEditor();
 				JFormattedTextField spinnerTextField = ((JSpinner.DefaultEditor) editor).getTextField();

@@ -47,7 +47,7 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
 
     final int method3594(byte i) {
         if (i < 69) method3598(92, 34, 59, 2, false);
-        return anInt7416;
+        return Applet_Sub1.scaleInterfaceInputY(anInt7416);
     }
 
     private final void method3599(int i, int i_4_, int i_5_) {
@@ -78,7 +78,7 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
 
     final int method3597(boolean bool) {
         if (bool != true) return 27;
-        return anInt7417;
+        return Applet_Sub1.scaleInterfaceInputX(anInt7417);
     }
 
     private final int method3600(MouseEvent mouseevent, int i) {
