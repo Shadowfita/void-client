@@ -1,0 +1,24 @@
+name: Export UI scale source
+
+on:
+  push:
+    branches:
+      - feature/native-ui-scale
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package source
+        run: |
+          tar --exclude=.git --exclude=.gradle --exclude='**/build' -czf /tmp/void-client-source.tar.gz .
+      - name: Upload source
+        uses: actions/upload-artifact@v4
+        with:
+          name: void-client-ui-scale-source
+          path: /tmp/void-client-source.tar.gz
+          if-no-files-found: error
