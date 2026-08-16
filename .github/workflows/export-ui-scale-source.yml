@@ -22,10 +22,10 @@ jobs:
       - name: Reassemble and apply implementation
         shell: bash
         run: |
-          # Patch chunks are kept below connector write-size limits and concatenated exactly here.
+          # Decompiled sources mix CRLF and LF. Ignore line-ending whitespace while preserving the files' existing endings.
           cat .tmp/native-ui-scale.patch.part* > /tmp/native-ui-scale.patch
-          git apply --check /tmp/native-ui-scale.patch
-          git apply /tmp/native-ui-scale.patch
+          git apply --check --ignore-space-change --ignore-whitespace /tmp/native-ui-scale.patch
+          git apply --ignore-space-change --ignore-whitespace /tmp/native-ui-scale.patch
           git diff --stat
 
       - name: Set up JDK 8
