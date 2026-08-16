@@ -1,0 +1,184 @@
+index 006644617968a005c055fee1565f18f9df57c3aa..b8843ab1d4f9ffcb9fafe19da190b3f26f0e670e 100644
+--- a/client/src/net/runelite/client/plugins/config/ConfigPanel.java
++++ b/client/src/net/runelite/client/plugins/config/ConfigPanel.java
+@@ -401,7 +401,16 @@ public class ConfigPanel extends PluginPanel
+ 			{
+ 				double cost = configManager.getConfiguration(cd.getGroup().value(), cid.getItem().keyName(), double.class);
+ 
+-				SpinnerModel model = new SpinnerNumberModel(cost, 0, Double.MAX_VALUE, 0.1);
++				Range range = cid.getRange();
++				double min = 0.0, max = Double.MAX_VALUE;
++				if (range != null)
++				{
++					min = range.min();
++					max = range.max();
++				}
++				cost = Math.max(min, Math.min(max, cost));
++
++				SpinnerModel model = new SpinnerNumberModel(cost, min, max, 0.1);
+ 				JSpinner spinner = new JSpinner(model);
+ 				Component editor = spinner.getEditor();
+ 				JFormattedTextField spinnerTextField = ((JSpinner.DefaultEditor) editor).getTextField();
+diff --git a/client/src/net/runelite/client/plugins/stretchedmode/StretchedModeConfig.java b/client/src/net/runelite/client/plugins/stretchedmode/StretchedModeConfig.java
+index ccf491974f49772be2af1c36494435ab0f5f2728..818dce1d40d0ced626f45e633da3b069dc83b298 100644
+--- a/client/src/net/runelite/client/plugins/stretchedmode/StretchedModeConfig.java
++++ b/client/src/net/runelite/client/plugins/stretchedmode/StretchedModeConfig.java
+@@ -8,10 +8,34 @@ import net.runelite.client.config.Range;
+ @ConfigGroup("stretchedmode")
+ public interface StretchedModeConfig extends Config
+ {
++	@Range(
++		min = 1,
++		max = 3
++	)
++	@ConfigItem(
++		keyName = "scalingFactor",
++		name = "Interface Scale",
++		description = "Scales the RuneScape HUD and interfaces while keeping the 3D scene at native resolution. Decimal values such as 1.3x and 1.5x are supported."
++	)
++	default double scaling()
++	{
++		return 1.0;
++	}
++
++	@ConfigItem(
++		keyName = "legacyFullCanvasStretch",
++		name = "Legacy Full-Canvas Stretch",
++		description = "Uses the old Stretched Mode behaviour, scaling the whole game including the 3D scene. Use this as a fallback for software rendering."
++	)
++	default boolean legacyFullCanvasStretch()
++	{
++		return false;
++	}
++
+ 	@ConfigItem(
+ 		keyName = "increasedPerformance",
+-		name = "Increased Performance Mode",
+-		description = "Uses faster stretching."
++		name = "Legacy Fast Scaling",
++		description = "Legacy full-canvas mode only. Uses nearest-neighbour scaling instead of bilinear filtering."
+ 	)
+ 	default boolean increasedPerformance()
+ 	{
+@@ -20,8 +44,8 @@ public interface StretchedModeConfig extends Config
+ 
+ 	@ConfigItem(
+ 		keyName = "integerScaling",
+-		name = "Integer Scaling",
+-		description = "Uses a whole-number scale factor."
++		name = "Legacy Integer Scaling",
++		description = "Legacy full-canvas mode only. Restricts the physical game canvas to whole-number scale multiples."
+ 	)
+ 	default boolean integerScaling()
+ 	{
+@@ -30,25 +54,11 @@ public interface StretchedModeConfig extends Config
+ 
+ 	@ConfigItem(
+ 		keyName = "keepAspectRatio",
+-		name = "Keep Aspect Ratio",
+-		description = "Keeps the game aspect ratio while stretching."
++		name = "Legacy Keep Aspect Ratio",
++		description = "Legacy full-canvas mode only. Keeps the game aspect ratio while stretching."
+ 	)
+ 	default boolean keepAspectRatio()
+ 	{
+ 		return true;
+ 	}
+-
+-	@Range(
+-		min = 1,
+-		max = 8
+-	)
+-	@ConfigItem(
+-		keyName = "scalingFactor",
+-		name = "Resizable Scale Factor",
+-		description = "Scales the game view by this factor. Decimal values such as 1.1x, 1.5x and 1.75x are supported."
+-	)
+-	default double scaling()
+-	{
+-		return 1.0;
+-	}
+ }
+diff --git a/client/src/net/runelite/client/plugins/stretchedmode/StretchedModePlugin.java b/client/src/net/runelite/client/plugins/stretchedmode/StretchedModePlugin.java
+index 7dee5ccd50666fbd513c5e7a8f564a2d9141a261..71cceeab147feaffb1e971fe458e9a7da5d50104 100644
+--- a/client/src/net/runelite/client/plugins/stretchedmode/StretchedModePlugin.java
++++ b/client/src/net/runelite/client/plugins/stretchedmode/StretchedModePlugin.java
+@@ -12,9 +12,9 @@ import net.runelite.client.plugins.Plugin;
+ import net.runelite.client.plugins.PluginDescriptor;
+ 
+ @PluginDescriptor(
+-	name = "Stretched Mode - Beta",
+-	description = "Stretches the game in fixed and resizable modes.",
+-	tags = {"resize", "ui", "interface", "stretch", "scaling", "fixed"},
++	name = "Interface Scaling - Beta",
++	description = "Scales the RuneScape HUD independently from the native-resolution 3D scene.",
++	tags = {"resize", "ui", "interface", "hud", "stretch", "scaling", "fixed"},
+ 	enabledByDefault = false,
+ 	loadInSafeMode = false,
+ 	loadWhenOutdated = true
+@@ -43,17 +43,6 @@ public class StretchedModePlugin extends Plugin
+ 	@Override
+ 	protected void startUp()
+ 	{
+-		if (safeMode)
+-		{
+-			clientThread.invoke(() ->
+-			{
+-				client.setStretchedEnabled(false);
+-				client.invalidateStretching(true);
+-			});
+-			return;
+-		}
+-
+-		clientThread.invoke(() -> client.setStretchedEnabled(true));
+ 		updateConfig();
+ 	}
+ 
+@@ -62,6 +51,8 @@ public class StretchedModePlugin extends Plugin
+ 	{
+ 		clientThread.invoke(() ->
+ 		{
++			client.setInterfaceScalingFactor(100);
++			client.setScalingFactor(100);
+ 			client.setStretchedEnabled(false);
+ 			client.invalidateStretching(true);
+ 		});
+@@ -84,19 +75,33 @@ public class StretchedModePlugin extends Plugin
+ 		{
+ 			clientThread.invoke(() ->
+ 			{
++				client.setInterfaceScalingFactor(100);
++				client.setScalingFactor(100);
+ 				client.setStretchedEnabled(false);
+ 				client.invalidateStretching(true);
+ 			});
+ 			return;
+ 		}
+ 
++		final int factor = (int) Math.round(config.scaling() * 100.0);
+ 		clientThread.invoke(() ->
+ 		{
+-			client.setStretchedFast(config.increasedPerformance());
+-			client.setStretchedIntegerScaling(config.integerScaling());
+-			client.setStretchedKeepAspectRatio(config.keepAspectRatio());
+-			client.setScalingFactor((int) Math.round(config.scaling() * 100.0));
+-			client.invalidateStretching(true);
++			if (config.legacyFullCanvasStretch())
++			{
++				client.setInterfaceScalingFactor(100);
++				client.setStretchedFast(config.increasedPerformance());
++				client.setStretchedIntegerScaling(config.integerScaling());
++				client.setStretchedKeepAspectRatio(config.keepAspectRatio());
++				client.setScalingFactor(factor);
++				client.setStretchedEnabled(true);
++				client.invalidateStretching(true);
++				return;
++			}
++
++			client.setStretchedEnabled(false);
++			client.setScalingFactor(100);
++			client.setInterfaceScalingFactor(factor);
++			client.invalidateStretching(false);
+ 		});
+ 	}
+ }
