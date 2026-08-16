@@ -1,0 +1,159 @@
++        return Math.max(0, Math.min(interfaceLogicalHeight - 1, value));
++    }
++
++    private static int currentInterfaceLogicalWidth() {
++        if (interfaceRenderScaleActive || interfaceInputScaleActive) {
++            return Math.max(1, interfaceLogicalWidth);
++        }
++        Applet_Sub1 applet = activeApplet();
++        if (applet == null || !applet.canUseNativeInterfaceScaling()) {
++            return Math.max(1, Class321.anInt4017);
++        }
++        return calculateInterfaceLogicalSize(Math.max(1, Class321.anInt4017), applet.interfaceScalingFactor);
++    }
++
++    private static int currentInterfaceLogicalHeight() {
++        if (interfaceRenderScaleActive || interfaceInputScaleActive) {
++            return Math.max(1, interfaceLogicalHeight);
++        }
++        Applet_Sub1 applet = activeApplet();
++        if (applet == null || !applet.canUseNativeInterfaceScaling()) {
++            return Math.max(1, Class348_Sub42_Sub8_Sub2.anInt10432);
++        }
++        return calculateInterfaceLogicalSize(Math.max(1, Class348_Sub42_Sub8_Sub2.anInt10432), applet.interfaceScalingFactor);
++    }
++
++    private static int currentInterfaceNativeWidth() {
++        return (interfaceRenderScaleActive || interfaceInputScaleActive) ? interfaceNativeWidth : Math.max(1, Class321.anInt4017);
++    }
++
++    private static int currentInterfaceNativeHeight() {
++        return (interfaceRenderScaleActive || interfaceInputScaleActive) ? interfaceNativeHeight : Math.max(1, Class348_Sub42_Sub8_Sub2.anInt10432);
++    }
++
++    static int interfaceToPhysicalX(int x) {
++        int logical = currentInterfaceLogicalWidth();
++        int nativeSize = currentInterfaceNativeWidth();
++        return (int) Math.floor((double) x * nativeSize / logical);
++    }
++
++    static int interfaceToPhysicalY(int y) {
++        int logical = currentInterfaceLogicalHeight();
++        int nativeSize = currentInterfaceNativeHeight();
++        return (int) Math.floor((double) y * nativeSize / logical);
++    }
++
++    static int interfaceToPhysicalRight(int x) {
++        int logical = currentInterfaceLogicalWidth();
++        int nativeSize = currentInterfaceNativeWidth();
++        return (int) Math.ceil((double) x * nativeSize / logical);
++    }
++
++    static int interfaceToPhysicalBottom(int y) {
++        int logical = currentInterfaceLogicalHeight();
++        int nativeSize = currentInterfaceNativeHeight();
++        return (int) Math.ceil((double) y * nativeSize / logical);
++    }
++
++    static int interfaceWidthToPhysical(int width) {
++        return Math.max(1, interfaceToPhysicalRight(width));
++    }
++
++    static int interfaceHeightToPhysical(int height) {
++        return Math.max(1, interfaceToPhysicalBottom(height));
++    }
++
++    static void setInterfaceDirtyBounds(Rectangle rectangle, int x, int y, int width, int height) {
++        if (!interfaceRenderScaleActive) {
++            rectangle.setBounds(x, y, width, height);
++            return;
++        }
++        int left = interfaceToPhysicalX(x);
++        int top = interfaceToPhysicalY(y);
++        int right = interfaceToPhysicalRight(x + width);
++        int bottom = interfaceToPhysicalBottom(y + height);
++        rectangle.setBounds(left, top, Math.max(1, right - left), Math.max(1, bottom - top));
++    }
++
+     static void applyCanvasSize() {
+         if (Class305.aCanvas3869 == null) {
+             return;
+@@ -801,6 +1015,38 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
+         return scalingFactor;
+     }
+ 
++    @Override
++    public void setInterfaceScalingFactor(int factor) {
++        int clamped = Math.max(100, Math.min(300, factor));
++        if (interfaceScalingFactor == clamped) {
++            return;
++        }
++        interfaceScalingFactor = clamped;
++        lastInterfaceLayoutWidth = -1;
++        lastInterfaceLayoutHeight = -1;
++
++        // Returning to 1x must also return the interface layout to the native
++        // canvas dimensions; otherwise widgets retain their previously scaled
++        // logical positions until the next window resize.
++        if (clamped == 100 && !interfaceRenderScaleActive && !interfaceInputScaleActive && r.anInt9721 != -1) {
++            Class239.method1713(true, 520);
++        }
++        Canvas canvas = getCanvas();
++        if (canvas != null) {
++            canvas.repaint();
++        }
++    }
++
++    @Override
++    public int getInterfaceScalingFactor() {
++        return interfaceScalingFactor;
++    }
++
++    @Override
++    public boolean isInterfaceScalingSupported() {
++        return Class348_Sub8.aHa6654 != null && Class348_Sub8.aHa6654.supportsNativeInterfaceScaling();
++    }
++
+     @Override
+     public void invalidateStretching(boolean resize) {
+         if (!resize) {
+diff --git a/client/src/Class216.java b/client/src/Class216.java
+index 70b02074f02b150730d794866571c7ed2d591148..94145c9795774c0a09f3e7ee4f95bc563c00ecd6 100644
+--- a/client/src/Class216.java
++++ b/client/src/Class216.java
+@@ -14,22 +14,29 @@ final class Class216 implements Interface13 {
+     static final void method1583(byte i) {
+         anInt4977++;
+         if (r.anInt9721 != -1) {
+-            int i_0_ = Class258_Sub4.aClass373_8552.method3597(true);
+-            int i_1_ = Class258_Sub4.aClass373_8552.method3594((byte) 72);
+-            Class348_Sub45 class348_sub45 = ((Class348_Sub45) Class318_Sub1_Sub3.aClass262_8744.method1995(4));
+-            if (class348_sub45 != null) {
+-                i_0_ = class348_sub45.method3308((byte) -128);
+-                i_1_ = class348_sub45.method3311(58);
++            boolean interfaceScaled = Applet_Sub1.beginInterfaceInputScale();
++            try {
++                int i_0_ = Class258_Sub4.aClass373_8552.method3597(true);
++                int i_1_ = Class258_Sub4.aClass373_8552.method3594((byte) 72);
++                Class348_Sub45 class348_sub45 = ((Class348_Sub45) Class318_Sub1_Sub3.aClass262_8744.method1995(4));
++                if (class348_sub45 != null) {
++                    i_0_ = class348_sub45.method3308((byte) -128);
++                    i_1_ = class348_sub45.method3311(58);
++                }
++                int i_2_ = 0;
++                if (i != -73) anInt4976 = 105;
++                int i_3_ = 0;
++                if (Class59_Sub1.aBoolean5300) {
++                    i_2_ = s_Sub3.method4008((byte) -128);
++                    i_3_ = Class16.method260(false);
++                }
++                Class182.method1373(r.anInt9721, i_2_, i_2_, Class321.anInt4017 + i_2_, i_1_, i_0_, -1391, i_0_ + i_2_, Class348_Sub42_Sub8_Sub2.anInt10432 + i_3_, i_3_, i_3_ + i_1_, i_3_);
++                if (Class168.aClass46_2249 != null) Class228.method1630(0, i_3_ + i_1_, i_2_ + i_0_);
++            } finally {
++                if (interfaceScaled) {
++                    Applet_Sub1.endInterfaceInputScale();
++                }
+             }
+-            int i_2_ = 0;
+-            if (i != -73) anInt4976 = 105;
+-            int i_3_ = 0;
