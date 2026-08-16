@@ -45,10 +45,10 @@ public interface StretchedModeConfig extends Config
 	@ConfigItem(
 		keyName = "scalingFactor",
 		name = "Resizable Scale Factor",
-		description = "Scales the game view by this whole-number factor (1x, 2x, 3x, ...)."
+		description = "Scales the game view by this factor. Decimal values such as 1.1x, 1.5x and 1.75x are supported."
 	)
-	default int scaling()
+	default double scaling()
 	{
-		return 1;
+		return 1.0;
 	}
 }
