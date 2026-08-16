@@ -31,6 +31,13 @@
     @com.google.inject.Inject *;
 }
 
+# Class373_Sub1 is created reflectively by Class348_Sub18.method2941.
+# Preserve the wheel-capable AWT mouse handler and its constructor so ProGuard
+# cannot shrink it and silently force the non-wheel Class373_Sub2 fallback.
+-keep class Class373_Sub1 {
+    <init>(java.awt.Component, boolean);
+}
+
 # All packaged classes — treat as untouchable libs
 -keep class **.** { *; }
 -keepclassmembers class **.** { *; }
