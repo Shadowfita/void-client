@@ -1,0 +1,39 @@
+name: Verify mouse wheel zoom fix
+
+on:
+  push:
+    branches:
+      - fix/mouse-wheel-zoom
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 8
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build release jar through ProGuard
+        run: ./gradlew :client:proguardJar --no-daemon --stacktrace
+
+      - name: Verify wheel-capable handler survived ProGuard
+        shell: bash
+        run: |
+          jar_path="client/build/libs/void-client-0.1.1-release.jar"
+          test -f "$jar_path"
+          jar tf "$jar_path" | grep -Fx 'Class373_Sub1.class'
+          javap -classpath "$jar_path" -p Class373_Sub1 > /tmp/Class373_Sub1.txt
+          grep -F 'Class373_Sub1(java.awt.Component, boolean);' /tmp/Class373_Sub1.txt
+          grep -F 'java.awt.event.MouseWheelListener' /tmp/Class373_Sub1.txt
