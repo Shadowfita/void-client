@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
@@ -15,18 +15,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Export source
-        uses: actions/upload-artifact@v4
         with:
-          name: fractional-ui-source
-          path: |
-            .
-            !.git
-            !**/build
-            !out
-          include-hidden-files: true
-          retention-days: 1
+          fetch-depth: 0
+
+      - name: Apply staged implementation
+        shell: bash
+        run: |
+          if [ -f .tmp/fractional-ui-pixel-supersampling.patch ]; then
+            git apply --check --ignore-space-change --ignore-whitespace .tmp/fractional-ui-pixel-supersampling.patch
+            git apply --ignore-space-change --ignore-whitespace .tmp/fractional-ui-pixel-supersampling.patch
+            git diff --check
+          fi
 
       - name: Set up JDK 8
         uses: actions/setup-java@v4
@@ -45,3 +44,44 @@ jobs:
 
       - name: Build release JAR
         run: ./gradlew :client:proguardJar --no-daemon --stacktrace
+
+      - name: Verify implementation and release JAR
+        shell: bash
+        run: |
+          grep -q 'getInterfaceTextureSupersampleFactor' client/src/Applet_Sub1.java
+          grep -q 'createInterfaceSupersampleTexture' client/src/ha_Sub2.java
+          grep -q 'glGetTexImageub' client/src/ha_Sub2.java
+          jar_path='client/build/libs/void-client-0.1.1-release.jar'
+          test -f "$jar_path"
+          unzip -p "$jar_path" META-INF/MANIFEST.MF | tr -d '\r' | grep -Fx 'Main-Class: Loader'
+          javap -classpath "$jar_path" -p Class373_Sub1 > /tmp/Class373_Sub1.txt
+          grep -F 'Class373_Sub1(java.awt.Component, boolean);' /tmp/Class373_Sub1.txt
+          grep -F 'java.awt.event.MouseWheelListener' /tmp/Class373_Sub1.txt
+
+      - name: Stage test JAR
+        shell: bash
+        run: |
+          mkdir -p release
+          cp client/build/libs/void-client-0.1.1-release.jar release/void-client-fractional-ui-pixel-supersampling.jar
+          (cd release && sha256sum void-client-fractional-ui-pixel-supersampling.jar > void-client-fractional-ui-pixel-supersampling.jar.sha256)
+
+      - name: Upload test JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: void-client-fractional-ui-pixel-supersampling
+          path: |
+            release/void-client-fractional-ui-pixel-supersampling.jar
+            release/void-client-fractional-ui-pixel-supersampling.jar.sha256
+          retention-days: 1
+
+      - name: Commit verified implementation
+        shell: bash
+        run: |
+          if [ -f .tmp/fractional-ui-pixel-supersampling.patch ]; then
+            git config user.name 'Ryan Palmer'
+            git config user.email 'www.ryan.palmer@hotmail.com'
+            git add client/src
+            git rm .tmp/fractional-ui-pixel-supersampling.patch
+            git commit -m 'Improve fractional UI scaling with integer pixel supersampling'
+            git push origin HEAD:feature/fractional-ui-pixel-supersampling
+          fi
