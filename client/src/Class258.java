@@ -48,6 +48,7 @@ abstract class Class258 implements Interface9 {
 
     final void method1952(int i) {
         anInt4863++;
+        releaseInterfaceSupersampleTexture();
         if (this.anInt4859 > 0) {
             this.aHa_Sub2_4851.method3737((this.anInt4859), (byte) 121, method1951(i + 19838));
             this.anInt4859 = 0;
@@ -99,6 +100,14 @@ abstract class Class258 implements Interface9 {
         }
         anInt4855++;
         if (i != 9728) method1956(false);
+    }
+
+    void invalidateInterfaceSupersampleTexture() {
+        /* Only 2D UI textures override this. */
+    }
+
+    void releaseInterfaceSupersampleTexture() {
+        /* Only 2D UI textures override this. */
     }
 
     protected final void finalize() throws Throwable {

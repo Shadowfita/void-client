@@ -619,6 +619,24 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
         return interfaceRenderScaleActive;
     }
 
+    /**
+     * Fractional native UI scales are rendered from an integer-nearest
+     * supersampled copy of each UI texture, then minified by the hardware
+     * renderer to the requested decimal scale. This preserves source texels
+     * before the unavoidable fractional reconstruction step.
+     */
+    static int getInterfaceTextureSupersampleFactor() {
+        Applet_Sub1 applet = activeApplet();
+        if (!interfaceRenderScaleActive || applet == null) {
+            return 1;
+        }
+        int factor = applet.interfaceScalingFactor;
+        if (factor <= 100 || factor % 100 == 0) {
+            return 1;
+        }
+        return Math.max(2, (factor + 99) / 100);
+    }
+
     static boolean beginInterfaceInputScale() {
         Applet_Sub1 applet = activeApplet();
         if (applet == null || !applet.canUseNativeInterfaceScaling() || interfaceInputScaleActive) {
