@@ -173,7 +173,7 @@ public class ClientUI
 		{
 			final NavigationButton navigationButton = event.getButton();
 			final PluginPanel pluginPanel = navigationButton.getPanel();
-			final boolean inTitle = !event.getButton().isTab() && withTitleBar;
+			final boolean inTitle = false; // Keep navigation in the persistent side toolbar; the OS/FlatLaf owns the sole titlebar.
 			final int iconSize = 16;
 
 			if (pluginPanel != null)
@@ -388,16 +388,9 @@ public class ClientUI
 			sidebarContainer = new BackgroundPanel(CLIENT_BACKGROUND);
 			sidebarContainer.setLayout(new BoxLayout(sidebarContainer, BoxLayout.X_AXIS));
 			titleToolbar = new ClientTitleToolbar();
-			JPanel shellBar = new JPanel(new BorderLayout());
-			shellBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-			shellBar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, ColorScheme.BORDER_COLOR));
-			JLabel shellTitle = new JLabel(title);
-			shellTitle.setForeground(ColorScheme.TEXT_COLOR);
-			shellTitle.setFont(shellTitle.getFont().deriveFont(Font.BOLD));
-			shellTitle.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
-			shellBar.add(shellTitle, BorderLayout.WEST);
-			shellBar.add(titleToolbar, BorderLayout.EAST);
-			container.add(shellBar, BorderLayout.NORTH);
+			// Do not add a second in-client title strip. Linux/Windows native chrome or
+			// FlatLaf custom chrome is the single window titlebar; navigation lives in
+			// the persistent vertical plugin toolbar instead.
 			updateSidebarLayout();
 
 			frame.add(container);
@@ -466,7 +459,7 @@ public class ClientUI
 				0,
 				null);
 
-			titleToolbar.addComponent(sidebarNavigationButton, sidebarNavigationJButton);
+			pluginToolbar.addComponent(sidebarNavigationButton, sidebarNavigationJButton);
 
 			restoreSidebarState();
 		});
@@ -624,7 +617,7 @@ public class ClientUI
 			configManager.setConfiguration(CONFIG_GROUP, CONFIG_CLIENT_SIDEBAR_INITIALIZED, true);
 			configManager.setConfiguration(CONFIG_GROUP, CONFIG_CLIENT_SIDEBAR_CLOSED, true);
 			sidebarOpen = false;
-			pluginToolbar.setVisible(false);
+			pluginToolbar.setVisible(true);
 			sidebarNavigationJButton.setIcon(new ImageIcon(sidebarOpenIcon));
 			sidebarNavigationJButton.setToolTipText("Open SideBar");
 			updateSidebarLayout();
@@ -638,7 +631,7 @@ public class ClientUI
 		}
 
 		sidebarOpen = false;
-		pluginToolbar.setVisible(false);
+		pluginToolbar.setVisible(true);
 		sidebarNavigationJButton.setIcon(new ImageIcon(sidebarOpenIcon));
 		sidebarNavigationJButton.setToolTipText("Open SideBar");
 		updateSidebarLayout();
@@ -927,7 +920,7 @@ public class ClientUI
 
 			contract();
 
-			pluginToolbar.setVisible(false);
+			pluginToolbar.setVisible(true);
 		}
 		else
 		{
@@ -946,14 +939,8 @@ public class ClientUI
 		updateSidebarLayout();
 		giveClientFocus();
 
-		if (sidebarOpen)
-		{
-			frame.expandBy(pluginToolbar.getWidth());
-		}
-		else
-		{
-			frame.contractBy(pluginToolbar.getWidth());
-		}
+		// The vertical toolbar remains visible in both states, so toggling a
+		// plugin panel must not resize the frame by the toolbar width.
 
 		finishClientResize();
 	}
