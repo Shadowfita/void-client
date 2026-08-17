@@ -28,6 +28,7 @@ import com.GameClient;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Constants;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.ExpandResizeType;
 import net.runelite.client.config.RuneLiteConfig;
@@ -88,7 +89,7 @@ public class ClientUI
 	//private final MouseManager mouseManager;
 	private Applet client;
 	private final ConfigManager configManager;
-	//private final Provider<ClientThread> clientThreadProvider;
+	private final ClientThread clientThread;
 	private final EventBus eventBus;
 	private final boolean safeMode;
 	private final String title;
@@ -124,7 +125,7 @@ public class ClientUI
 		//MouseManager mouseManager,
 		@Nullable Applet client,
 		ConfigManager configManager,
-		//Provider<ClientThread> clientThreadProvider,
+		ClientThread clientThread,
 		EventBus eventBus,
 		@Named("safeMode") boolean safeMode,
 		@Named("void.title") String title,
@@ -137,7 +138,7 @@ public class ClientUI
 		//this.mouseManager = mouseManager;
 		this.client = client;
 		this.configManager = configManager;
-		//this.clientThreadProvider = clientThreadProvider;
+		this.clientThread = clientThread;
 		this.eventBus = eventBus;
 		this.safeMode = safeMode;
 		this.title = title + "(" + version + ")";
@@ -947,17 +948,24 @@ public class ClientUI
 
 	private void finishClientResize()
 	{
+		// AWT/Swing owns frame and Canvas hierarchy changes. JAGGL/OpenGL does not:
+		// renderer state must only be touched on the 634 client thread where its
+		// GL context is current.
 		frame.refreshNativePeer();
-		redrawClientNow();
-		redrawClient();
+		refreshSwingClient(false);
+		requestRendererResize();
+
 		SwingUtilities.invokeLater(() ->
 		{
 			frame.refreshNativePeer();
-			redrawClientNow();
+			refreshSwingClient(false);
+			requestRendererResize();
+
 			Timer timer = new Timer(75, event ->
 			{
 				frame.refreshNativePeer();
-				redrawClientNow();
+				refreshSwingClient(false);
+				requestRendererResize();
 			});
 			timer.setRepeats(false);
 			timer.start();
@@ -978,11 +986,36 @@ public class ClientUI
 			container.repaint();
 			clientPanel.repaint();
 			frame.repaint();
-			redrawClientNow();
+			refreshSwingClient(false);
+			requestRendererResize();
 		});
 	}
 
 	private void redrawClient()
+	{
+		if (!SwingUtilities.isEventDispatchThread())
+		{
+			SwingUtilities.invokeLater(this::redrawClient);
+			return;
+		}
+
+		refreshSwingClient(true);
+		requestRendererResize();
+	}
+
+	private void redrawClientNow()
+	{
+		if (!SwingUtilities.isEventDispatchThread())
+		{
+			SwingUtilities.invokeLater(this::redrawClientNow);
+			return;
+		}
+
+		refreshSwingClient(false);
+		requestRendererResize();
+	}
+
+	private void requestRendererResize()
 	{
 		if (!(client instanceof GameClient))
 		{
@@ -990,42 +1023,32 @@ public class ClientUI
 		}
 
 		final GameClient gameClient = (GameClient) client;
-		SwingUtilities.invokeLater(() ->
-		{
-			redrawClient(gameClient, true);
-			SwingUtilities.invokeLater(() -> redrawClient(gameClient, true));
-		});
+		clientThread.invokeLater(() -> gameClient.invalidateStretching(true));
 	}
 
-	private void redrawClientNow()
+	private void refreshSwingClient(boolean requestFocus)
 	{
-		if (client instanceof GameClient)
-		{
-			redrawClient((GameClient) client, false);
-		}
-	}
-
-	private void redrawClient(GameClient gameClient, boolean requestFocus)
-	{
+		assert SwingUtilities.isEventDispatchThread() : "Swing client refresh must run on EDT";
 		try
 		{
-			gameClient.invalidateStretching(true);
-
-			Canvas canvas = gameClient.getCanvas();
-			if (canvas != null)
+			if (client instanceof GameClient)
 			{
-				canvas.invalidate();
-				canvas.validate();
-				canvas.repaint();
-
-				Container parent = canvas.getParent();
-				while (parent != null)
+				Canvas canvas = ((GameClient) client).getCanvas();
+				if (canvas != null)
 				{
-					parent.invalidate();
-					parent.validate();
-					parent.doLayout();
-					parent.repaint();
-					parent = parent.getParent();
+					canvas.invalidate();
+					canvas.validate();
+					canvas.repaint();
+
+					Container parent = canvas.getParent();
+					while (parent != null)
+					{
+						parent.invalidate();
+						parent.validate();
+						parent.doLayout();
+						parent.repaint();
+						parent = parent.getParent();
+					}
 				}
 			}
 
@@ -1043,7 +1066,7 @@ public class ClientUI
 		}
 		catch (RuntimeException ex)
 		{
-			log.debug("Unable to redraw client after sidebar resize", ex);
+			log.debug("Unable to refresh Swing client after sidebar resize", ex);
 		}
 	}
 
