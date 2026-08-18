@@ -18,6 +18,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Record workflow run id
+        shell: bash
+        run: |
+          mkdir -p debug
+          printf '%s\n' '${{ github.run_id }}' > debug/latest-ui-persistence-run-id.txt
+          git config user.name 'Ryan Palmer'
+          git config user.email 'www.ryan.palmer@hotmail.com'
+          git add debug/latest-ui-persistence-run-id.txt
+          git commit -m 'debug: record UI persistence verification run'
+          git push origin HEAD:hotfix/ui-scale-persistent-hud
+
       - name: Apply scaled UI redraw fix
         shell: bash
         run: |
@@ -78,10 +89,9 @@ jobs:
           javap -classpath "$jar_path" -p Class373_Sub1 > /tmp/Class373_Sub1.txt
           grep -F 'Class373_Sub1(java.awt.Component, boolean);' /tmp/Class373_Sub1.txt
           grep -F 'java.awt.event.MouseWheelListener' /tmp/Class373_Sub1.txt
-          mkdir -p release debug
+          mkdir -p release
           cp "$jar_path" release/void-client-0.2.0-ui-persistence-hotfix.jar
           (cd release && sha256sum void-client-0.2.0-ui-persistence-hotfix.jar > void-client-0.2.0-ui-persistence-hotfix.jar.sha256)
-          printf '%s\n' '${{ github.run_id }}' > debug/latest-ui-persistence-run-id.txt
 
       - uses: actions/upload-artifact@v4
         with:
@@ -95,9 +105,7 @@ jobs:
       - name: Commit verified fix
         shell: bash
         run: |
-          git config user.name 'Ryan Palmer'
-          git config user.email 'www.ryan.palmer@hotmail.com'
-          git add client/src/Applet_Sub1.java debug/latest-ui-persistence-run-id.txt
+          git add client/src/Applet_Sub1.java
           git rm .github/workflows/apply-persistent-scaled-ui-hotfix.yml
           git commit -m 'Keep native-scaled HUD and chat composited'
           git push origin HEAD:hotfix/ui-scale-persistent-hud
