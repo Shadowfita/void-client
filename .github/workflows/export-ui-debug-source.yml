@@ -1,0 +1,29 @@
+name: Export UI debug source
+
+on:
+  push:
+    branches:
+      - hotfix/jaggl-resize-threading
+    paths:
+      - '.github/workflows/export-ui-debug-source.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect UI scale call sites
+        shell: bash
+        run: |
+          mkdir -p debug
+          grep -RniE 'beginInterfaceRenderScale|endInterfaceRenderScale|suspendInterfaceRenderScale|resumeInterfaceRenderScale|refreshNativeInterfaceScaling|interfaceRenderScaleActive|setInterfaceDirtyBounds' client/src > debug/ui-scale-call-sites.txt || true
+          tar -czf debug/client-src.tar.gz client/src
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ui-debug-source
+          path: debug
+          if-no-files-found: error
+          retention-days: 1
