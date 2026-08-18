@@ -1,0 +1,18 @@
+client/src/Class119_Sub1.java:79:                Class13.method226(Class195.anIntArray5007[0], Class195.anIntArray5007[2], Class195.anIntArray5007[1], 0, Class195.anIntArray5007[3]);
+client/src/Class119_Sub1.java:80:            } else if (Class21.aClass46_323 != null && (Class348_Sub42_Sub8_Sub2.aClass230_10434 == Class10.aClass230_186)) {
+client/src/Class119_Sub1.java:81:                int i_1_ = (Class262.aClass324_3326.method2571(-1, IterableHashTable.anInt4383, Class175.anIntArray2330, string, 16777215, 0, Class341.aClass105Array4234, 16 + Class238_Sub1.anInt5832, 4 + Class120.anInt4911, OutputStream_Sub1.aRandom93));
+client/src/Class119_Sub1.java:82:                Class13.method226(Class120.anInt4911 - -4, (Class369.aClass143_4962.method1183(true, string) + i_1_), Class238_Sub1.anInt5832, 0, 16);
+client/src/Class239_Sub24.java:99:                var_ha.KA(Class120.anInt4911, Class238_Sub1.anInt5832, Class18.anInt282, Class305.anInt3861);
+client/src/Class362.java:53:                    Class13.method226(i_5_, i_1_, i_6_, i ^ 0x2, i_2_);
+client/src/Class362.java:63:                    Class13.method226(i_10_ - i_9_, i_9_ + i_7_ - -i_9_, i_11_ + -i_9_, i + -2, i_9_ + i_8_ - -i_9_);
+client/src/Class348_Sub40_Sub7.java:131:                                            Class5_Sub2.method198(class46, false, physicalY, physicalX);
+client/src/Class348_Sub40_Sub7.java:144:                                            Class5_Sub2.method198(class46, false, i_25_, i_24_);
+client/src/client.java:1612:        Class5_Sub2.method198(null, false, -1, -1);
+client/src/Class302.java:41:            Class5_Sub2.method198(null, false, -1, -1);
+client/src/Class348_Sub24.java:322:                        Class5_Sub2.method198(null, false, -1, -1);
+client/src/Class348_Sub42_Sub19.java:64:            Class13.method226(Class50_Sub3.anInt5252, Class348_Sub1_Sub1.anInt8806, Class373.anInt4534, 0, Class177.anInt4669);
+client/src/Class5_Sub2.java:99:    static final void method198(Class46 class46, boolean bool, int i, int i_22_) {
+client/src/Class5_Sub2.java:100:        Class238_Sub1.anInt5832 = i;
+client/src/Class5_Sub2.java:101:        Class120.anInt4911 = i_22_;
+client/src/Class5_Sub2.java:102:        Class21.aClass46_323 = class46;
+client/src/Class286_Sub2.java:67:        Class13.method226(Class135_Sub1.anInt4717, Class63.anInt1117, Class348_Sub42_Sub5.anInt9532, 0, Class237_Sub1.anInt5819);
