@@ -19,7 +19,6 @@ jobs:
           fetch-depth: 0
 
       - name: Record workflow run id
-        shell: bash
         run: |
           mkdir -p debug
           printf '%s\n' '${{ github.run_id }}' > debug/latest-ui-persistence-run-id.txt
@@ -29,42 +28,12 @@ jobs:
           git commit -m 'debug: record UI persistence verification run'
           git push origin HEAD:hotfix/ui-scale-persistent-hud
 
-      - name: Apply scaled UI redraw fix
-        shell: bash
+      - name: Apply hotfix
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('client/src/Applet_Sub1.java')
-          s = p.read_text()
-          old = '''        if (Class348_Sub8.aHa6654 != null) {
-            Class348_Sub8.aHa6654.refreshNativeInterfaceScaling();
-        }
-    }
-
-    static boolean suspendInterfaceRenderScale() {'''
-          new = '''        if (Class348_Sub8.aHa6654 != null) {
-            Class348_Sub8.aHa6654.refreshNativeInterfaceScaling();
-        }
-
-        // The 634 resizable interface relies on dirty rectangles because the
-        // continuously rendered 3D viewport can overlap transparent HUD/chat
-        // widgets. Native fractional UI scaling moves those rectangles between
-        // logical and physical coordinate spaces, and a missed overlap leaves
-        // the viewport able to overwrite the HUD until another full resize.
-        // Keep the scaled UI dirty so those lightweight widgets are composited
-        // every frame while native interface scaling is active.
-        for (int i = 0; i < Class152.aBooleanArray2076.length; i++) {
-            Class152.aBooleanArray2076[i] = true;
-        }
-    }
-
-    static boolean suspendInterfaceRenderScale() {'''
-          if s.count(old) != 1:
-              raise SystemExit(f'expected one endInterfaceRenderScale block, got {s.count(old)}')
-          p.write_text(s.replace(old, new, 1))
-          PY
+          git apply --check .tmp/persistent-scaled-ui.patch
+          git apply .tmp/persistent-scaled-ui.patch
           git diff --check
-          grep -n -A15 -B5 'Keep the scaled UI dirty' client/src/Applet_Sub1.java
+          grep -n -A12 -B4 'composited again on the next frame' client/src/Class88.java
 
       - uses: actions/setup-java@v4
         with:
@@ -81,7 +50,6 @@ jobs:
         run: ./gradlew :client:proguardJar --no-daemon --stacktrace
 
       - name: Verify and stage test JAR
-        shell: bash
         run: |
           jar_path='client/build/libs/void-client-0.2.0-release.jar'
           test -f "$jar_path"
@@ -103,9 +71,9 @@ jobs:
           if-no-files-found: error
 
       - name: Commit verified fix
-        shell: bash
         run: |
-          git add client/src/Applet_Sub1.java
+          git add client/src/Class88.java
+          git rm .tmp/persistent-scaled-ui.patch
           git rm .github/workflows/apply-persistent-scaled-ui-hotfix.yml
           git commit -m 'Keep native-scaled HUD and chat composited'
           git push origin HEAD:hotfix/ui-scale-persistent-hud
