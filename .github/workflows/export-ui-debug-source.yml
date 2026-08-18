@@ -8,7 +8,7 @@ on:
       - '.github/workflows/export-ui-debug-source.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   export:
@@ -20,10 +20,12 @@ jobs:
         run: |
           mkdir -p debug
           grep -RniE 'beginInterfaceRenderScale|endInterfaceRenderScale|suspendInterfaceRenderScale|resumeInterfaceRenderScale|refreshNativeInterfaceScaling|interfaceRenderScaleActive|setInterfaceDirtyBounds' client/src > debug/ui-scale-call-sites.txt || true
-          tar -czf debug/client-src.tar.gz client/src
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ui-debug-source
-          path: debug
-          if-no-files-found: error
-          retention-days: 1
+          grep -RniE 'Class152\.aBooleanArray2076|Class49\.aBoolean4726|method1373\(|method1630\(' client/src > debug/ui-dirty-call-sites.txt || true
+      - name: Commit audit
+        shell: bash
+        run: |
+          git config user.name 'Ryan Palmer'
+          git config user.email 'www.ryan.palmer@hotmail.com'
+          git add debug/ui-scale-call-sites.txt debug/ui-dirty-call-sites.txt
+          git commit -m 'debug: capture UI scale render call sites'
+          git push origin HEAD:hotfix/jaggl-resize-threading
