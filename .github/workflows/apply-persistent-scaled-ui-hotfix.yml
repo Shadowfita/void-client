@@ -30,8 +30,8 @@ jobs:
 
       - name: Apply hotfix
         run: |
-          git apply --check .tmp/persistent-scaled-ui.patch
-          git apply .tmp/persistent-scaled-ui.patch
+          git apply --check --ignore-space-change --ignore-whitespace .tmp/persistent-scaled-ui.patch
+          git apply --ignore-space-change --ignore-whitespace .tmp/persistent-scaled-ui.patch
           git diff --check
           grep -n -A12 -B4 'composited again on the next frame' client/src/Class88.java
 
