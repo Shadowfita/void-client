@@ -21,11 +21,12 @@ jobs:
           mkdir -p debug
           grep -RniE 'beginInterfaceRenderScale|endInterfaceRenderScale|suspendInterfaceRenderScale|resumeInterfaceRenderScale|refreshNativeInterfaceScaling|interfaceRenderScaleActive|setInterfaceDirtyBounds' client/src > debug/ui-scale-call-sites.txt || true
           grep -RniE 'Class152\.aBooleanArray2076|Class49\.aBoolean4726|method1373\(|method1630\(' client/src > debug/ui-dirty-call-sites.txt || true
+          grep -RniE 'Class13\.method226|Class120\.anInt4911|Class238_Sub1\.anInt5832|Class21\.aClass46_323|method198\(' client/src > debug/ui-viewport-overlap-call-sites.txt || true
       - name: Commit audit
         shell: bash
         run: |
           git config user.name 'Ryan Palmer'
           git config user.email 'www.ryan.palmer@hotmail.com'
-          git add debug/ui-scale-call-sites.txt debug/ui-dirty-call-sites.txt
-          git commit -m 'debug: capture UI scale render call sites'
+          git add debug/ui-scale-call-sites.txt debug/ui-dirty-call-sites.txt debug/ui-viewport-overlap-call-sites.txt
+          git commit -m 'debug: extend UI render overlap audit'
           git push origin HEAD:hotfix/jaggl-resize-threading
