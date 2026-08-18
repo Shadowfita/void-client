@@ -1,0 +1,34 @@
+client/src/Class130_Sub1.java:4160:            Class152.aBooleanArray2076[j1] = true;
+client/src/Class228.java:108:    static final void method1630(int i, int i_6_, int i_7_) {
+client/src/Class159.java:47:                Class152.aBooleanArray2076[i_10_] = true;
+client/src/Class159.java:48:        } else Class152.aBooleanArray2076[i_4_] = true;
+client/src/Class354.java:86:            Class152.aBooleanArray2076[i_3_] = true;
+client/src/Class13.java:27:            if (i < rectangle.width + rectangle.x && i_0_ + i > rectangle.x && (i_1_ < rectangle.y - -rectangle.height) && rectangle.y < i_1_ + i_3_) Class152.aBooleanArray2076[i_4_] = true;
+client/src/Class348_Sub40_Sub7.java:150:                                        Class152.aBooleanArray2076[i_23_] = true;
+client/src/Class348_Sub40_Sub7.java:180:                                        Class152.aBooleanArray2076[i_23_] = true;
+client/src/Class348_Sub40_Sub7.java:186:                                        Class152.aBooleanArray2076[i_23_] = true;
+client/src/Class348_Sub40_Sub7.java:258:                                            Class152.aBooleanArray2076[i_23_] = true;
+client/src/client.java:1526:                                Class182.method1373(class348_sub41.anInt7050, i_43_, i_45_, i_47_, i_39_, i_38_, -1391, i_40_, i_48_, i_44_, i_41_, i_46_);
+client/src/client.java:1938:            if (Class49.aBoolean4726) {
+client/src/client.java:1940:                Class49.aBoolean4726 = false;
+client/src/Class302.java:36:                if (Class152.aBooleanArray2076[i_3_]) Class268.aBooleanArray3438[i_3_] = true;
+client/src/Class302.java:37:                Class175.aBooleanArray2326[i_3_] = Class152.aBooleanArray2076[i_3_];
+client/src/Class302.java:38:                Class152.aBooleanArray2076[i_3_] = false;
+client/src/Class348_Sub42_Sub8_Sub2.java:1516:                Class152.aBooleanArray2076[i_203_] = true;
+client/src/Applet_Sub1.java:237:        Class49.aBoolean4726 = true;
+client/src/Applet_Sub1.java:249:            Class49.aBoolean4726 = true;
+client/src/Applet_Sub1.java:269:            Class49.aBoolean4726 = true;
+client/src/Applet_Sub1.java:298:        Class49.aBoolean4726 = true;
+client/src/Applet_Sub1.java:1069:        Class49.aBoolean4726 = true;
+client/src/Applet_Sub1.java:1070:        for (int i = 0; i < Class152.aBooleanArray2076.length; i++) {
+client/src/Applet_Sub1.java:1071:            Class152.aBooleanArray2076[i] = true;
+client/src/Class251.java:49:        if (class46.anInt794 == Class58.anInt1064) Class152.aBooleanArray2076[class46.anInt760] = true;
+client/src/Class182.java:35:    static final void method1373(int i, int i_0_, int i_1_, int i_2_, int i_3_, int i_4_, int i_5_, int i_6_, int i_7_, int i_8_, int i_9_, int i_10_) {
+client/src/Class239_Sub10.java:44:            if (Class152.aBooleanArray2076[i_6_]) Class268.aBooleanArray3438[i_6_] = true;
+client/src/Class239_Sub10.java:45:            Class175.aBooleanArray2326[i_6_] = Class152.aBooleanArray2076[i_6_];
+client/src/Class239_Sub10.java:46:            Class152.aBooleanArray2076[i_6_] = false;
+client/src/Class216.java:37:                Class182.method1373(r.anInt9721, interfaceX, interfaceX, interfaceWidth + interfaceX, i_1_, i_0_, -1391, i_0_ + interfaceX, interfaceHeight + interfaceY, interfaceY, interfaceY + i_1_, interfaceY);
+client/src/Class216.java:38:                if (Class168.aClass46_2249 != null) Class228.method1630(0, interfaceY + i_1_, interfaceX + i_0_);
+client/src/Class215.java:73:                Class152.aBooleanArray2076[i_5_] = true;
+client/src/Class215.java:74:            Class49.aBoolean4726 = true;
+client/src/Class312.java:74:                Class152.aBooleanArray2076[i_2_] = true;

@@ -1,0 +1,40 @@
+client/src/ha.java:381:    void refreshNativeInterfaceScaling() {
+client/src/Class348_Sub40_Sub7.java:59:                            Applet_Sub1.setInterfaceDirtyBounds(Class180.aRectangleArray2371[Class348_Sub38.anInt7008], i_11_ + class46.anInt800, i_10_ + class46.anInt750, class46.anInt709, class46.anInt789);
+client/src/Class348_Sub40_Sub7.java:121:                                        if (Applet_Sub1.isInterfaceRenderScaleActive()) {
+client/src/Class348_Sub40_Sub7.java:133:                                                boolean suspended = Applet_Sub1.suspendInterfaceRenderScale();
+client/src/Class348_Sub40_Sub7.java:138:                                                        Applet_Sub1.resumeInterfaceRenderScale();
+client/src/ha_Sub3.java:2108:    final void refreshNativeInterfaceScaling() {
+client/src/ha_Sub3.java:2116:            if (Applet_Sub1.isInterfaceRenderScaleActive()) {
+client/src/ha_Sub2.java:708:    final void refreshNativeInterfaceScaling() {
+client/src/ha_Sub2.java:724:            if (Applet_Sub1.isInterfaceRenderScaleActive()) {
+client/src/Applet_Sub1.java:88:    private static boolean interfaceRenderScaleActive;
+client/src/Applet_Sub1.java:490:        if (interfaceRenderScaleActive && Class348_Sub8.aHa6654.supportsNativeInterfaceScaling()) {
+client/src/Applet_Sub1.java:538:    static boolean beginInterfaceRenderScale() {
+client/src/Applet_Sub1.java:540:        if (applet == null || !applet.canUseNativeInterfaceScaling() || interfaceRenderScaleActive) {
+client/src/Applet_Sub1.java:545:        interfaceRenderScaleActive = true;
+client/src/Applet_Sub1.java:546:        Class348_Sub8.aHa6654.refreshNativeInterfaceScaling();
+client/src/Applet_Sub1.java:550:    static void endInterfaceRenderScale() {
+client/src/Applet_Sub1.java:551:        if (!interfaceRenderScaleActive) {
+client/src/Applet_Sub1.java:554:        interfaceRenderScaleActive = false;
+client/src/Applet_Sub1.java:556:            Class348_Sub8.aHa6654.refreshNativeInterfaceScaling();
+client/src/Applet_Sub1.java:560:    static boolean suspendInterfaceRenderScale() {
+client/src/Applet_Sub1.java:561:        if (!interfaceRenderScaleActive) {
+client/src/Applet_Sub1.java:564:        interfaceRenderScaleActive = false;
+client/src/Applet_Sub1.java:565:        Class348_Sub8.aHa6654.refreshNativeInterfaceScaling();
+client/src/Applet_Sub1.java:569:    static void resumeInterfaceRenderScale() {
+client/src/Applet_Sub1.java:571:        if (interfaceRenderScaleActive || applet == null || !applet.canUseNativeInterfaceScaling()) {
+client/src/Applet_Sub1.java:574:        interfaceRenderScaleActive = true;
+client/src/Applet_Sub1.java:575:        Class348_Sub8.aHa6654.refreshNativeInterfaceScaling();
+client/src/Applet_Sub1.java:618:    static boolean isInterfaceRenderScaleActive() {
+client/src/Applet_Sub1.java:619:        return interfaceRenderScaleActive;
+client/src/Applet_Sub1.java:649:        if (interfaceRenderScaleActive || interfaceInputScaleActive) {
+client/src/Applet_Sub1.java:660:        if (interfaceRenderScaleActive || interfaceInputScaleActive) {
+client/src/Applet_Sub1.java:671:        return (interfaceRenderScaleActive || interfaceInputScaleActive) ? interfaceNativeWidth : Math.max(1, Class321.anInt4017);
+client/src/Applet_Sub1.java:675:        return (interfaceRenderScaleActive || interfaceInputScaleActive) ? interfaceNativeHeight : Math.max(1, Class348_Sub42_Sub8_Sub2.anInt10432);
+client/src/Applet_Sub1.java:710:    static void setInterfaceDirtyBounds(Rectangle rectangle, int x, int y, int width, int height) {
+client/src/Applet_Sub1.java:711:        if (!interfaceRenderScaleActive) {
+client/src/Applet_Sub1.java:1048:        if (interfaceRenderScaleActive) {
+client/src/Applet_Sub1.java:1049:            interfaceRenderScaleActive = false;
+client/src/Applet_Sub1.java:1051:                Class348_Sub8.aHa6654.refreshNativeInterfaceScaling();
+client/src/Class88.java:50:        boolean interfaceScaled = Applet_Sub1.beginInterfaceRenderScale();
+client/src/Class88.java:70:                Applet_Sub1.endInterfaceRenderScale();
