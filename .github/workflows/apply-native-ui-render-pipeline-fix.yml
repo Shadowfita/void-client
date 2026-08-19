@@ -19,6 +19,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Record verification run
+        run: |
+          mkdir -p debug
+          printf '%s\n' '${{ github.run_id }}' > debug/latest-native-ui-pipeline-run-id.txt
+          git config user.name 'Ryan Palmer'
+          git config user.email 'www.ryan.palmer@hotmail.com'
+          git add debug/latest-native-ui-pipeline-run-id.txt
+          git commit -m 'debug: record native UI pipeline verification run'
+          git push origin HEAD:fix/native-ui-render-pipeline
+
       - name: Apply implementation
         run: |
           python3 .tmp/fix-native-ui-render-pipeline.py
@@ -71,8 +81,6 @@ jobs:
 
       - name: Commit verified implementation
         run: |
-          git config user.name 'Ryan Palmer'
-          git config user.email 'www.ryan.palmer@hotmail.com'
           git add client/src
           git rm .tmp/fix-native-ui-render-pipeline.py
           git rm .github/workflows/apply-native-ui-render-pipeline-fix.yml
