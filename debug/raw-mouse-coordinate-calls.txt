@@ -1,0 +1,44 @@
+client/src/client.java:1094:                        bool = (Class258_Sub4.aClass373_8552.method3597(true) + i_51_) >= i_45_ && Class258_Sub4.aClass373_8552.method3594((byte) 89) + i_52_ >= i_46_ && (Class258_Sub4.aClass373_8552.method3597(true) + i_51_) < i_47_ && Class258_Sub4.aClass373_8552.method3594((byte) 74) + i_52_ < i_48_;
+client/src/client.java:1242:                                            Class318_Sub4.anInt6411 = Class258_Sub4.aClass373_8552.method3597(true);
+client/src/client.java:1243:                                            Class219.anInt2872 = Class258_Sub4.aClass373_8552.method3594((byte) 72);
+client/src/client.java:1246:                                        if (Class348_Sub42.anInt7059 == 1 && ((Class318_Sub4.anInt6411 != Class258_Sub4.aClass373_8552.method3597(true)) || (Class219.anInt2872 != (Class258_Sub4.aClass373_8552.method3594((byte) 117))))) {
+client/src/client.java:1253:                                            Class64_Sub3.method689((byte) -59, (Class183.anInt2464 + (int) ((double) ((Class318_Sub4.anInt6411) - (Class258_Sub4.aClass373_8552.method3597(true))) * 2.0 / (double) (Class75.aFloat1249))));
+client/src/client.java:1254:                                            Class286_Sub8.method2170((s_Sub2.anInt8237 - (int) ((double) ((Class219.anInt2872) - (Class258_Sub4.aClass373_8552.method3594((byte) 83))) * 2.0 / (double) (Class75.aFloat1249))), (byte) 3);
+client/src/client.java:1266:                                    if (bool_53_) Class341.method2676(class46.anInt709, class46.anInt789, (i_51_ + Class258_Sub4.aClass373_8552.method3597(true) - i_43_), (byte) 58, (i_52_ + Class258_Sub4.aClass373_8552.method3594((byte) 111) - i_44_));
+client/src/client.java:1290:                                class348_sub36.anInt6984 = i_51_ + Class258_Sub4.aClass373_8552.method3597(true) - i_43_;
+client/src/client.java:1291:                                class348_sub36.anInt6995 = (i_52_ + Class258_Sub4.aClass373_8552.method3594((byte) 98) - i_44_);
+client/src/client.java:1301:                                    class348_sub36.anInt6984 = (i_51_ + Class258_Sub4.aClass373_8552.method3597(true) - i_43_);
+client/src/client.java:1302:                                    class348_sub36.anInt6995 = (i_52_ + Class258_Sub4.aClass373_8552.method3594((byte) 75) - i_44_);
+client/src/client.java:1311:                                class348_sub36.anInt6984 = i_51_ + Class258_Sub4.aClass373_8552.method3597(true) - i_43_;
+client/src/client.java:1312:                                class348_sub36.anInt6995 = (i_52_ + Class258_Sub4.aClass373_8552.method3594((byte) 80) - i_44_);
+client/src/client.java:1322:                                    class348_sub36.anInt6984 = (i_51_ + Class258_Sub4.aClass373_8552.method3597(true) - i_43_);
+client/src/client.java:1323:                                    class348_sub36.anInt6995 = (i_52_ + Class258_Sub4.aClass373_8552.method3594((byte) 112) - i_44_);
+client/src/client.java:1332:                                class348_sub36.anInt6984 = i_51_ + Class258_Sub4.aClass373_8552.method3597(true) - i_43_;
+client/src/client.java:1333:                                class348_sub36.anInt6995 = (i_52_ + Class258_Sub4.aClass373_8552.method3594((byte) 95) - i_44_);
+client/src/client.java:1343:                                    class348_sub36.anInt6984 = (i_51_ + Class258_Sub4.aClass373_8552.method3597(true) - i_43_);
+client/src/client.java:1344:                                    class348_sub36.anInt6995 = (i_52_ + Class258_Sub4.aClass373_8552.method3594((byte) 90) - i_44_);
+client/src/Class112.java:71:            int i_2_ = Class258_Sub4.aClass373_8552.method3597(true);
+client/src/Class112.java:72:            int i_3_ = Class258_Sub4.aClass373_8552.method3594((byte) 81);
+client/src/Class135_Sub1.java:73:        int i_11_ = i_4_ + Class258_Sub4.aClass373_8552.method3597(true);
+client/src/Class135_Sub1.java:75:        int i_12_ = i_5_ + Class258_Sub4.aClass373_8552.method3594((byte) 95);
+client/src/Class216.java:19:                int i_0_ = Class258_Sub4.aClass373_8552.method3597(true);
+client/src/Class216.java:20:                int i_1_ = Class258_Sub4.aClass373_8552.method3594((byte) 72);
+client/src/Class231.java:57:            int i_6_ = Class258_Sub4.aClass373_8552.method3597(true) - -i_3_;
+client/src/Class231.java:58:            int i_7_ = i_4_ + Class258_Sub4.aClass373_8552.method3594((byte) 127);
+client/src/Class261.java:138:                int i_15_ = Class258_Sub4.aClass373_8552.method3597(true);
+client/src/Class261.java:139:                int i_16_ = Class258_Sub4.aClass373_8552.method3594((byte) 116);
+client/src/Class347.java:36:            int i_2_ = i_0_ + Class258_Sub4.aClass373_8552.method3597(true);
+client/src/Class347.java:37:            int i_3_ = i_1_ + Class258_Sub4.aClass373_8552.method3594((byte) 80);
+client/src/Class348_Sub40_Sub7.java:84:                                    int i_29_ = (Class258_Sub4.aClass373_8552.method3597(true) - -i_26_);
+client/src/Class348_Sub40_Sub7.java:85:                                    int i_30_ = (Class258_Sub4.aClass373_8552.method3594((byte) 101) + i_27_);
+client/src/Class373.java:40:    abstract int method3594(byte i);
+client/src/Class373.java:46:    abstract int method3597(boolean bool);
+client/src/Class373_Sub1.java:48:    final int method3594(byte i) {
+client/src/Class373_Sub1.java:79:    final int method3597(boolean bool) {
+client/src/Class373_Sub2.java:118:    final int method3594(byte i) {
+client/src/Class373_Sub2.java:148:        if (i != 0) method3597(false);
+client/src/Class373_Sub2.java:207:    final int method3597(boolean bool) {
+client/src/Class66.java:55:                anIntArray1164[0] = Class258_Sub4.aClass373_8552.method3597(true) - i_1_;
+client/src/Class66.java:56:                anIntArray1164[1] = (Class258_Sub4.aClass373_8552.method3594((byte) 80) - i_2_);
+client/src/Class66.java:3994:                    anIntArray1149[anInt1173++] = Class258_Sub4.aClass373_8552.method3597(true);
+client/src/Class66.java:3998:                    anIntArray1149[anInt1173++] = Class258_Sub4.aClass373_8552.method3594((byte) 127);

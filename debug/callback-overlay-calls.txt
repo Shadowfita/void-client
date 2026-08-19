@@ -1,0 +1,17 @@
+client/src/Applet_Sub1.java:8:import net.runelite.api.hooks.Callbacks;
+client/src/Applet_Sub1.java:285:                RuneLite.getInjector().getInstance(Callbacks.class).clientMainLoop();
+client/src/net/runelite/client/callback/Hooks.java:35:import net.runelite.api.hooks.Callbacks;
+client/src/net/runelite/client/callback/Hooks.java:66:public class Hooks implements Callbacks {
+client/src/net/runelite/client/callback/Hooks.java:286:    public void drawInterface(int interfaceId, List<WidgetItem> widgetItems)
+client/src/net/runelite/client/callback/Hooks.java:301:    public void drawLayer(Object layer, List<WidgetItem> widgetItems)
+client/src/net/runelite/client/callback/Hooks.java:333:    public void drawScene() {
+client/src/net/runelite/client/callback/Hooks.java:348:    public void drawAboveOverheads() {
+client/src/net/runelite/client/callback/Hooks.java:454:        // so that callbacks can safely use it later from threads.
+client/src/net/runelite/client/RuneLiteModule.java:41:import net.runelite.api.hooks.Callbacks;
+client/src/net/runelite/client/RuneLiteModule.java:90:		bind(Callbacks.class).to(Hooks.class);
+client/src/net/runelite/api/hooks/Callbacks.java:36: * Interface of callbacks the injected client uses to send events
+client/src/net/runelite/api/hooks/Callbacks.java:38:public interface Callbacks
+client/src/net/runelite/api/hooks/Callbacks.java:67:	void drawScene();
+client/src/net/runelite/api/hooks/Callbacks.java:72:	void drawAboveOverheads();
+client/src/net/runelite/api/hooks/Callbacks.java:89:	void drawInterface(int interfaceId, List<WidgetItem> widgetItems);
+client/src/net/runelite/api/hooks/Callbacks.java:96:	void drawLayer(Object layer, List<WidgetItem> widgetItems);

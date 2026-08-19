@@ -1,0 +1,18 @@
+client/src/Class348_Sub45_Sub1.java:24:        return Applet_Sub1.scaleInterfaceInputY(this.anInt9725);
+client/src/Class348_Sub45_Sub1.java:34:        return Applet_Sub1.scaleInterfaceInputX(this.anInt9729);
+client/src/Applet_Sub1.java:604:    static int physicalToInterfaceX(int x) {
+client/src/Applet_Sub1.java:611:    static int physicalToInterfaceY(int y) {
+client/src/Applet_Sub1.java:640:    static int scaleInterfaceInputX(int x) {
+client/src/Applet_Sub1.java:641:        return interfaceInputScaleActive ? physicalToInterfaceX(x) : x;
+client/src/Applet_Sub1.java:644:    static int scaleInterfaceInputY(int y) {
+client/src/Applet_Sub1.java:645:        return interfaceInputScaleActive ? physicalToInterfaceY(y) : y;
+client/src/Class373_Sub2.java:121:        return Applet_Sub1.scaleInterfaceInputY(anInt7448);
+client/src/Class373_Sub2.java:210:        return Applet_Sub1.scaleInterfaceInputX(anInt7442);
+client/src/Class88.java:61:            int interfaceX = interfaceScaled ? Applet_Sub1.physicalToInterfaceX(i) : i;
+client/src/Class88.java:62:            int interfaceY = interfaceScaled ? Applet_Sub1.physicalToInterfaceY(i_1_) : i_1_;
+client/src/Class373_Sub1.java:50:        return Applet_Sub1.scaleInterfaceInputY(anInt7416);
+client/src/Class373_Sub1.java:81:        return Applet_Sub1.scaleInterfaceInputX(anInt7417);
+client/src/Class216.java:35:                int interfaceX = interfaceScaled ? Applet_Sub1.physicalToInterfaceX(i_2_) : i_2_;
+client/src/Class216.java:36:                int interfaceY = interfaceScaled ? Applet_Sub1.physicalToInterfaceY(i_3_) : i_3_;
+client/src/Class348_Sub45_Sub2.java:33:        return Applet_Sub1.scaleInterfaceInputY(this.anInt9733);
+client/src/Class348_Sub45_Sub2.java:39:        return Applet_Sub1.scaleInterfaceInputX(this.anInt9739);
