@@ -1,0 +1,14 @@
+client/src/Class338.java:39:        if (class46 != null) Class251.method1913(!bool, i_2_ + -104, class46);
+client/src/Class239_Sub28.java:24:    static final void method1843(int i, int i_8_, Class46 class46, boolean bool, int i_9_) {
+client/src/Class348_Sub42_Sub8_Sub2.java:156:                Class251.method1913(true, -123, class46);
+client/src/Class367_Sub1.java:46:                    Class239_Sub28.method1843(i_5_, -326, class46, bool_6_, i_7_);
+client/src/Class367_Sub1.java:47:                    Class14_Sub1.method239((byte) 115, i_5_, i_7_, class46);
+client/src/Class367_Sub1.java:52:                    if (class46.anInt774 == 0) Class251.method1913(bool_6_, -116, class46);
+client/src/Class14_Sub1.java:47:    static final void method239(byte i, int i_3_, int i_4_, Class46 class46) {
+client/src/Class111.java:88:        Class239_Sub28.method1843(i_16_, -326, class46, false, i_15_);
+client/src/Class111.java:89:        Class14_Sub1.method239((byte) -114, i_16_, i_15_, class46);
+client/src/Class251.java:19:    static final void method1913(boolean bool, int i, Class46 class46) {
+client/src/Class251.java:32:        if (i != -23590) method1913(false, -115, null);
+client/src/Class66.java:2770:                if (class46.anInt774 == 0) Class251.method1913(false, 36, class46);
+client/src/Class66.java:2788:                if (class46.anInt774 == 0) Class251.method1913(false, 49, class46);
+client/src/Class66.java:2947:                if (class46.anInt774 == 0) Class251.method1913(false, 62, class46);

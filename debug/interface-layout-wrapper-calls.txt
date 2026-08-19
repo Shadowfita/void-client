@@ -1,0 +1,6 @@
+client/src/Class348_Sub42_Sub8.java:60:            Class239.method1713(false, 520);
+client/src/Class348_Sub42_Sub8_Sub2.java:1513:            Class239.method1713(false, 520);
+client/src/Applet_Sub1.java:1061:            Class239.method1713(true, 520);
+client/src/Class107.java:72:            Class239.method1713(false, 520);
+client/src/Class215.java:70:            if (r.anInt9721 != -1) Class239.method1713(true, 520);
+client/src/Class367_Sub11.java:166:                    if (r.anInt9721 != -1) Class239.method1713(true, 520);
