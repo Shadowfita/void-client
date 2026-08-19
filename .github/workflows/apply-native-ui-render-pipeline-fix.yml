@@ -1,0 +1,80 @@
+name: Verify native UI render pipeline correction
+
+on:
+  push:
+    branches:
+      - fix/native-ui-render-pipeline
+    paths:
+      - '.github/workflows/apply-native-ui-render-pipeline-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply implementation
+        run: |
+          python3 .tmp/fix-native-ui-render-pipeline.py
+          git diff --check
+          grep -F 'ensureInterfaceLayout(true);' client/src/Applet_Sub1.java
+          grep -F 'renderRuneLiteHardwareOverlay(false);' client/src/Class302.java
+          grep -F 'renderRuneLiteHardwareOverlay(true);' client/src/ha_Sub2.java
+          grep -F 'BufferedImage renderHardwareOverlay' client/src/net/runelite/api/hooks/Callbacks.java
+          grep -F 'updateRuneLiteOverlayPixels' client/src/Class105_Sub2.java
+          ! grep -F 'rolloverIconAlpha' client/src/net/runelite/client/ui/laf/RuneLiteLAF.properties
+
+      - name: Set up Java 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compile and test
+        run: |
+          ./gradlew :client:compileJava --no-daemon --stacktrace
+          ./gradlew :client:test --no-daemon --stacktrace
+
+      - name: Build ProGuard release JAR
+        run: ./gradlew :client:proguardJar --no-daemon --stacktrace
+
+      - name: Verify and stage JAR
+        run: |
+          jar_path='client/build/libs/void-client-0.2.0-release.jar'
+          test -f "$jar_path"
+          unzip -p "$jar_path" META-INF/MANIFEST.MF | tr -d '\r' | grep -Fx 'Main-Class: Loader'
+          javap -classpath "$jar_path" -p Class373_Sub1 > /tmp/Class373_Sub1.txt
+          grep -F 'Class373_Sub1(java.awt.Component, boolean);' /tmp/Class373_Sub1.txt
+          grep -F 'java.awt.event.MouseWheelListener' /tmp/Class373_Sub1.txt
+          mkdir -p release
+          cp "$jar_path" release/void-client-0.2.0-native-ui-pipeline-test.jar
+          (cd release && sha256sum void-client-0.2.0-native-ui-pipeline-test.jar > void-client-0.2.0-native-ui-pipeline-test.jar.sha256)
+
+      - name: Upload test JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: void-client-native-ui-pipeline-test
+          path: |
+            release/void-client-0.2.0-native-ui-pipeline-test.jar
+            release/void-client-0.2.0-native-ui-pipeline-test.jar.sha256
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Commit verified implementation
+        run: |
+          git config user.name 'Ryan Palmer'
+          git config user.email 'www.ryan.palmer@hotmail.com'
+          git add client/src
+          git rm .tmp/fix-native-ui-render-pipeline.py
+          git rm .github/workflows/apply-native-ui-render-pipeline-fix.yml
+          git commit -m 'Fix native UI state and JAGGL RuneLite overlay composition'
+          git push origin HEAD:fix/native-ui-render-pipeline
