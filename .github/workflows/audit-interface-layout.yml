@@ -1,0 +1,29 @@
+name: Audit interface layout calls
+
+on:
+  push:
+    branches:
+      - hotfix/jaggl-resize-threading
+    paths:
+      - '.github/workflows/audit-interface-layout.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Capture layout call sites
+        run: |
+          mkdir -p debug
+          grep -RniF 'Class239_Sub3.method1728' client/src > debug/interface-layout-direct-calls.txt || true
+          grep -RniF 'Class239.method1713' client/src > debug/interface-layout-wrapper-calls.txt || true
+          grep -RniE 'method1913\(|method239\(|method1843\(' client/src > debug/interface-relayout-related-calls.txt || true
+          git config user.name 'Ryan Palmer'
+          git config user.email 'www.ryan.palmer@hotmail.com'
+          git add debug/interface-layout-direct-calls.txt debug/interface-layout-wrapper-calls.txt debug/interface-relayout-related-calls.txt
+          git rm .github/workflows/audit-interface-layout.yml
+          git commit -m 'debug: audit native interface layout call sites'
+          git push origin HEAD:hotfix/jaggl-resize-threading
