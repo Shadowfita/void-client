@@ -30,6 +30,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.awt.image.BufferedImage;
 import java.util.List;
 
 /**
@@ -70,6 +71,12 @@ public interface Callbacks
 	 * Called after logic that is drawing 2D objects is processed.
 	 */
 	void drawAboveOverheads();
+
+	/**
+	 * Render RuneLite overlays into a transparent framebuffer for composition by
+	 * the native 634 hardware renderer.
+	 */
+	BufferedImage renderHardwareOverlay(int width, int height, boolean aboveWidgets);
 
 	/**
 	 * Client top-most draw method, rendering over top of most of game interfaces.
