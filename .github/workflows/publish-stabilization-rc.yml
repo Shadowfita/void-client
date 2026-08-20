@@ -1,0 +1,106 @@
+name: Publish verified stabilization RC
+
+on:
+  push:
+    branches:
+      - stabilization/0.3.0-compatibility
+    paths:
+      - '.github/workflows/publish-stabilization-rc.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release-candidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify complete stabilization source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f STABILIZATION_IMPLEMENTATION.md
+          test -f client/src/SceneProjectionBridge.java
+          test -f client/src/net/runelite/client/callback/HardwareOverlayFrame.java
+          test -f client/src/net/runelite/client/plugins/qol/InventoryWidgetTracker.java
+          test -f client/src/net/runelite/client/plugins/stretchedmode/InterfaceSupersampleBudget.java
+          test -f .github/scripts/verify-stabilization.py
+          test -f client/test/net/runelite/client/game/GameStateBridgeTest.java
+          test -f client/test/net/runelite/client/plugins/xptracker/XpTrackerPluginTest.java
+          test -f client/test/net/runelite/client/plugins/qol/InventoryWidgetTrackerTest.java
+          grep -Eq 'version[[:space:]]*=[[:space:]]*"0\.3\.0"' client/build.gradle.kts
+          grep -Fq 'hasSceneProjection' client/src/com/GameClient.java
+          grep -Fq 'supportsRuneLiteOverlayComposition' client/src/ha.java
+          grep -Fq 'fractionalSupersampling' client/src/net/runelite/client/plugins/stretchedmode/StretchedModeConfig.java
+          grep -Fq 'getOverlaysSnapshot' client/src/net/runelite/client/ui/overlay/OverlayManager.java
+          ! grep -Fq 'InventoryGridCanvasOverlay.paint' client/src/Canvas_Sub1.java
+          python3 .github/scripts/verify-stabilization.py
+          git diff --check
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compile and test
+        run: |
+          ./gradlew :client:compileJava --no-daemon --stacktrace
+          ./gradlew :client:test --no-daemon --stacktrace
+      - name: Build ProGuard release JAR
+        run: ./gradlew :client:proguardJar --no-daemon --stacktrace
+      - name: Verify and stage release candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          jar_path='client/build/libs/void-client-0.3.0-release.jar'
+          test -f "$jar_path"
+          unzip -p "$jar_path" META-INF/MANIFEST.MF | tr -d '\r' | grep -Fx 'Main-Class: Loader'
+          unzip -p "$jar_path" runelite.properties | tr -d '\r' | grep -Eq '^void.version= ?0\.3\.0$'
+          javap -classpath "$jar_path" -p Class373_Sub1 > /tmp/Class373_Sub1.txt
+          grep -F 'Class373_Sub1(java.awt.Component, boolean);' /tmp/Class373_Sub1.txt
+          grep -F 'java.awt.event.MouseWheelListener' /tmp/Class373_Sub1.txt
+          mkdir -p release
+          cp "$jar_path" release/void-client-0.3.0-rc.1.jar
+          (cd release && sha256sum void-client-0.3.0-rc.1.jar > void-client-0.3.0-rc.1.jar.sha256)
+          cat > release/VERIFICATION.txt <<EOF
+          STATUS=PASS
+          SOURCE_SHA=${GITHUB_SHA}
+          VERSION=0.3.0
+          COMPILE=PASS
+          TESTS=PASS
+          PROGUARD=PASS
+          MANIFEST=PASS
+          RUNTIME_VERSION=PASS
+          MOUSE_WHEEL_RETENTION=PASS
+          WORKFLOW_RUN=${GITHUB_RUN_ID}
+          EOF
+      - name: Publish or update prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag='v0.3.0-rc.1'
+          sha=$(git rev-parse HEAD)
+          cat > /tmp/notes.md <<EOF
+          # Void Client 0.3.0 RC 1
+
+          Six-phase compatibility stabilization candidate for the revision-634 deob.
+
+          Source commit: \`$sha\`
+
+          This prerelease includes the scene/projection compatibility substrate, stable event identities, widget-derived inventory integration, client-thread-safe resize handling, dirty-region JAGGL overlay composition, fractional UI texture supersampling, Java 8/21 compatibility guards, and exact release/version verification.
+          EOF
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            existing=$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json targetCommitish --jq .targetCommitish)
+            if [ "$existing" != "$sha" ] && [ "$existing" != 'stabilization/0.3.0-compatibility' ]; then
+              echo "Existing RC points to a different source: $existing" >&2
+              exit 1
+            fi
+            gh release upload "$tag" --repo "$GITHUB_REPOSITORY" --clobber release/void-client-0.3.0-rc.1.jar release/void-client-0.3.0-rc.1.jar.sha256 release/VERIFICATION.txt
+            gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --target "$sha" --notes-file /tmp/notes.md --prerelease
+          else
+            gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$sha" --title 'v0.3.0-rc.1' --notes-file /tmp/notes.md --prerelease release/void-client-0.3.0-rc.1.jar release/void-client-0.3.0-rc.1.jar.sha256 release/VERIFICATION.txt
+          fi
