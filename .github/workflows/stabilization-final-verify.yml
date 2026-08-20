@@ -1,0 +1,117 @@
+name: Verify complete 0.3.0 stabilization
+
+on:
+  push:
+    branches:
+      - stabilization/0.3.0-compatibility
+    paths:
+      - '.github/workflows/stabilization-final-verify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out stabilization branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify all six implementation phases are present
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f client/src/SceneProjectionBridge.java
+          test -f client/src/net/runelite/client/callback/HardwareOverlayFrame.java
+          test -f client/src/net/runelite/client/plugins/qol/InventoryWidgetTracker.java
+          test -f client/src/net/runelite/client/plugins/stretchedmode/InterfaceSupersampleBudget.java
+          test -f STABILIZATION_IMPLEMENTATION.md
+          test -f .github/scripts/verify-stabilization.py
+          test -f client/test/net/runelite/client/game/GameStateBridgeTest.java
+          test -f client/test/net/runelite/client/plugins/xptracker/XpTrackerPluginTest.java
+          test -f client/test/net/runelite/client/plugins/qol/InventoryWidgetTrackerTest.java
+          grep -Eq 'version[[:space:]]*=[[:space:]]*"0\.3\.0"' client/build.gradle.kts
+          grep -Fq 'projectVersion' client/resources/runelite.properties
+          grep -Fq 'hasSceneProjection' client/src/com/GameClient.java
+          grep -Fq 'supportsRuneLiteOverlayComposition' client/src/ha.java
+          grep -Fq 'fractionalSupersampling' client/src/net/runelite/client/plugins/stretchedmode/StretchedModeConfig.java
+          grep -Fq 'private static String npcKey' client/src/net/runelite/client/game/GameStateBridge.java
+          grep -Fq 'getOverlaysSnapshot' client/src/net/runelite/client/ui/overlay/OverlayManager.java
+          ! grep -Rq 'InventoryGridCanvasOverlay.paint' client/src/Canvas_Sub1.java
+          git diff --check
+
+      - name: Set up Java 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compile and test
+        run: |
+          ./gradlew :client:compileJava --no-daemon --stacktrace
+          ./gradlew :client:test --no-daemon --stacktrace
+
+      - name: Build ProGuard release JAR
+        run: ./gradlew :client:proguardJar --no-daemon --stacktrace
+
+      - name: Verify release identity and retained native input
+        shell: bash
+        run: |
+          set -euo pipefail
+          jar_path='client/build/libs/void-client-0.3.0-release.jar'
+          test -f "$jar_path"
+          unzip -p "$jar_path" META-INF/MANIFEST.MF | tr -d '\r' | grep -Fx 'Main-Class: Loader'
+          unzip -p "$jar_path" runelite.properties | tr -d '\r' | grep -Eq '^void.version= ?0\.3\.0$'
+          javap -classpath "$jar_path" -p Class373_Sub1 > /tmp/Class373_Sub1.txt
+          grep -F 'Class373_Sub1(java.awt.Component, boolean);' /tmp/Class373_Sub1.txt
+          grep -F 'java.awt.event.MouseWheelListener' /tmp/Class373_Sub1.txt
+          python3 .github/scripts/verify-stabilization.py
+
+      - name: Stage artifact and checksum
+        shell: bash
+        run: |
+          mkdir -p release
+          cp client/build/libs/void-client-0.3.0-release.jar release/void-client-0.3.0-stabilization.jar
+          (cd release && sha256sum void-client-0.3.0-stabilization.jar > void-client-0.3.0-stabilization.jar.sha256)
+
+      - name: Upload test release
+        uses: actions/upload-artifact@v4
+        with:
+          name: void-client-0.3.0-stabilization
+          path: |
+            release/void-client-0.3.0-stabilization.jar
+            release/void-client-0.3.0-stabilization.jar.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Record verified branch status
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p debug
+          sha=$(git rev-parse HEAD)
+          checksum=$(cut -d' ' -f1 release/void-client-0.3.0-stabilization.jar.sha256)
+          cat > debug/stabilization-final-status.txt <<EOF
+          STATUS=PASS
+          SOURCE_SHA=$sha
+          VERSION=0.3.0
+          COMPILE=PASS
+          TESTS=PASS
+          PROGUARD=PASS
+          MANIFEST=PASS
+          RUNTIME_VERSION=PASS
+          MOUSE_WHEEL_RETENTION=PASS
+          SHA256=$checksum
+          WORKFLOW_RUN=$GITHUB_RUN_ID
+          EOF
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add debug/stabilization-final-status.txt
+          git commit -m 'ci: record verified 0.3.0 stabilization build'
+          git push origin HEAD:stabilization/0.3.0-compatibility
