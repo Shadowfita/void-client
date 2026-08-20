@@ -1,0 +1,30 @@
+name: Export stabilization source
+
+on:
+  push:
+    branches:
+      - stabilization/0.3.0-compatibility
+    paths:
+      - '.github/workflows/export-stabilization-source.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: void-client-stabilization-source
+          path: |
+            .
+            !.git
+            !**/build
+            !out
+          include-hidden-files: true
+          retention-days: 2
