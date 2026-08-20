@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   export:
@@ -18,6 +18,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Record run ID
+        run: |
+          mkdir -p debug
+          printf '%s\n' "$GITHUB_RUN_ID" > debug/latest-stabilization-export-run-id.txt
+          git config user.name 'Ryan Palmer'
+          git config user.email 'www.ryan.palmer@hotmail.com'
+          git add debug/latest-stabilization-export-run-id.txt
+          git commit -m 'ci: record stabilization export run' || true
+          git push origin HEAD:stabilization/0.3.0-compatibility
+
       - uses: actions/upload-artifact@v4
         with:
           name: void-client-stabilization-source
