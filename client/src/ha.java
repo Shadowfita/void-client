@@ -382,6 +382,10 @@ abstract class ha {
         /* Unsupported renderer. */
     }
 
+    void drawRuneLiteHardwareOverlay(int[] pixels, int width, int height) {
+        /* Unsupported renderer. */
+    }
+
     ha(d var_d) {
         this.aD4579 = var_d;
         int i = -1;

@@ -1,0 +1,38 @@
+name: Export current stabilization branch source
+
+on:
+  push:
+    branches:
+      - stabilization/0.3.0-compatibility
+    paths:
+      - '.github/workflows/export-current-stabilization-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Package source
+        shell: bash
+        run: |
+          zip -qr void-client-stabilization-current-source.zip . \
+            -x '.git/*' '**/build/*' '.gradle/*' 'out/*'
+      - name: Publish source snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          tag='stabilization-source-current'
+          sha=$(git rev-parse HEAD)
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$tag" --repo "$GITHUB_REPOSITORY" --clobber void-client-stabilization-current-source.zip
+            gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --target "$sha" --title 'Temporary stabilization source snapshot' --notes "Current source snapshot from $sha" --prerelease
+          else
+            gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$sha" --title 'Temporary stabilization source snapshot' --notes "Current source snapshot from $sha" --prerelease void-client-stabilization-current-source.zip
+          fi

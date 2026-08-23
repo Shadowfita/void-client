@@ -15,6 +15,8 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
@@ -93,6 +95,7 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
     private static int interfaceLogicalHeight;
     private static int lastInterfaceLayoutWidth = -1;
     private static int lastInterfaceLayoutHeight = -1;
+    private static int lastInterfaceLayoutFrame = -1;
     public static int anInt53;
     public static boolean aBoolean54;
     public static int anInt55;
@@ -285,6 +288,29 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
                 RuneLite.getInjector().getInstance(Callbacks.class).clientMainLoop();
             }
         } catch (Throwable ignored) {
+        }
+    }
+
+    static void renderRuneLiteHardwareOverlay(boolean aboveWidgets) {
+        try {
+            if (RuneLite.getInjector() == null || Class348_Sub8.aHa6654 == null || Class305.aCanvas3869 == null) {
+                return;
+            }
+
+            int width = Math.max(1, Class305.aCanvas3869.getWidth());
+            int height = Math.max(1, Class305.aCanvas3869.getHeight());
+            BufferedImage image = RuneLite.getInjector().getInstance(Callbacks.class)
+                    .renderHardwareOverlay(width, height, aboveWidgets);
+            if (image == null || !(image.getRaster().getDataBuffer() instanceof DataBufferInt)) {
+                return;
+            }
+
+            int[] pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
+            Class348_Sub8.aHa6654.drawRuneLiteHardwareOverlay(pixels, width, height);
+        } catch (Throwable throwable) {
+            if (Loader.trace) {
+                throwable.printStackTrace();
+            }
         }
     }
 
@@ -523,16 +549,30 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
         interfaceLogicalHeight = calculateInterfaceLogicalSize(interfaceNativeHeight, applet.interfaceScalingFactor);
     }
 
-    private static void ensureInterfaceLayout() {
+    private static void ensureInterfaceLayout(boolean force) {
         if (r.anInt9721 == -1) {
             return;
         }
-        if (lastInterfaceLayoutWidth == interfaceLogicalWidth && lastInterfaceLayoutHeight == interfaceLogicalHeight) {
+
+        // Canvas dimensions alone are not a sufficient cache key. Native 634
+        // interface scripts can reopen/reflow attached groups (settings/audio,
+        // chat modes, tab content, etc.) while the outer window size remains
+        // unchanged. If that happens after our logical UI layout pass, right-
+        // and bottom-anchored roots can retain a physical-space layout until a
+        // window resize. Always re-establish the logical root immediately
+        // before drawing; input traversal only needs one relayout per frame.
+        int frame = Class367_Sub11.anInt7396;
+        if (!force
+                && lastInterfaceLayoutFrame == frame
+                && lastInterfaceLayoutWidth == interfaceLogicalWidth
+                && lastInterfaceLayoutHeight == interfaceLogicalHeight) {
             return;
         }
+
         Class239_Sub3.method1728(interfaceLogicalHeight, -1, r.anInt9721, true, interfaceLogicalWidth);
         lastInterfaceLayoutWidth = interfaceLogicalWidth;
         lastInterfaceLayoutHeight = interfaceLogicalHeight;
+        lastInterfaceLayoutFrame = frame;
     }
 
     static boolean beginInterfaceRenderScale() {
@@ -541,7 +581,7 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
             return false;
         }
         prepareInterfaceDimensions();
-        ensureInterfaceLayout();
+        ensureInterfaceLayout(true);
         interfaceRenderScaleActive = true;
         Class348_Sub8.aHa6654.refreshNativeInterfaceScaling();
         return true;
@@ -625,7 +665,7 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
             return false;
         }
         prepareInterfaceDimensions();
-        ensureInterfaceLayout();
+        ensureInterfaceLayout(false);
         interfaceInputScaleActive = true;
         return true;
     }
@@ -1056,6 +1096,7 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
         interfaceScalingFactor = clamped;
         lastInterfaceLayoutWidth = -1;
         lastInterfaceLayoutHeight = -1;
+        lastInterfaceLayoutFrame = -1;
 
         if (r.anInt9721 != -1) {
             Class239.method1713(true, 520);

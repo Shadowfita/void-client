@@ -1,0 +1,104 @@
+name: Final six-phase stabilization verification
+
+on:
+  push:
+    branches:
+      - stabilization/0.3.0-compatibility
+    paths:
+      - '.github/workflows/stabilization-final-verify-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility:
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['8', '21']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify six-phase source set
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f STABILIZATION_IMPLEMENTATION.md
+          test -f client/src/SceneProjectionBridge.java
+          test -f client/src/net/runelite/client/callback/HardwareOverlayFrame.java
+          test -f client/src/net/runelite/client/plugins/qol/InventoryWidgetTracker.java
+          test -f client/src/net/runelite/client/plugins/stretchedmode/InterfaceSupersampleBudget.java
+          test -f client/test/net/runelite/client/game/GameStateBridgeTest.java
+          test -f client/test/net/runelite/client/plugins/xptracker/XpTrackerPluginTest.java
+          test -f client/test/net/runelite/client/plugins/qol/InventoryWidgetTrackerTest.java
+          grep -Eq 'version[[:space:]]*=[[:space:]]*"0\.3\.0"' client/build.gradle.kts
+          grep -Fq 'hasSceneProjection' client/src/com/GameClient.java
+          grep -Fq 'supportsRuneLiteOverlayComposition' client/src/ha.java
+          grep -Fq 'fractionalSupersampling' client/src/net/runelite/client/plugins/stretchedmode/StretchedModeConfig.java
+          grep -Fq 'getOverlaysSnapshot' client/src/net/runelite/client/ui/overlay/OverlayManager.java
+          ! grep -Fq 'InventoryGridCanvasOverlay.paint' client/src/Canvas_Sub1.java
+          git diff --check
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compile and test on Java ${{ matrix.java }}
+        run: |
+          ./gradlew :client:compileJava --no-daemon --stacktrace
+          ./gradlew :client:test --no-daemon --stacktrace
+
+  release:
+    needs: compatibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Run static stabilization verifier
+        run: python3 .github/scripts/verify-stabilization.py
+      - name: Build ProGuard release JAR
+        run: ./gradlew :client:proguardJar --no-daemon --stacktrace
+      - name: Verify executable identity and reflection retention
+        shell: bash
+        run: |
+          set -euo pipefail
+          jar_path='client/build/libs/void-client-0.3.0-release.jar'
+          test -f "$jar_path"
+          unzip -p "$jar_path" META-INF/MANIFEST.MF | tr -d '\r' | grep -Fx 'Main-Class: Loader'
+          unzip -p "$jar_path" runelite.properties | tr -d '\r' | grep -Eq '^void.version= ?0\.3\.0$'
+          javap -classpath "$jar_path" -p Class373_Sub1 > /tmp/Class373_Sub1.txt
+          grep -F 'Class373_Sub1(java.awt.Component, boolean);' /tmp/Class373_Sub1.txt
+          grep -F 'java.awt.event.MouseWheelListener' /tmp/Class373_Sub1.txt
+      - name: Stage verified release
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          cp client/build/libs/void-client-0.3.0-release.jar release/void-client-0.3.0-stabilization.jar
+          (cd release && sha256sum void-client-0.3.0-stabilization.jar > void-client-0.3.0-stabilization.jar.sha256)
+          cat > release/VERIFICATION.txt <<EOF
+          STATUS=PASS
+          SOURCE_SHA=${GITHUB_SHA}
+          VERSION=0.3.0
+          JAVA_8_COMPILE_TEST=PASS
+          JAVA_21_COMPILE_TEST=PASS
+          PROGUARD=PASS
+          MANIFEST=PASS
+          RUNTIME_VERSION=PASS
+          MOUSE_WHEEL_RETENTION=PASS
+          WORKFLOW_RUN=${GITHUB_RUN_ID}
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: void-client-0.3.0-six-phase-stabilization
+          path: |
+            release/void-client-0.3.0-stabilization.jar
+            release/void-client-0.3.0-stabilization.jar.sha256
+            release/VERIFICATION.txt
+          if-no-files-found: error
+          retention-days: 14

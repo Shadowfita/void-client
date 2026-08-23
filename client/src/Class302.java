@@ -40,6 +40,10 @@ final class Class302 {
             Class58.anInt1064 = Class367_Sub11.anInt7396;
             Class5_Sub2.method198(null, false, -1, -1);
             Class175.method1343(-1, null, 1, -1);
+            // RuneLite scene overlays (NPC names, tile indicators, object/NPC
+            // markers, etc.) must be drawn into the JAGGL backbuffer before the
+            // native RuneScape interface so chat/tabs remain above them.
+            Applet_Sub1.renderRuneLiteHardwareOverlay(false);
             if (r.anInt9721 != -1) {
                 Class348_Sub38.anInt7008 = 0;
                 Class88.method842(false);

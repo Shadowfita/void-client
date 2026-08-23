@@ -110,6 +110,15 @@ final class Class105_Sub2 extends Class105 {
         OpenGL.glPixelTransferf(3355, 0.0F);
     }
 
+    final void updateRuneLiteOverlayPixels(int[] pixels, int width, int height) {
+        if (pixels == null || width != aClass258_Sub3_Sub1_8434.anInt9940 || height != aClass258_Sub3_Sub1_8434.anInt9939) {
+            throw new IllegalArgumentException("RuneLite overlay dimensions changed");
+        }
+        // Match the constructor's top-left Java image orientation by flipping
+        // rows during the GL texture sub-image upload.
+        aClass258_Sub3_Sub1_8434.method1964(true, height, 0, pixels, 0, (byte) -73, width, 0, width);
+    }
+
     final void method984(int[] is) {
         is[1] = anInt8446;
         anInt8445++;

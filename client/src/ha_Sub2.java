@@ -163,6 +163,9 @@ final class ha_Sub2 extends ha {
     static int anInt7662;
     static int anInt7663;
     private OpenGL anOpenGL7664;
+    private Class105_Sub2 runeLiteOverlaySprite;
+    private int runeLiteOverlayWidth = -1;
+    private int runeLiteOverlayHeight = -1;
     static int anInt7665;
     static int anInt7666 = 503;
     static int anInt7667;
@@ -707,6 +710,26 @@ final class ha_Sub2 extends ha {
     @Override
     final void refreshNativeInterfaceScaling() {
         method3745((byte) 127);
+    }
+
+    @Override
+    final void drawRuneLiteHardwareOverlay(int[] pixels, int width, int height) {
+        if (pixels == null || width <= 0 || height <= 0) {
+            return;
+        }
+
+        if (runeLiteOverlaySprite == null || runeLiteOverlayWidth != width || runeLiteOverlayHeight != height) {
+            runeLiteOverlaySprite = new Class105_Sub2(this, width, height, pixels, 0, width);
+            runeLiteOverlayWidth = width;
+            runeLiteOverlayHeight = height;
+        } else {
+            runeLiteOverlaySprite.updateRuneLiteOverlayPixels(pixels, width, height);
+        }
+
+        // Overlay pixels are already in physical canvas coordinates. The native
+        // UI projection is not active at either composition point.
+        KA(0, 0, width, height);
+        runeLiteOverlaySprite.method972(0, 0, width, height);
     }
 
     final void method3744(float f, int i, float f_45_) {
@@ -3506,6 +3529,10 @@ final class ha_Sub2 extends ha {
 
     final void method3626(int i, int i_457_) throws Exception_Sub1 {
         try {
+            // ABOVE_WIDGETS / ALWAYS_ON_TOP must be part of the actual JAGGL
+            // backbuffer; Canvas.getGraphics() is not a valid overlay path for
+            // this hardware renderer.
+            Applet_Sub1.renderRuneLiteHardwareOverlay(true);
             anOpenGL7664.swapBuffers();
         } catch (Exception exception) {
             /* empty */

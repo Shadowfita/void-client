@@ -95,6 +95,7 @@ public class Hooks implements Callbacks {
 
     private static Object lastMainBufferProvider;
     private static Graphics2D lastGraphics;
+    private BufferedImage hardwareOverlayBuffer;
 
     private Graphics2D beginGraphics() {
      /*   if (GLManager.isEnabled()) {
@@ -281,6 +282,53 @@ public class Hooks implements Callbacks {
         // despawn event could be published prior to the
         // spawn event, which is deferred
         deferredEventBus.replay();
+    }
+
+    @Override
+    public BufferedImage renderHardwareOverlay(int width, int height, boolean aboveWidgets)
+    {
+        if (width <= 0 || height <= 0)
+        {
+            return null;
+        }
+
+        if (hardwareOverlayBuffer == null
+                || hardwareOverlayBuffer.getWidth() != width
+                || hardwareOverlayBuffer.getHeight() != height)
+        {
+            hardwareOverlayBuffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        }
+
+        Graphics2D graphics2d = hardwareOverlayBuffer.createGraphics();
+        try
+        {
+            graphics2d.setComposite(AlphaComposite.Clear);
+            graphics2d.fillRect(0, 0, width, height);
+            graphics2d.setComposite(AlphaComposite.SrcOver);
+
+            if (aboveWidgets)
+            {
+                renderer.renderOverlayLayer(graphics2d, OverlayLayer.ABOVE_WIDGETS);
+                renderer.renderOverlayLayer(graphics2d, OverlayLayer.ALWAYS_ON_TOP);
+                notifier.processFlash(graphics2d);
+                clientUi.paintOverlays(graphics2d);
+            }
+            else
+            {
+                renderer.renderOverlayLayer(graphics2d, OverlayLayer.ABOVE_SCENE);
+                renderer.renderOverlayLayer(graphics2d, OverlayLayer.UNDER_WIDGETS);
+            }
+        }
+        catch (Exception ex)
+        {
+            log.warn("Error during hardware overlay rendering", ex);
+        }
+        finally
+        {
+            graphics2d.dispose();
+        }
+
+        return hardwareOverlayBuffer;
     }
 
     public void drawInterface(int interfaceId, List<WidgetItem> widgetItems)
