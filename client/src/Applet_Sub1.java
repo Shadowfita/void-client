@@ -534,6 +534,12 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
         return !stretchedEnabled
                 && interfaceScalingFactor != 100
                 && Class348_Sub42_Sub12.method3229(-86) == 2
+                && r.anInt9721 != -1
+                // Login/loading interfaces are created while texture atlases and
+                // renderer state are still changing. Keep them in the native
+                // projection; enable independent HUD scaling once the local
+                // player and in-game interface are established.
+                && Class132.aPlayer_1907 != null
                 && Class348_Sub8.aHa6654 != null
                 && Class348_Sub8.aHa6654.supportsNativeInterfaceScaling();
     }
@@ -667,7 +673,10 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
      */
     static int getInterfaceTextureSupersampleFactor() {
         Applet_Sub1 applet = activeApplet();
-        if (!interfaceRenderScaleActive || applet == null || !applet.interfaceSupersamplingEnabled) {
+        if (!interfaceRenderScaleActive
+                || applet == null
+                || !applet.interfaceSupersamplingEnabled
+                || Class132.aPlayer_1907 == null) {
             return 1;
         }
         int factor = applet.interfaceScalingFactor;

@@ -15,7 +15,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 	name = "Idle Notifier",
 	description = "Notifies when skilling stops, the player logs out, or vital stats are low.",
 	tags = {"idle", "notification", "logout", "hitpoints", "prayer"},
-	enabledByDefault = true,
+	enabledByDefault = false,
 	loadWhenOutdated = true
 )
 public class IdleNotifierPlugin extends Plugin

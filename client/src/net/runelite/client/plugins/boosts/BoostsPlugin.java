@@ -11,7 +11,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 	name = "Boosts Information",
 	description = "Shows boosted and drained skill levels.",
 	tags = {"boost", "stats", "levels", "potions"},
-	enabledByDefault = true,
+	enabledByDefault = false,
 	loadWhenOutdated = true
 )
 public class BoostsPlugin extends Plugin

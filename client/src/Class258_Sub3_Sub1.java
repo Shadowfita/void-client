@@ -11,12 +11,19 @@ final class Class258_Sub3_Sub1 extends Class258_Sub3 {
     static int anInt9942;
     private Class258_Sub3 interfaceSupersampleTexture;
     private int interfaceSupersampleFactor = 1;
+    private static final int MAX_RETAINED_SOURCE_BYTES = 4 * 1024 * 1024;
+    private static final int MAX_PROXY_BYTES = 32 * 1024 * 1024;
+
     private int[] interfaceIntPixels;
     private byte[] interfaceBytePixels;
-    private int interfaceByteFormat = -1;
+    // Deliberately has no field initializer: the superclass constructor may
+    // capture byte-backed source pixels before subclass initializers run.
+    private int interfaceByteFormat;
+    private boolean interfaceSourceComplete;
 
     final void recordInterfaceIntPixels(int x, int y, int width, int height, int[] pixels, int offset, int stride) {
         if (!validRegion(x, y, width, height) || pixels == null) {
+            clearInterfaceSource();
             return;
         }
         if (stride <= 0) {
@@ -24,36 +31,51 @@ final class Class258_Sub3_Sub1 extends Class258_Sub3 {
         }
         long last = (long) offset + (long) (height - 1) * stride + width;
         if (offset < 0 || stride < width || last > pixels.length) {
-            interfaceIntPixels = null;
+            clearInterfaceSource();
             return;
         }
-        int textureSize = safeTextureElementCount(1);
-        if (textureSize <= 0) {
-            interfaceIntPixels = null;
+
+        int texturePixels = retainedTexturePixelCount(4);
+        if (texturePixels <= 0) {
+            clearInterfaceSource();
             return;
         }
-        if (interfaceIntPixels == null || interfaceIntPixels.length != textureSize) {
-            interfaceIntPixels = new int[textureSize];
+
+        boolean sameBacking = interfaceIntPixels != null
+                && interfaceIntPixels.length == texturePixels
+                && interfaceBytePixels == null;
+        if (!sameBacking) {
+            try {
+                interfaceIntPixels = new int[texturePixels];
+            } catch (OutOfMemoryError error) {
+                clearInterfaceSource();
+                return;
+            }
+            interfaceSourceComplete = false;
         }
         interfaceBytePixels = null;
         interfaceByteFormat = -1;
+
         for (int row = 0; row < height; row++) {
             System.arraycopy(pixels, offset + row * stride,
                     interfaceIntPixels, (y + row) * this.anInt8547 + x, width);
+        }
+        if (isFullTextureUpdate(x, y, width, height)) {
+            interfaceSourceComplete = true;
         }
     }
 
     final void recordInterfaceBytePixels(int x, int y, int width, int height, byte[] pixels,
                                          int offset, int stridePixels, int format) {
         if (!validRegion(x, y, width, height) || pixels == null) {
+            clearInterfaceSource();
             return;
         }
         final int channels;
         try {
             channels = Class183.method1382(format, -6409);
         } catch (IllegalArgumentException ex) {
-            interfaceBytePixels = null;
-            interfaceByteFormat = -1;
+            clearInterfaceSource();
             return;
         }
         if (stridePixels <= 0) {
@@ -63,31 +85,43 @@ final class Class258_Sub3_Sub1 extends Class258_Sub3 {
         int rowBytes = width * channels;
         long last = (long) offset + (long) (height - 1) * strideBytes + rowBytes;
         if (offset < 0 || stridePixels < width || last > pixels.length) {
-            interfaceBytePixels = null;
-            interfaceByteFormat = -1;
+            clearInterfaceSource();
             return;
         }
-        int textureSize = safeTextureElementCount(channels);
-        if (textureSize <= 0) {
-            interfaceBytePixels = null;
-            interfaceByteFormat = -1;
+
+        int texturePixels = retainedTexturePixelCount(channels);
+        if (texturePixels <= 0) {
+            clearInterfaceSource();
             return;
         }
-        if (interfaceBytePixels == null
-                || interfaceBytePixels.length != textureSize
-                || interfaceByteFormat != format) {
-            interfaceBytePixels = new byte[textureSize];
+        int textureBytes = texturePixels * channels;
+        boolean sameBacking = interfaceBytePixels != null
+                && interfaceBytePixels.length == textureBytes
+                && interfaceByteFormat == format
+                && interfaceIntPixels == null;
+        if (!sameBacking) {
+            try {
+                interfaceBytePixels = new byte[textureBytes];
+            } catch (OutOfMemoryError error) {
+                clearInterfaceSource();
+                return;
+            }
+            interfaceSourceComplete = false;
         }
         interfaceIntPixels = null;
         interfaceByteFormat = format;
+
         for (int row = 0; row < height; row++) {
             System.arraycopy(pixels, offset + row * strideBytes,
                     interfaceBytePixels, ((y + row) * this.anInt8547 + x) * channels, rowBytes);
         }
+        if (isFullTextureUpdate(x, y, width, height)) {
+            interfaceSourceComplete = true;
+        }
     }
 
     final Class258_Sub3 createInterfaceSupersampleTexture(int factor) {
-        if (factor <= 1 || this.anInt4849 != 3553) {
+        if (factor <= 1 || this.anInt4849 != 3553 || !interfaceSourceComplete) {
             return null;
         }
         int width = this.anInt8547;
@@ -98,59 +132,81 @@ final class Class258_Sub3_Sub1 extends Class258_Sub3 {
         int targetWidth = width * factor;
         int targetHeight = height * factor;
 
-        if (interfaceIntPixels != null && interfaceIntPixels.length == width * height) {
-            long targetCount = (long) targetWidth * targetHeight;
-            if (targetCount <= 0L || targetCount > 16L * 1024L * 1024L) {
-                return null;
+        try {
+            if (interfaceIntPixels != null && interfaceIntPixels.length == width * height) {
+                long targetCount = (long) targetWidth * targetHeight;
+                long targetBytes = targetCount * 4L;
+                if (targetCount <= 0L || targetCount > Integer.MAX_VALUE || targetBytes > MAX_PROXY_BYTES) {
+                    return null;
+                }
+                int[] target = new int[(int) targetCount];
+                expandIntegerNearest(interfaceIntPixels, width, height, target, targetWidth, factor);
+                Class258_Sub3 result = new Class258_Sub3(this.aHa_Sub2_4851, 3553, this.anInt4858,
+                        targetWidth, targetHeight, false, target, 0, 0, false);
+                // Stage one is exact integer nearest-neighbour. Linear filtering
+                // performs only the unavoidable final fractional reduction and
+                // materially improves thin 634 font strokes at 1.3x-1.5x.
+                result.method1957(9728, true);
+                result.method1965(false, false, 10243);
+                return result;
             }
-            int[] target = new int[(int) targetCount];
-            expandIntegerNearest(interfaceIntPixels, width, height, target, targetWidth, factor);
-            Class258_Sub3 result = new Class258_Sub3(this.aHa_Sub2_4851, 3553, this.anInt4858,
-                    targetWidth, targetHeight, false, target, 0, 0, false);
-            result.method1957(9728, true);
-            result.method1965(false, false, 10243);
-            return result;
+
+            if (interfaceBytePixels != null && interfaceByteFormat != -1) {
+                final int channels;
+                try {
+                    channels = Class183.method1382(interfaceByteFormat, -6409);
+                } catch (IllegalArgumentException ex) {
+                    return null;
+                }
+                if (interfaceBytePixels.length != width * height * channels) {
+                    return null;
+                }
+                long targetBytes = (long) targetWidth * targetHeight * channels;
+                if (targetBytes <= 0L || targetBytes > MAX_PROXY_BYTES || targetBytes > Integer.MAX_VALUE) {
+                    return null;
+                }
+                byte[] target = new byte[(int) targetBytes];
+                expandIntegerNearest(interfaceBytePixels, width, height, channels, target, targetWidth, factor);
+                Class258_Sub3 result = new Class258_Sub3(this.aHa_Sub2_4851, 3553, this.anInt4858,
+                        targetWidth, targetHeight, false, target, interfaceByteFormat, false);
+                result.method1957(9728, true);
+                result.method1965(false, false, 10243);
+                return result;
+            }
+        } catch (OutOfMemoryError error) {
+            // Supersampling is an optional quality path. Falling back to the
+            // original texture must never take down login or the render loop.
+            return null;
         }
 
-        if (interfaceBytePixels != null && interfaceByteFormat != -1) {
-            final int channels;
-            try {
-                channels = Class183.method1382(interfaceByteFormat, -6409);
-            } catch (IllegalArgumentException ex) {
-                return null;
-            }
-            if (interfaceBytePixels.length != width * height * channels) {
-                return null;
-            }
-            long targetBytes = (long) targetWidth * targetHeight * channels;
-            if (targetBytes <= 0L || targetBytes > 64L * 1024L * 1024L) {
-                return null;
-            }
-            byte[] target = new byte[(int) targetBytes];
-            expandIntegerNearest(interfaceBytePixels, width, height, channels, target, targetWidth, factor);
-            Class258_Sub3 result = new Class258_Sub3(this.aHa_Sub2_4851, 3553, this.anInt4858,
-                    targetWidth, targetHeight, false, target, interfaceByteFormat, false);
-            // Alpha-only font atlases stay crisp under the final fractional
-            // reduction; colour sprites use linear minification.
-            result.method1957(9728, interfaceByteFormat != 6406);
-            result.method1965(false, false, 10243);
-            return result;
-        }
-
-        // Render-target and framebuffer-copy textures have no CPU source. The
-        // caller will bind the original texture, preserving the login UI rather
-        // than attempting unsupported JAGGL readback.
+        // Render-target, framebuffer-copy, oversized and partially populated
+        // textures have no safe complete CPU source. Bind the original texture.
         return null;
+    }
+
+    private void clearInterfaceSource() {
+        interfaceIntPixels = null;
+        interfaceBytePixels = null;
+        interfaceByteFormat = -1;
+        interfaceSourceComplete = false;
+        releaseInterfaceSupersampleTexture();
     }
 
     private boolean validRegion(int x, int y, int width, int height) {
         return x >= 0 && y >= 0 && width > 0 && height > 0
-                && x + width <= this.anInt8547 && y + height <= this.anInt8551;
+                && (long) x + width <= this.anInt8547
+                && (long) y + height <= this.anInt8551;
     }
 
-    private int safeTextureElementCount(int channels) {
-        long count = (long) this.anInt8547 * this.anInt8551 * channels;
-        return count > 0L && count <= Integer.MAX_VALUE ? (int) count : -1;
+    private boolean isFullTextureUpdate(int x, int y, int width, int height) {
+        return x == 0 && y == 0 && width == this.anInt8547 && height == this.anInt8551;
+    }
+
+    private int retainedTexturePixelCount(int bytesPerPixel) {
+        long pixels = (long) this.anInt8547 * this.anInt8551;
+        long bytes = pixels * bytesPerPixel;
+        return pixels > 0L && pixels <= Integer.MAX_VALUE && bytes <= MAX_RETAINED_SOURCE_BYTES
+                ? (int) pixels : -1;
     }
 
     private static void expandIntegerNearest(int[] source, int width, int height,

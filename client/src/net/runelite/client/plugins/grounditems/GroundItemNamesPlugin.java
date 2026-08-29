@@ -11,7 +11,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 	name = "Ground Items",
 	description = "Highlight ground items and show item value information.",
 	tags = {"ground", "item", "items", "names", "prices", "highlight", "overlay"},
-	enabledByDefault = true,
+	enabledByDefault = false,
 	loadWhenOutdated = true
 )
 public class GroundItemNamesPlugin extends Plugin

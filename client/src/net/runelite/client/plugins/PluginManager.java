@@ -89,6 +89,35 @@ public class PluginManager
 		"net.runelite.client.plugins.pathtracing."
 	};
 
+	private static final String RECOMMENDED_DEFAULTS_VERSION_KEY = "voidRecommendedDefaultsVersion";
+	private static final int RECOMMENDED_DEFAULTS_VERSION = 2;
+	private static final String[] RECOMMENDED_ENABLED_PLUGINS = {
+		"stretchedmodeplugin",
+		"animationsmoothingplugin",
+		"xptrackerplugin"
+	};
+	private static final String[] RECOMMENDED_DISABLED_PLUGINS = {
+		"antidragplugin",
+		"banktagsplugin",
+		"boostsplugin",
+		"chatimprovementsplugin",
+		"cluehelperplugin",
+		"entityhiderplugin",
+		"grounditemnamesplugin",
+		"idlenotifierplugin",
+		"inventorygridplugin",
+		"inventorytagsplugin",
+		"itemchargesplugin",
+		"loottrackerplugin",
+		"menuentryswapperplugin",
+		"npcindicatorsplugin",
+		"npcnamesplugin",
+		"objectindicatorsplugin",
+		"opponentinfoplugin",
+		"playerindicatorsplugin",
+		"tileindicatorsplugin"
+	};
+
 	private final boolean developerMode;
 	private final boolean staffMode;
 	private final boolean safeMode;
@@ -235,8 +264,55 @@ public class PluginManager
 		}
 	}
 
+
+	/**
+	 * v0.3.1 adopts a conservative first-run/upgrade profile. Previous test
+	 * builds persisted most newly added plugins as enabled, so changing only the
+	 * descriptor defaults would leave existing users with the intrusive profile.
+	 * Apply this migration once; users remain free to re-enable anything later.
+	 */
+	private void applyRecommendedDefaultsMigration()
+	{
+		String stored = configManager.getConfiguration(
+			RuneLiteConfig.GROUP_NAME, RECOMMENDED_DEFAULTS_VERSION_KEY);
+		int version = 0;
+		if (stored != null)
+		{
+			try
+			{
+				version = Integer.parseInt(stored);
+			}
+			catch (NumberFormatException ignored)
+			{
+				// Treat an invalid marker as an old profile and repair it.
+			}
+		}
+		if (version >= RECOMMENDED_DEFAULTS_VERSION)
+		{
+			return;
+		}
+
+		for (String pluginKey : RECOMMENDED_ENABLED_PLUGINS)
+		{
+			configManager.setConfiguration(RuneLiteConfig.GROUP_NAME, pluginKey, true);
+		}
+		for (String pluginKey : RECOMMENDED_DISABLED_PLUGINS)
+		{
+			configManager.setConfiguration(RuneLiteConfig.GROUP_NAME, pluginKey, false);
+		}
+
+		// Keep XP tracking available in its sidebar without placing a panel over
+		// the game for a brand-new player.
+		configManager.setConfiguration("xptracker", "showOverlay", false);
+		configManager.setConfiguration(
+			RuneLiteConfig.GROUP_NAME, RECOMMENDED_DEFAULTS_VERSION_KEY,
+			RECOMMENDED_DEFAULTS_VERSION);
+		log.info("Applied Void {} recommended QoL plugin defaults", RECOMMENDED_DEFAULTS_VERSION);
+	}
+
 	public void startPlugins()
 	{
+		applyRecommendedDefaultsMigration();
 		List<Plugin> scannedPlugins = new ArrayList<>(plugins);
 		int loaded = 0;
 		for (Plugin plugin : scannedPlugins)
