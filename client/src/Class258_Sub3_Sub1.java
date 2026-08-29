@@ -11,6 +11,188 @@ final class Class258_Sub3_Sub1 extends Class258_Sub3 {
     static int anInt9942;
     private Class258_Sub3 interfaceSupersampleTexture;
     private int interfaceSupersampleFactor = 1;
+    private int[] interfaceIntPixels;
+    private byte[] interfaceBytePixels;
+    private int interfaceByteFormat = -1;
+
+    final void recordInterfaceIntPixels(int x, int y, int width, int height, int[] pixels, int offset, int stride) {
+        if (!validRegion(x, y, width, height) || pixels == null) {
+            return;
+        }
+        if (stride <= 0) {
+            stride = width;
+        }
+        long last = (long) offset + (long) (height - 1) * stride + width;
+        if (offset < 0 || stride < width || last > pixels.length) {
+            interfaceIntPixels = null;
+            return;
+        }
+        int textureSize = safeTextureElementCount(1);
+        if (textureSize <= 0) {
+            interfaceIntPixels = null;
+            return;
+        }
+        if (interfaceIntPixels == null || interfaceIntPixels.length != textureSize) {
+            interfaceIntPixels = new int[textureSize];
+        }
+        interfaceBytePixels = null;
+        interfaceByteFormat = -1;
+        for (int row = 0; row < height; row++) {
+            System.arraycopy(pixels, offset + row * stride,
+                    interfaceIntPixels, (y + row) * this.anInt8547 + x, width);
+        }
+    }
+
+    final void recordInterfaceBytePixels(int x, int y, int width, int height, byte[] pixels,
+                                         int offset, int stridePixels, int format) {
+        if (!validRegion(x, y, width, height) || pixels == null) {
+            return;
+        }
+        final int channels;
+        try {
+            channels = Class183.method1382(format, -6409);
+        } catch (IllegalArgumentException ex) {
+            interfaceBytePixels = null;
+            interfaceByteFormat = -1;
+            return;
+        }
+        if (stridePixels <= 0) {
+            stridePixels = width;
+        }
+        int strideBytes = stridePixels * channels;
+        int rowBytes = width * channels;
+        long last = (long) offset + (long) (height - 1) * strideBytes + rowBytes;
+        if (offset < 0 || stridePixels < width || last > pixels.length) {
+            interfaceBytePixels = null;
+            interfaceByteFormat = -1;
+            return;
+        }
+        int textureSize = safeTextureElementCount(channels);
+        if (textureSize <= 0) {
+            interfaceBytePixels = null;
+            interfaceByteFormat = -1;
+            return;
+        }
+        if (interfaceBytePixels == null
+                || interfaceBytePixels.length != textureSize
+                || interfaceByteFormat != format) {
+            interfaceBytePixels = new byte[textureSize];
+        }
+        interfaceIntPixels = null;
+        interfaceByteFormat = format;
+        for (int row = 0; row < height; row++) {
+            System.arraycopy(pixels, offset + row * strideBytes,
+                    interfaceBytePixels, ((y + row) * this.anInt8547 + x) * channels, rowBytes);
+        }
+    }
+
+    final Class258_Sub3 createInterfaceSupersampleTexture(int factor) {
+        if (factor <= 1 || this.anInt4849 != 3553) {
+            return null;
+        }
+        int width = this.anInt8547;
+        int height = this.anInt8551;
+        if (width <= 0 || height <= 0 || width > 4096 / factor || height > 4096 / factor) {
+            return null;
+        }
+        int targetWidth = width * factor;
+        int targetHeight = height * factor;
+
+        if (interfaceIntPixels != null && interfaceIntPixels.length == width * height) {
+            long targetCount = (long) targetWidth * targetHeight;
+            if (targetCount <= 0L || targetCount > 16L * 1024L * 1024L) {
+                return null;
+            }
+            int[] target = new int[(int) targetCount];
+            expandIntegerNearest(interfaceIntPixels, width, height, target, targetWidth, factor);
+            Class258_Sub3 result = new Class258_Sub3(this.aHa_Sub2_4851, 3553, this.anInt4858,
+                    targetWidth, targetHeight, false, target, 0, 0, false);
+            result.method1957(9728, true);
+            result.method1965(false, false, 10243);
+            return result;
+        }
+
+        if (interfaceBytePixels != null && interfaceByteFormat != -1) {
+            final int channels;
+            try {
+                channels = Class183.method1382(interfaceByteFormat, -6409);
+            } catch (IllegalArgumentException ex) {
+                return null;
+            }
+            if (interfaceBytePixels.length != width * height * channels) {
+                return null;
+            }
+            long targetBytes = (long) targetWidth * targetHeight * channels;
+            if (targetBytes <= 0L || targetBytes > 64L * 1024L * 1024L) {
+                return null;
+            }
+            byte[] target = new byte[(int) targetBytes];
+            expandIntegerNearest(interfaceBytePixels, width, height, channels, target, targetWidth, factor);
+            Class258_Sub3 result = new Class258_Sub3(this.aHa_Sub2_4851, 3553, this.anInt4858,
+                    targetWidth, targetHeight, false, target, interfaceByteFormat, false);
+            // Alpha-only font atlases stay crisp under the final fractional
+            // reduction; colour sprites use linear minification.
+            result.method1957(9728, interfaceByteFormat != 6406);
+            result.method1965(false, false, 10243);
+            return result;
+        }
+
+        // Render-target and framebuffer-copy textures have no CPU source. The
+        // caller will bind the original texture, preserving the login UI rather
+        // than attempting unsupported JAGGL readback.
+        return null;
+    }
+
+    private boolean validRegion(int x, int y, int width, int height) {
+        return x >= 0 && y >= 0 && width > 0 && height > 0
+                && x + width <= this.anInt8547 && y + height <= this.anInt8551;
+    }
+
+    private int safeTextureElementCount(int channels) {
+        long count = (long) this.anInt8547 * this.anInt8551 * channels;
+        return count > 0L && count <= Integer.MAX_VALUE ? (int) count : -1;
+    }
+
+    private static void expandIntegerNearest(int[] source, int width, int height,
+                                             int[] target, int targetWidth, int factor) {
+        int[] expandedRow = new int[targetWidth];
+        for (int y = 0; y < height; y++) {
+            int sourceRow = y * width;
+            int out = 0;
+            for (int x = 0; x < width; x++) {
+                int pixel = source[sourceRow + x];
+                for (int copy = 0; copy < factor; copy++) {
+                    expandedRow[out++] = pixel;
+                }
+            }
+            int targetRow = y * factor * targetWidth;
+            for (int copyY = 0; copyY < factor; copyY++) {
+                System.arraycopy(expandedRow, 0, target, targetRow + copyY * targetWidth, targetWidth);
+            }
+        }
+    }
+
+    private static void expandIntegerNearest(byte[] source, int width, int height, int channels,
+                                             byte[] target, int targetWidth, int factor) {
+        int sourceStride = width * channels;
+        int targetStride = targetWidth * channels;
+        byte[] expandedRow = new byte[targetStride];
+        for (int y = 0; y < height; y++) {
+            int sourceRow = y * sourceStride;
+            int out = 0;
+            for (int x = 0; x < width; x++) {
+                int pixel = sourceRow + x * channels;
+                for (int copy = 0; copy < factor; copy++) {
+                    System.arraycopy(source, pixel, expandedRow, out, channels);
+                    out += channels;
+                }
+            }
+            int targetRow = y * factor * targetStride;
+            for (int copyY = 0; copyY < factor; copyY++) {
+                System.arraycopy(expandedRow, 0, target, targetRow + copyY * targetStride, targetStride);
+            }
+        }
+    }
 
     final Class258 getInterfaceSupersampleTexture(int factor) {
         if (factor <= 1 || this.anInt4849 != 3553) {

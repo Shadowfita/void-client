@@ -1769,68 +1769,21 @@ final class ha_Sub2 extends ha {
     }
 
     final Class258_Sub3 createInterfaceSupersampleTexture(Class258_Sub3 source, int factor) {
-        if (factor <= 1 || source == null || source.anInt4849 != 3553) {
+        /*
+         * The Java declaration for glGetTexImageub exists in graphics.jar, but
+         * the legacy 634 JAGGL native library shipped by this client does not
+         * export that JNI symbol. Calling it aborts login and resize rendering
+         * with UnsatisfiedLinkError before the interface can be drawn.
+         *
+         * UI textures created from CPU pixels retain a small source copy in
+         * Class258_Sub3_Sub1. Build the integer-nearest proxy from that copy.
+         * Render-target/copy textures have no source copy and safely fall back
+         * to the original texture instead of attempting unsupported readback.
+         */
+        if (!(source instanceof Class258_Sub3_Sub1)) {
             return null;
         }
-        int width = source.anInt8547;
-        int height = source.anInt8551;
-        if (width <= 0 || height <= 0 || width > 4096 / factor || height > 4096 / factor) {
-            return null;
-        }
-
-        int format;
-        int channels;
-        try {
-            format = Class348_Sub9.method2779(true, source.anInt4858);
-            channels = Class183.method1382(format, -6409);
-        } catch (IllegalArgumentException ex) {
-            return null;
-        }
-
-        long sourceBytesLong = (long) width * height * channels;
-        long targetBytesLong = sourceBytesLong * factor * factor;
-        // UI atlases are small. Reject unexpectedly large textures so a scene
-        // texture cannot accidentally consume a large proxy allocation.
-        if (sourceBytesLong <= 0L || targetBytesLong > 64L * 1024L * 1024L) {
-            return null;
-        }
-
-        byte[] sourcePixels = new byte[(int) sourceBytesLong];
-        method3771((byte) -100, source);
-        OpenGL.glPixelStorei(3317, 1);
-        OpenGL.glGetTexImageub(source.anInt4849, 0, format, 5121, sourcePixels, 0);
-
-        int targetWidth = width * factor;
-        int targetHeight = height * factor;
-        byte[] targetPixels = new byte[(int) targetBytesLong];
-        int sourceStride = width * channels;
-        int targetStride = targetWidth * channels;
-        byte[] expandedRow = new byte[targetStride];
-        for (int y = 0; y < height; y++) {
-            int sourceRow = y * sourceStride;
-            int out = 0;
-            for (int x = 0; x < width; x++) {
-                int pixel = sourceRow + x * channels;
-                for (int copy = 0; copy < factor; copy++) {
-                    System.arraycopy(sourcePixels, pixel, expandedRow, out, channels);
-                    out += channels;
-                }
-            }
-            int targetRow = y * factor * targetStride;
-            for (int copyY = 0; copyY < factor; copyY++) {
-                System.arraycopy(expandedRow, 0, targetPixels, targetRow + copyY * targetStride, targetStride);
-            }
-        }
-
-        Class258_Sub3 result = new Class258_Sub3(this, 3553, source.anInt4858, targetWidth, targetHeight);
-        method3771((byte) -100, result);
-        OpenGL.glTexSubImage2Dub(3553, 0, 0, 0, targetWidth, targetHeight, format, 5121, targetPixels, 0);
-        // Stage one above is exact integer nearest-neighbour. Linear filtering
-        // is only used for the unavoidable final fractional minification.
-        result.method1957(9728, true);
-        result.method1965(false, false, 10243);
-        OpenGL.glPixelStorei(3317, 4);
-        return result;
+        return ((Class258_Sub3_Sub1) source).createInterfaceSupersampleTexture(factor);
     }
 
     final void method3771(byte i, Class258 class258) {

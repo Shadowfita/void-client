@@ -72,12 +72,17 @@ class Class258_Sub3 extends Class258 {
                     is_16_[i_18_++] = is[i_19_++];
             }
             is = is_16_;
+            i_11_ = 0;
+            i_15_ = i_13_;
         }
         this.aHa_Sub2_4851.method3771((byte) -80, this);
         if (i_13_ != i_15_) OpenGL.glPixelStorei(3314, i_15_);
         OpenGL.glTexSubImage2Di(this.anInt4849, 0, i_14_, i_10_, i_13_, i, 32993, (this.aHa_Sub2_4851.anInt7812), is, i_11_);
         if (i_13_ != i_15_) OpenGL.glPixelStorei(3314, 0);
         this.invalidateInterfaceSupersampleTexture();
+        if (this instanceof Class258_Sub3_Sub1) {
+            ((Class258_Sub3_Sub1) this).recordInterfaceIntPixels(i_14_, i_10_, i_13_, i, is, i_11_, i_15_);
+        }
         if (i_12_ > -65) this.anInt8547 = 101;
     }
 
@@ -108,6 +113,10 @@ class Class258_Sub3 extends Class258 {
                 this.method1955(true, (byte) -123);
             }
             this.method1957(9728, true);
+            if (this instanceof Class258_Sub3_Sub1) {
+                int rowLength = i_24_ == 0 ? i_22_ : i_24_;
+                ((Class258_Sub3_Sub1) this).recordInterfaceIntPixels(0, 0, i_22_, i_23_, is, i_25_, rowLength);
+            }
         } catch (RuntimeException runtimeexception) {
             throw Class348_Sub17.method2929(runtimeexception, ("tp.<init>(" + (var_ha_Sub2 != null ? "{...}" : "null") + ',' + i + ',' + i_21_ + ',' + i_22_ + ',' + i_23_ + ',' + bool + ',' + (is != null ? "{...}" : "null") + ',' + i_24_ + ',' + i_25_ + ',' + bool_26_ + ')'));
         }
@@ -140,6 +149,9 @@ class Class258_Sub3 extends Class258 {
             }
             OpenGL.glPixelStorei(3317, 4);
             this.method1957(9728, true);
+            if (this instanceof Class258_Sub3_Sub1) {
+                ((Class258_Sub3_Sub1) this).recordInterfaceBytePixels(0, 0, i_33_, i_34_, is, 0, i_33_, i_35_);
+            }
         } catch (RuntimeException runtimeexception) {
             throw Class348_Sub17.method2929(runtimeexception, ("tp.<init>(" + (var_ha_Sub2 != null ? "{...}" : "null") + ',' + i + ',' + i_32_ + ',' + i_33_ + ',' + i_34_ + ',' + bool + ',' + (is != null ? "{...}" : "null") + ',' + i_35_ + ',' + bool_36_ + ')'));
         }
@@ -221,6 +233,8 @@ class Class258_Sub3 extends Class258 {
                     is_71_[i_73_++] = is[i_74_++];
             }
             is = is_71_;
+            i_67_ = 0;
+            i_63_ = i_62_;
         }
         this.aHa_Sub2_4851.method3771((byte) -102, this);
         OpenGL.glPixelStorei(3317, 1);
@@ -229,6 +243,9 @@ class Class258_Sub3 extends Class258 {
         if (i_63_ != i_62_) OpenGL.glPixelStorei(3314, 0);
         OpenGL.glPixelStorei(3317, 4);
         this.invalidateInterfaceSupersampleTexture();
+        if (this instanceof Class258_Sub3_Sub1) {
+            ((Class258_Sub3_Sub1) this).recordInterfaceBytePixels(i, i_61_, i_62_, i_64_, is, i_67_, i_63_, i_65_);
+        }
         int i_76_ = -17 % ((46 - i_66_) / 59);
     }
 
