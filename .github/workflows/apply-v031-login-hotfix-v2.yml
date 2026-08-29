@@ -1,0 +1,134 @@
+name: Apply and verify hardened v0.3.1 login UI hotfix
+
+on:
+  push:
+    branches:
+      - fix/v0.3.1-scaling-projection-defaults
+    paths:
+      - '.github/workflows/apply-v031-login-hotfix-v2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-build-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out v0.3.1 correction branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply hardened source correction
+        shell: bash
+        run: |
+          gzip -dc debug/v031-login-hotfix-v2.patch.gz > /tmp/v031-login-hotfix-v2.patch
+          git apply --check --whitespace=nowarn /tmp/v031-login-hotfix-v2.patch
+          git apply --whitespace=nowarn /tmp/v031-login-hotfix-v2.patch
+
+          # The shipped JAGGL library does not export this readback symbol.
+          if grep -R -n -F 'OpenGL.glGetTexImageub' client/src; then
+            echo 'Unsupported JAGGL texture readback remains in source' >&2
+            exit 1
+          fi
+
+          # Constructor-safe CPU source retention and safe fallback checks.
+          grep -F 'private int interfaceByteFormat;' client/src/Class258_Sub3_Sub1.java
+          ! grep -F 'private int interfaceByteFormat =' client/src/Class258_Sub3_Sub1.java
+          grep -F 'interfaceSourceComplete' client/src/Class258_Sub3_Sub1.java
+          grep -F 'MAX_RETAINED_SOURCE_BYTES' client/src/Class258_Sub3_Sub1.java
+          grep -F 'MAX_PROXY_BYTES' client/src/Class258_Sub3_Sub1.java
+          grep -F 'result.method1957(9728, true);' client/src/Class258_Sub3_Sub1.java
+
+          # Keep login/loading interfaces native until the in-game root is ready.
+          grep -F 'r.anInt9721 != -1' client/src/Applet_Sub1.java
+          grep -F 'Class132.aPlayer_1907 != null' client/src/Applet_Sub1.java
+
+          # Existing profiles receive the new conservative QoL defaults once.
+          grep -F 'RECOMMENDED_DEFAULTS_VERSION = 2' client/src/net/runelite/client/plugins/PluginManager.java
+          grep -F 'applyRecommendedDefaultsMigration();' client/src/net/runelite/client/plugins/PluginManager.java
+          grep -F 'enabledByDefault = false' client/src/net/runelite/client/plugins/grounditems/GroundItemNamesPlugin.java
+          grep -F 'enabledByDefault = false' client/src/net/runelite/client/plugins/boosts/BoostsPlugin.java
+          grep -F 'enabledByDefault = false' client/src/net/runelite/client/plugins/idlenotifier/IdleNotifierPlugin.java
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compile, test and build ProGuard JAR
+        run: ./gradlew :client:compileJava :client:test :client:proguardJar --no-daemon --stacktrace
+
+      - name: Verify executable output
+        shell: bash
+        run: |
+          javap -classpath client/build/classes/java/main -c -p ha_Sub2 > /tmp/ha_Sub2.txt
+          if grep -F 'glGetTexImageub' /tmp/ha_Sub2.txt; then
+            echo 'Unsupported JAGGL readback remains in executable bytecode' >&2
+            exit 1
+          fi
+
+          jar_path='client/build/libs/void-client-0.3.1-release.jar'
+          test -f "$jar_path"
+          unzip -p "$jar_path" META-INF/MANIFEST.MF | tr -d '\r' | grep -Fx 'Main-Class: Loader'
+          unzip -p "$jar_path" net/runelite/client/runelite.properties | tr -d '\r' | grep -Fx 'void.version= 0.3.1'
+          javap -classpath "$jar_path" -p Class373_Sub1 > /tmp/Class373_Sub1.txt
+          grep -F 'Class373_Sub1(java.awt.Component, boolean);' /tmp/Class373_Sub1.txt
+          grep -F 'java.awt.event.MouseWheelListener' /tmp/Class373_Sub1.txt
+
+          rm -rf /tmp/v031-jar
+          mkdir -p /tmp/v031-jar
+          unzip -q "$jar_path" -d /tmp/v031-jar
+          if grep -R -a -l -F 'glGetTexImageub' /tmp/v031-jar; then
+            echo 'Unsupported JAGGL readback symbol remains in packaged classes' >&2
+            exit 1
+          fi
+          javap -classpath "$jar_path" -p net.runelite.client.plugins.PluginManager \
+            | grep -F 'applyRecommendedDefaultsMigration'
+
+      - name: Commit verified source correction
+        id: source
+        shell: bash
+        run: |
+          git config user.name 'Ryan Palmer'
+          git config user.email 'www.ryan.palmer@hotmail.com'
+
+          git add \
+            client/src/Applet_Sub1.java \
+            client/src/Class258_Sub3_Sub1.java \
+            client/src/net/runelite/client/plugins/PluginManager.java \
+            client/src/net/runelite/client/plugins/boosts/BoostsPlugin.java \
+            client/src/net/runelite/client/plugins/grounditems/GroundItemNamesPlugin.java \
+            client/src/net/runelite/client/plugins/idlenotifier/IdleNotifierPlugin.java
+          git rm \
+            debug/v031-login-hotfix-v2.patch.gz \
+            .github/workflows/apply-v031-login-hotfix-v2.yml
+          git commit -m 'Harden fractional supersampling and login defaults'
+          git push origin HEAD:fix/v0.3.1-scaling-projection-defaults
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Stage downloadable test build
+        shell: bash
+        run: |
+          mkdir -p release
+          cp client/build/libs/void-client-0.3.1-release.jar \
+            release/void-client-0.3.1-login-ui-hotfix-v2.jar
+          (cd release && sha256sum void-client-0.3.1-login-ui-hotfix-v2.jar \
+            > void-client-0.3.1-login-ui-hotfix-v2.jar.sha256)
+          cat > release/void-client-0.3.1-login-ui-hotfix-v2.build-info <<EOF
+          branch=fix/v0.3.1-scaling-projection-defaults
+          source_sha=${{ steps.source.outputs.sha }}
+          workflow_run=${{ github.run_id }}
+          fix=constructor-safe CPU-backed integer-nearest proxies; login gating; conservative QoL migration
+          EOF
+
+      - name: Upload verified hotfix artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: void-client-v0.3.1-login-ui-hotfix-v2
+          path: release/
+          retention-days: 7
