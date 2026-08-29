@@ -1,13 +1,100 @@
 name: Apply v0.3.1 login UI supersampling hotfix
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - fix/v0.3.1-scaling-projection-defaults
+    paths:
+      - '.github/workflows/apply-v031-login-ui-hotfix.yml'
+      - 'hotfixes/v031-login-ui-supersampling.patch.b64.*'
 
 permissions:
   contents: write
 
 jobs:
-  placeholder:
+  apply-build-verify:
     runs-on: ubuntu-latest
     steps:
-      - run: echo 'placeholder'
+      - name: Check out current v0.3.1 branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct and apply login UI hotfix
+        shell: bash
+        run: |
+          cat hotfixes/v031-login-ui-supersampling.patch.b64.* \
+            | tr -d '\r\n' \
+            | base64 -d > /tmp/v031-login-ui-hotfix.patch
+          git apply --check --whitespace=nowarn /tmp/v031-login-ui-hotfix.patch
+          git apply --whitespace=nowarn /tmp/v031-login-ui-hotfix.patch
+
+          ! grep -F 'OpenGL.glGetTexImageub' client/src/ha_Sub2.java
+          grep -F 'recordInterfaceIntPixels' client/src/Class258_Sub3_Sub1.java
+          grep -F 'recordInterfaceBytePixels' client/src/Class258_Sub3_Sub1.java
+          grep -F 'createInterfaceSupersampleTexture(int factor)' client/src/Class258_Sub3_Sub1.java
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compile, test and build ProGuard JAR
+        run: ./gradlew :client:compileJava :client:test :client:proguardJar --no-daemon --stacktrace
+
+      - name: Verify bytecode and release JAR
+        shell: bash
+        run: |
+          javap -classpath client/build/classes/java/main -c -p ha_Sub2 > /tmp/ha_Sub2.txt
+          if grep -F 'glGetTexImageub' /tmp/ha_Sub2.txt; then
+            echo 'Unsupported JAGGL readback call remains in executable bytecode' >&2
+            exit 1
+          fi
+
+          jar_path='client/build/libs/void-client-0.3.1-release.jar'
+          test -f "$jar_path"
+          unzip -p "$jar_path" META-INF/MANIFEST.MF | tr -d '\r' | grep -Fx 'Main-Class: Loader'
+          unzip -p "$jar_path" net/runelite/client/runelite.properties | tr -d '\r' | grep -Fx 'void.version= 0.3.1'
+          javap -classpath "$jar_path" -p Class373_Sub1 > /tmp/Class373_Sub1.txt
+          grep -F 'Class373_Sub1(java.awt.Component, boolean);' /tmp/Class373_Sub1.txt
+          grep -F 'java.awt.event.MouseWheelListener' /tmp/Class373_Sub1.txt
+
+      - name: Commit verified source correction
+        id: source
+        shell: bash
+        run: |
+          git config user.name 'Ryan Palmer'
+          git config user.email 'www.ryan.palmer@hotmail.com'
+          git add \
+            client/src/ha_Sub2.java \
+            client/src/Class258_Sub3.java \
+            client/src/Class258_Sub3_Sub1.java
+          git commit -m 'Fix login UI crash in fractional supersampling'
+          git push origin HEAD:fix/v0.3.1-scaling-projection-defaults
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Stage downloadable hotfix
+        shell: bash
+        run: |
+          mkdir -p release
+          cp client/build/libs/void-client-0.3.1-release.jar \
+            release/void-client-0.3.1-login-ui-hotfix.jar
+          (cd release && sha256sum void-client-0.3.1-login-ui-hotfix.jar \
+            > void-client-0.3.1-login-ui-hotfix.jar.sha256)
+          cat > release/void-client-0.3.1-login-ui-hotfix.build-info <<EOF
+          branch=fix/v0.3.1-scaling-projection-defaults
+          source_sha=${{ steps.source.outputs.sha }}
+          workflow_run=${{ github.run_id }}
+          fix=CPU-retained integer-nearest UI proxies; no glGetTexImageub JNI call
+          EOF
+
+      - name: Upload verified hotfix artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: void-client-v0.3.1-login-ui-hotfix
+          path: release/
+          retention-days: 7
