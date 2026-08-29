@@ -24,7 +24,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 	name = "Object Indicators",
 	description = "Highlights selected scene objects by name or ID.",
 	tags = {"object", "marker", "highlight", "bank", "indicator"},
-	enabledByDefault = true,
+	enabledByDefault = false,
 	loadWhenOutdated = true
 )
 public class ObjectIndicatorsPlugin extends Plugin

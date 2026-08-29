@@ -11,7 +11,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 	name = "Inventory Tags",
 	description = "Color-codes inventory items using configurable name patterns.",
 	tags = {"inventory", "tag", "gear", "food", "items"},
-	enabledByDefault = true,
+	enabledByDefault = false,
 	loadWhenOutdated = true
 )
 public class InventoryTagsPlugin extends Plugin

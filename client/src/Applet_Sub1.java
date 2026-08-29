@@ -85,6 +85,7 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
     private boolean stretchedKeepAspectRatio = true;
     private int scalingFactor = 100;
     private int interfaceScalingFactor = 100;
+    private boolean interfaceSupersamplingEnabled = true;
     private boolean animationSmoothingEnabled;
 
     private static boolean interfaceRenderScaleActive;
@@ -659,6 +660,23 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
         return interfaceRenderScaleActive;
     }
 
+    /**
+     * For a fractional interface scale, first reproduce each source texel at
+     * the next whole-number nearest-neighbour scale. The renderer then
+     * minifies that exact proxy to the requested decimal size.
+     */
+    static int getInterfaceTextureSupersampleFactor() {
+        Applet_Sub1 applet = activeApplet();
+        if (!interfaceRenderScaleActive || applet == null || !applet.interfaceSupersamplingEnabled) {
+            return 1;
+        }
+        int factor = applet.interfaceScalingFactor;
+        if (factor <= 100 || factor % 100 == 0) {
+            return 1;
+        }
+        return Math.max(2, Math.min(3, (factor + 99) / 100));
+    }
+
     static boolean beginInterfaceInputScale() {
         Applet_Sub1 applet = activeApplet();
         if (applet == null || !applet.canUseNativeInterfaceScaling() || interfaceInputScaleActive) {
@@ -1124,6 +1142,16 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
     }
 
     @Override
+    public void setInterfaceSupersamplingEnabled(boolean enabled) {
+        interfaceSupersamplingEnabled = enabled;
+    }
+
+    @Override
+    public boolean isInterfaceSupersamplingEnabled() {
+        return interfaceSupersamplingEnabled;
+    }
+
+    @Override
     public boolean isInterfaceScalingSupported() {
         return Class348_Sub8.aHa6654 != null && Class348_Sub8.aHa6654.supportsNativeInterfaceScaling();
     }
@@ -1314,9 +1342,44 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
                 continue;
             }
 
-            npcs.add(new NpcInfo((int) entry.key, definition.id, definition.name, definition.combatLevel, npc.x >> 2, npc.y >> 2, npc.plane, Math.max(64, definition.height >> 2)));
+            npcs.add(new NpcInfo((int) entry.key, definition.id, definition.name, definition.combatLevel, npc.x >> 2, npc.y >> 2, npc.plane, Math.max(0, npc.method2426(200))));
         }
         return npcs;
+    }
+
+    @Override
+    public List<PlayerInfo> getPlayers() {
+        if (Class294.aPlayerArray5058 == null || Class286_Sub7.anIntArray6290 == null) {
+            return Collections.emptyList();
+        }
+
+        List<PlayerInfo> players = new ArrayList<>();
+        int count = Math.min(Class328_Sub1.anInt6513, Class286_Sub7.anIntArray6290.length);
+        boolean localIncluded = false;
+        for (int i = 0; i < count; i++) {
+            int index = Class286_Sub7.anIntArray6290[i];
+            if (index < 0 || index >= Class294.aPlayerArray5058.length) {
+                continue;
+            }
+            Player player = Class294.aPlayerArray5058[index];
+            if (player == null) {
+                continue;
+            }
+            String name = player.method2450(false, -100);
+            if (name == null || name.trim().isEmpty()) {
+                continue;
+            }
+            boolean local = player == Class132.aPlayer_1907 || index == Class348_Sub42_Sub11.anInt9591;
+            localIncluded |= local;
+            players.add(new PlayerInfo(index, name, player.anInt10516, player.x >> 2, player.y >> 2, player.plane, Math.max(0, player.method2426(200)), local));
+        }
+
+        Player local = Class132.aPlayer_1907;
+        if (!localIncluded && local != null) {
+            String name = local.method2450(false, -100);
+            players.add(new PlayerInfo(Class348_Sub42_Sub11.anInt9591, name == null ? "Player" : name, local.anInt10516, local.x >> 2, local.y >> 2, local.plane, Math.max(0, local.method2426(200)), true));
+        }
+        return players;
     }
 
     @Override
@@ -1442,31 +1505,38 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
 
     @Override
     public byte[][][] getTileSettings() {
-        return new byte[0][][];
+        return Class348_Sub33.aByteArrayArrayArray6962 == null
+                ? new byte[0][][]
+                : Class348_Sub33.aByteArrayArrayArray6962;
     }
 
     @Override
     public int[][][] getTileHeights() {
+        // The 634 client stores terrain behind renderer-specific height
+        // providers rather than a stable int[][][] array. RuneLite projection
+        // uses getLocalTileHeight(), which delegates to that native provider.
         return new int[0][][];
     }
 
     @Override
     public int getPlane() {
-        return 0;
+        return Class132.aPlayer_1907 == null ? Class355.anInt4372 : Class132.aPlayer_1907.plane;
     }
 
     @Override
     public int getBaseX() {
-        return 0;
+        return za_Sub2.regionTileX;
     }
 
     @Override
     public int getBaseY() {
-        return 0;
+        return Class90.regionTileY;
     }
 
     @Override
     public boolean isInInstancedRegion() {
+        // No stable template-chunk adapter exists in this deob yet. Returning
+        // false is safer than exposing fabricated instance coordinates.
         return false;
     }
 
@@ -1478,6 +1548,43 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
     @Override
     public int[][] getCollisionMaps(int plane) {
         return new int[0][];
+    }
+
+    @Override
+    public net.runelite.api.Point projectLocalPoint(int localX, int localY, int absoluteHeight) {
+        if (Class348_Sub8.aHa6654 == null || localX < 0 || localY < 0) {
+            return null;
+        }
+
+        // RuneLite local coordinates use 128 units per tile; this 634 deob
+        // uses 512. Project through the exact active renderer/camera matrix.
+        int nativeX = localX << 2;
+        int nativeY = localY << 2;
+        int[] projected = new int[3];
+        try {
+            if (Class305.aBoolean3870) {
+                Class348_Sub8.aHa6654.HA(nativeX, absoluteHeight, nativeY, Class132.anInt1906, projected);
+            } else {
+                Class348_Sub8.aHa6654.da(nativeX, absoluteHeight, nativeY, projected);
+            }
+        } catch (RuntimeException ex) {
+            return null;
+        }
+
+        if (projected[0] < 0 || projected[1] < 0 || projected[2] < 0) {
+            return null;
+        }
+        return new net.runelite.api.Point(
+                Class295.anInt3764 + projected[0],
+                Class234.anInt3047 + projected[1]);
+    }
+
+    @Override
+    public int getLocalTileHeight(int localX, int localY, int plane) {
+        if (localX < 0 || localY < 0 || plane < 0) {
+            return 0;
+        }
+        return Class275.method2064(localX << 2, plane, 11219, localY << 2);
     }
 
     @Override

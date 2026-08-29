@@ -12,7 +12,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 	name = "Inventory Grid",
 	description = "Adds a grid and drop preview to the inventory when dragging.",
 	tags = {"inventory", "grid", "drag", "items"},
-	enabledByDefault = true,
+	enabledByDefault = false,
 	loadWhenOutdated = true
 )
 public class InventoryGridPlugin extends Plugin

@@ -15,7 +15,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 	name = "Interface Scaling - Beta",
 	description = "Scales the RuneScape HUD independently from the native-resolution 3D scene.",
 	tags = {"resize", "ui", "interface", "hud", "stretch", "scaling", "fixed"},
-	enabledByDefault = false,
+	enabledByDefault = true,
 	loadInSafeMode = false,
 	loadWhenOutdated = true
 )
@@ -51,6 +51,7 @@ public class StretchedModePlugin extends Plugin
 	{
 		clientThread.invoke(() ->
 		{
+			client.setInterfaceSupersamplingEnabled(false);
 			client.setInterfaceScalingFactor(100);
 			client.setScalingFactor(100);
 			client.setStretchedEnabled(false);
@@ -75,6 +76,7 @@ public class StretchedModePlugin extends Plugin
 		{
 			clientThread.invoke(() ->
 			{
+				client.setInterfaceSupersamplingEnabled(false);
 				client.setInterfaceScalingFactor(100);
 				client.setScalingFactor(100);
 				client.setStretchedEnabled(false);
@@ -86,6 +88,7 @@ public class StretchedModePlugin extends Plugin
 		final int factor = (int) Math.round(config.scaling() * 100.0);
 		clientThread.invoke(() ->
 		{
+			client.setInterfaceSupersamplingEnabled(config.fractionalSupersampling());
 			if (config.legacyFullCanvasStretch())
 			{
 				client.setInterfaceScalingFactor(100);

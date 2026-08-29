@@ -11,7 +11,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 	name = "Item Charges",
 	description = "Displays potion doses and charge counts encoded in inventory item names.",
 	tags = {"charges", "doses", "inventory", "teleport"},
-	enabledByDefault = true,
+	enabledByDefault = false,
 	loadWhenOutdated = true
 )
 public class ItemChargesPlugin extends Plugin

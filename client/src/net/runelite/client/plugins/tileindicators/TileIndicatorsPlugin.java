@@ -11,7 +11,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 	name = "Tile Indicators",
 	description = "Highlights useful scene tiles.",
 	tags = {"tile", "true", "indicator", "overlay"},
-	enabledByDefault = true,
+	enabledByDefault = false,
 	loadWhenOutdated = true
 )
 public class TileIndicatorsPlugin extends Plugin

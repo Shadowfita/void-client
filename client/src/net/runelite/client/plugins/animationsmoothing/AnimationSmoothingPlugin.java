@@ -9,7 +9,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 	name = "Animation Smoothing",
 	description = "Smooths model animations between game ticks.",
 	tags = {"animation", "smoothing", "interpolation", "model"},
-	enabledByDefault = false,
+	enabledByDefault = true,
 	loadWhenOutdated = true
 )
 public class AnimationSmoothingPlugin extends Plugin

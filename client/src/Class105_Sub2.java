@@ -71,7 +71,7 @@ final class Class105_Sub2 extends Class105 {
         float f_23_ = -f_0_ + f_4_ + f_2_;
         aClass258_Sub3_Sub1_8434.method1957(9728, (i_7_ & 0x1) != 0);
         aHa_Sub2_8430.method3792(59);
-        aHa_Sub2_8430.method3771((byte) -93, aClass258_Sub3_Sub1_8434);
+        aHa_Sub2_8430.bindInterfaceTexture((byte) -93, aClass258_Sub3_Sub1_8434);
         aHa_Sub2_8430.method3753(i_6_, 1);
         aHa_Sub2_8430.method3761(0, i);
         OpenGL.glColor4ub((byte) (i_5_ >> 16), (byte) (i_5_ >> 8), (byte) i_5_, (byte) (i_5_ >> 24));
@@ -143,10 +143,10 @@ final class Class105_Sub2 extends Class105 {
         Class258_Sub3_Sub1 class258_sub3_sub1 = var_aa_Sub1.aClass258_Sub3_Sub1_5193;
         aClass258_Sub3_Sub1_8434.method1957(9728, false);
         aHa_Sub2_8430.method3792(75);
-        aHa_Sub2_8430.method3771((byte) -99, aClass258_Sub3_Sub1_8434);
+        aHa_Sub2_8430.bindInterfaceTexture((byte) -99, aClass258_Sub3_Sub1_8434);
         aHa_Sub2_8430.method3761(0, 1);
         aHa_Sub2_8430.method3738(-15039, 1);
-        aHa_Sub2_8430.method3771((byte) -123, class258_sub3_sub1);
+        aHa_Sub2_8430.bindInterfaceTexture((byte) -123, class258_sub3_sub1);
         aHa_Sub2_8430.method3729(7681, (byte) -101, 8448);
         aHa_Sub2_8430.method3762(34168, 768, (byte) -87, 0);
         aHa_Sub2_8430.method3753(1, 1);
@@ -232,10 +232,10 @@ final class Class105_Sub2 extends Class105 {
         aClass258_Sub3_Sub1_8434.method1957(9728, (0x1 & i) != 0);
         float f_66_ = f_48_ - f_44_ + f_46_;
         aHa_Sub2_8430.method3792(106);
-        aHa_Sub2_8430.method3771((byte) -123, aClass258_Sub3_Sub1_8434);
+        aHa_Sub2_8430.bindInterfaceTexture((byte) -123, aClass258_Sub3_Sub1_8434);
         aHa_Sub2_8430.method3761(0, 1);
         aHa_Sub2_8430.method3738(-15039, 1);
-        aHa_Sub2_8430.method3771((byte) -98, class258_sub3_sub1);
+        aHa_Sub2_8430.bindInterfaceTexture((byte) -98, class258_sub3_sub1);
         aHa_Sub2_8430.method3729(7681, (byte) -17, 8448);
         aHa_Sub2_8430.method3762(34168, 768, (byte) -87, 0);
         aHa_Sub2_8430.method3753(1, 1);
@@ -276,7 +276,7 @@ final class Class105_Sub2 extends Class105 {
         i += anInt8447;
         i_69_ += anInt8446;
         if (aClass258_Sub3_Sub1_8431 == null) {
-            aHa_Sub2_8430.method3771((byte) -127, aClass258_Sub3_Sub1_8434);
+            aHa_Sub2_8430.bindInterfaceTexture((byte) -127, aClass258_Sub3_Sub1_8434);
             aHa_Sub2_8430.method3761(0, i_70_);
             OpenGL.glBegin(7);
             OpenGL.glTexCoord2f(0.0F, aClass258_Sub3_Sub1_8434.aFloat9938);
@@ -312,13 +312,13 @@ final class Class105_Sub2 extends Class105 {
     private final void method992(int i, int i_73_) {
         aHa_Sub2_8430.method3738(-15039, 1);
         anInt8441++;
-        aHa_Sub2_8430.method3771((byte) -82, aClass258_Sub3_Sub1_8434);
+        aHa_Sub2_8430.bindInterfaceTexture((byte) -82, aClass258_Sub3_Sub1_8434);
         aHa_Sub2_8430.method3729(aHa_Sub2_8430.method3781((byte) 17, i), (byte) -61, 7681);
         aHa_Sub2_8430.method3762(34167, 768, (byte) -87, 1);
         if (i_73_ != 3) method964(46, -15, -58, 122, 11);
         aHa_Sub2_8430.method3775(false, 0, 770, 34168);
         aHa_Sub2_8430.method3738(-15039, 0);
-        aHa_Sub2_8430.method3771((byte) -108, aClass258_Sub3_Sub1_8431);
+        aHa_Sub2_8430.bindInterfaceTexture((byte) -108, aClass258_Sub3_Sub1_8431);
         aHa_Sub2_8430.method3729(34479, (byte) -47, 7681);
         aHa_Sub2_8430.method3762(34166, 768, (byte) -87, 1);
         if (anInt8429 != 0) {
@@ -335,7 +335,7 @@ final class Class105_Sub2 extends Class105 {
         int i_81_ = i_76_ + i_74_;
         aClass258_Sub3_Sub1_8434.method1957(9728, false);
         aHa_Sub2_8430.method3792(54);
-        aHa_Sub2_8430.method3771((byte) -88, aClass258_Sub3_Sub1_8434);
+        aHa_Sub2_8430.bindInterfaceTexture((byte) -88, aClass258_Sub3_Sub1_8434);
         aHa_Sub2_8430.method3753(i_79_, 1);
         aHa_Sub2_8430.method3761(0, i_77_);
         OpenGL.glColor4ub((byte) (i_78_ >> 16), (byte) (i_78_ >> 8), (byte) i_78_, (byte) (i_78_ >> 24));
@@ -439,7 +439,7 @@ final class Class105_Sub2 extends Class105 {
             float f_102_ = f_100_ + f * (float) aClass258_Sub3_Sub1_8434.anInt9940;
             float f_103_ = (f_101_ + (float) (aClass258_Sub3_Sub1_8434.anInt9939) * f_99_);
             if (aClass258_Sub3_Sub1_8431 == null) {
-                aHa_Sub2_8430.method3771((byte) -85, aClass258_Sub3_Sub1_8434);
+                aHa_Sub2_8430.bindInterfaceTexture((byte) -85, aClass258_Sub3_Sub1_8434);
                 aHa_Sub2_8430.method3761(0, i_95_);
                 OpenGL.glBegin(7);
                 OpenGL.glTexCoord2f(0.0F, aClass258_Sub3_Sub1_8434.aFloat9938);
@@ -471,7 +471,7 @@ final class Class105_Sub2 extends Class105 {
                 method991((byte) 9);
             }
         } else if (aClass258_Sub3_Sub1_8431 == null) {
-            aHa_Sub2_8430.method3771((byte) -101, aClass258_Sub3_Sub1_8434);
+            aHa_Sub2_8430.bindInterfaceTexture((byte) -101, aClass258_Sub3_Sub1_8434);
             aHa_Sub2_8430.method3761(0, i_95_);
             OpenGL.glBegin(7);
             OpenGL.glTexCoord2f(0.0F, aClass258_Sub3_Sub1_8434.aFloat9938);

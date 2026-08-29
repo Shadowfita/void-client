@@ -19,7 +19,7 @@ import net.runelite.client.util.Text;
 	name = "Clue Helper (2011)",
 	description = "Looks up classic Treasure Trail anagrams, ciphers, challenge answers and common search clues.",
 	tags = {"clue", "treasure", "trail", "anagram", "cipher"},
-	enabledByDefault = true,
+	enabledByDefault = false,
 	loadWhenOutdated = true
 )
 public class ClueHelperPlugin extends Plugin

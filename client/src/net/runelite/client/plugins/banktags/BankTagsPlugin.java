@@ -26,7 +26,7 @@ import net.runelite.client.ui.NavigationButton;
 	name = "Bank Tags",
 	description = "Provides a searchable, tagged sidebar view of the current 634 bank container.",
 	tags = {"bank", "tags", "search", "items"},
-	enabledByDefault = true,
+	enabledByDefault = false,
 	loadWhenOutdated = true
 )
 public class BankTagsPlugin extends Plugin

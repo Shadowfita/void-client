@@ -11,7 +11,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 	name = "NPC Indicators",
 	description = "Highlights selected NPCs by name or ID.",
 	tags = {"npc", "tag", "highlight", "slayer", "indicator"},
-	enabledByDefault = true,
+	enabledByDefault = false,
 	loadWhenOutdated = true
 )
 public class NpcIndicatorsPlugin extends Plugin

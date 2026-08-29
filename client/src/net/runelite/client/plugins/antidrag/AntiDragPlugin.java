@@ -16,7 +16,7 @@ import net.runelite.client.plugins.qol.QolInventoryLayout;
 	name = "Anti Drag",
 	description = "Prevents accidental inventory drags during fast clicking and gear switches.",
 	tags = {"drag", "inventory", "switching", "gear"},
-	enabledByDefault = true,
+	enabledByDefault = false,
 	loadWhenOutdated = true
 )
 public class AntiDragPlugin extends Plugin

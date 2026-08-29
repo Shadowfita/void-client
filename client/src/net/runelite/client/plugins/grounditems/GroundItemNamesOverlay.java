@@ -37,7 +37,7 @@ class GroundItemNamesOverlay extends Overlay
 		this.config = config;
 		this.itemPriceProvider = itemPriceProvider;
 		setPosition(OverlayPosition.DYNAMIC);
-		setLayer(OverlayLayer.ALWAYS_ON_TOP);
+		setLayer(OverlayLayer.ABOVE_SCENE);
 		setPriority(OverlayPriority.MED);
 	}
 

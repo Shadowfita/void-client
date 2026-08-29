@@ -121,6 +121,17 @@ public abstract class GameClient extends Applet {
 
     public abstract int[][] getCollisionMaps(int plane);
 
+    /**
+     * Projects a RuneLite local-coordinate point (1/128 tile units) with an
+     * already-resolved absolute scene height through the active 634 camera.
+     */
+    public abstract net.runelite.api.Point projectLocalPoint(int localX, int localY, int absoluteHeight);
+
+    /**
+     * Samples the native 634 terrain at a RuneLite local-coordinate point.
+     */
+    public abstract int getLocalTileHeight(int localX, int localY, int plane);
+
     public abstract Canvas getCanvas();
 
     public abstract int getCanvasWidth();
@@ -155,6 +166,10 @@ public abstract class GameClient extends Applet {
 
     public abstract int getInterfaceScalingFactor();
 
+    public abstract void setInterfaceSupersamplingEnabled(boolean enabled);
+
+    public abstract boolean isInterfaceSupersamplingEnabled();
+
     public abstract boolean isInterfaceScalingSupported();
 
     public abstract void invalidateStretching(boolean resize);
@@ -185,6 +200,11 @@ public abstract class GameClient extends Applet {
     }
 
     public List<NpcInfo> getNpcs()
+    {
+        return Collections.emptyList();
+    }
+
+    public List<PlayerInfo> getPlayers()
     {
         return Collections.emptyList();
     }
@@ -349,6 +369,39 @@ public abstract class GameClient extends Applet {
         {
             return height;
         }
+    }
+
+    public static final class PlayerInfo
+    {
+        private final int index;
+        private final String name;
+        private final int combatLevel;
+        private final int localX;
+        private final int localY;
+        private final int plane;
+        private final int height;
+        private final boolean localPlayer;
+
+        public PlayerInfo(int index, String name, int combatLevel, int localX, int localY, int plane, int height, boolean localPlayer)
+        {
+            this.index = index;
+            this.name = name;
+            this.combatLevel = combatLevel;
+            this.localX = localX;
+            this.localY = localY;
+            this.plane = plane;
+            this.height = height;
+            this.localPlayer = localPlayer;
+        }
+
+        public int getIndex() { return index; }
+        public String getName() { return name; }
+        public int getCombatLevel() { return combatLevel; }
+        public int getLocalX() { return localX; }
+        public int getLocalY() { return localY; }
+        public int getPlane() { return plane; }
+        public int getHeight() { return height; }
+        public boolean isLocalPlayer() { return localPlayer; }
     }
 
     public static final class ItemStackInfo

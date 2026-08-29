@@ -35,7 +35,6 @@ import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 
-import static net.runelite.api.Constants.TILE_FLAG_BRIDGE;
 
 /**
  * A utility class containing methods to help with conversion between
@@ -110,29 +109,7 @@ public class Perspective
 	 */
 	public static Point localToCanvas(@Nonnull GameClient client, int x, int y, int z)
 	{
-	/*	TODO GameClient.instance.unprojectAbsolute(x, z, y, Viewport.center_x, Viewport.center_y, Scene.fov, Scene.fov);
-		if (client.spriteDrawX > -1) {
-			return new Point(client.spriteDrawX, client.spriteDrawY);
-		}*/
-		if (!client.hasLocalPlayer())
-		{
-			return null;
-		}
-
-		final int localSceneX = client.getLocalPlayerSceneX();
-		final int localSceneY = client.getLocalPlayerSceneY();
-		if (localSceneX < 0 || localSceneY < 0)
-		{
-			return null;
-		}
-
-		final int dx = (x >> LOCAL_COORD_BITS) - localSceneX;
-		final int dy = (y >> LOCAL_COORD_BITS) - localSceneY;
-		final int centerX = client.getCanvasWidth() / 2;
-		final int centerY = client.getCanvasHeight() / 2 + 48;
-		final int screenX = centerX + (dx - dy) * 16;
-		final int screenY = centerY + (dx + dy) * 8 - (z >> 5);
-		return new Point(screenX, screenY);
+		return client.projectLocalPoint(x, y, z);
 	}
 
 	/**
@@ -174,36 +151,11 @@ public class Perspective
 	 */
 	public static int getTileHeight(@Nonnull GameClient client, @Nonnull LocalPoint point, int plane)
 	{
-		int sceneX = point.getSceneX();
-		int sceneY = point.getSceneY();
-		if (sceneX >= 0 && sceneY >= 0 && sceneX < SCENE_SIZE && sceneY < SCENE_SIZE)
+		if (point == null || !point.isInScene())
 		{
-			int[][][] tileHeights = client.getTileHeights();
-			if (tileHeights.length <= plane || tileHeights[plane].length <= sceneX || tileHeights[plane][sceneX].length <= sceneY + 1)
-			{
-				return 0;
-			}
-
-			int z1 = plane;
-			byte[][][] tileSettings = client.getTileSettings();
-			if (tileSettings.length > 1 && tileSettings[1].length > sceneX && tileSettings[1][sceneX].length > sceneY
-				&& plane < Constants.MAX_Z - 1 && (tileSettings[1][sceneX][sceneY] & TILE_FLAG_BRIDGE) == TILE_FLAG_BRIDGE)
-			{
-				z1 = plane + 1;
-			}
-			if (tileHeights.length <= z1 || tileHeights[z1].length <= sceneX + 1 || tileHeights[z1][sceneX].length <= sceneY + 1 || tileHeights[z1][sceneX + 1].length <= sceneY + 1)
-			{
-				return 0;
-			}
-
-			int x = point.getX() & (LOCAL_TILE_SIZE - 1);
-			int y = point.getY() & (LOCAL_TILE_SIZE - 1);
-			int var8 = x * tileHeights[z1][sceneX + 1][sceneY] + (LOCAL_TILE_SIZE - x) * tileHeights[z1][sceneX][sceneY] >> LOCAL_COORD_BITS;
-			int var9 = tileHeights[z1][sceneX][sceneY + 1] * (LOCAL_TILE_SIZE - x) + x * tileHeights[z1][sceneX + 1][sceneY + 1] >> LOCAL_COORD_BITS;
-			return (LOCAL_TILE_SIZE - y) * var8 + y * var9 >> LOCAL_COORD_BITS;
+			return 0;
 		}
-
-		return 0;
+		return client.getLocalTileHeight(point.getX(), point.getY(), plane);
 	}
 
 	/**
@@ -217,24 +169,7 @@ public class Perspective
 	 */
 	private static int getHeight(@Nonnull GameClient client, int localX, int localY, int plane)
 	{
-		int sceneX = localX >> LOCAL_COORD_BITS;
-		int sceneY = localY >> LOCAL_COORD_BITS;
-		if (sceneX >= 0 && sceneY >= 0 && sceneX < SCENE_SIZE && sceneY < SCENE_SIZE)
-		{
-			int[][][] tileHeights = client.getTileHeights();
-			if (tileHeights.length <= plane || tileHeights[plane].length <= sceneX + 1 || tileHeights[plane][sceneX].length <= sceneY + 1 || tileHeights[plane][sceneX + 1].length <= sceneY + 1)
-			{
-				return 0;
-			}
-
-			int x = localX & (LOCAL_TILE_SIZE - 1);
-			int y = localY & (LOCAL_TILE_SIZE - 1);
-			int var8 = x * tileHeights[plane][sceneX + 1][sceneY] + (LOCAL_TILE_SIZE - x) * tileHeights[plane][sceneX][sceneY] >> LOCAL_COORD_BITS;
-			int var9 = tileHeights[plane][sceneX][sceneY + 1] * (LOCAL_TILE_SIZE - x) + x * tileHeights[plane][sceneX + 1][sceneY + 1] >> LOCAL_COORD_BITS;
-			return (LOCAL_TILE_SIZE - y) * var8 + y * var9 >> LOCAL_COORD_BITS;
-		}
-
-		return 0;
+		return client.getLocalTileHeight(localX, localY, plane);
 	}
 
 	/**
@@ -304,13 +239,9 @@ public class Perspective
 		final int sceneX = localLocation.getSceneX();
 		final int sceneY = localLocation.getSceneY();
 
+		// Class275.method2064, exposed through getLocalTileHeight(), already
+		// applies the 634 bridge-plane rule. Do not adjust the plane twice.
 		int tilePlane = plane;
-		final byte[][][] tileSettings = client.getTileSettings();
-		if (tileSettings.length > 1 && tileSettings[1].length > sceneX && tileSettings[1][sceneX].length > sceneY
-			&& plane < Constants.MAX_Z - 1 && (tileSettings[1][sceneX][sceneY] & TILE_FLAG_BRIDGE) == TILE_FLAG_BRIDGE)
-		{
-			tilePlane = plane + 1;
-		}
 
 		final int swX = localLocation.getX() - (sizeX * LOCAL_TILE_SIZE / 2);
 		final int swY = localLocation.getY() - (sizeY * LOCAL_TILE_SIZE / 2);

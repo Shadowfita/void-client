@@ -11,7 +11,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 	name = "Opponent Information",
 	description = "Shows information about the player or NPC currently being fought.",
 	tags = {"opponent", "combat", "npc", "player"},
-	enabledByDefault = true,
+	enabledByDefault = false,
 	loadWhenOutdated = true
 )
 public class OpponentInfoPlugin extends Plugin

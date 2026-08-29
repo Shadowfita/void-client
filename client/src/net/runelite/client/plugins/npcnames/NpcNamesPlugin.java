@@ -11,7 +11,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 	name = "NPC Names",
 	description = "Shows names above NPCs.",
 	tags = {"npc", "names", "overlay"},
-	enabledByDefault = true,
+	enabledByDefault = false,
 	loadWhenOutdated = true
 )
 public class NpcNamesPlugin extends Plugin

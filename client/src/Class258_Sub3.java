@@ -77,6 +77,7 @@ class Class258_Sub3 extends Class258 {
         if (i_13_ != i_15_) OpenGL.glPixelStorei(3314, i_15_);
         OpenGL.glTexSubImage2Di(this.anInt4849, 0, i_14_, i_10_, i_13_, i, 32993, (this.aHa_Sub2_4851.anInt7812), is, i_11_);
         if (i_13_ != i_15_) OpenGL.glPixelStorei(3314, 0);
+        this.invalidateInterfaceSupersampleTexture();
         if (i_12_ > -65) this.anInt8547 = 101;
     }
 
@@ -166,6 +167,7 @@ class Class258_Sub3 extends Class258 {
         this.aHa_Sub2_4851.method3771((byte) -100, this);
         OpenGL.glCopyTexSubImage2D(this.anInt4849, 0, i, -i_51_ - (i_53_ - (this.anInt8551)), i_54_, i_57_, i_56_, i_51_);
         if (i_55_ != -120) method1965(true, true, -57);
+        this.invalidateInterfaceSupersampleTexture();
         OpenGL.glFlush();
     }
 
@@ -226,6 +228,7 @@ class Class258_Sub3 extends Class258 {
         OpenGL.glTexSubImage2Dub(this.anInt4849, 0, i, i_61_, i_62_, i_64_, i_65_, 5121, is, i_67_);
         if (i_63_ != i_62_) OpenGL.glPixelStorei(3314, 0);
         OpenGL.glPixelStorei(3317, 4);
+        this.invalidateInterfaceSupersampleTexture();
         int i_76_ = -17 % ((46 - i_66_) / 59);
     }
 

@@ -23,6 +23,16 @@ public interface StretchedModeConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "fractionalSupersampling",
+		name = "Fractional Pixel Supersampling",
+		description = "For decimal UI scales, first expands pixel-art textures and font atlases by an exact whole-number nearest-neighbour factor, then downsamples them to the requested size for improved clarity."
+	)
+	default boolean fractionalSupersampling()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "legacyFullCanvasStretch",
 		name = "Legacy Full-Canvas Stretch",
 		description = "Uses the old Stretched Mode behaviour, scaling the whole game including the 3D scene. Use this as a fallback for software rendering."

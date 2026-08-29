@@ -9,6 +9,42 @@ final class Class258_Sub3_Sub1 extends Class258_Sub3 {
     int anInt9940;
     boolean aBoolean9941;
     static int anInt9942;
+    private Class258_Sub3 interfaceSupersampleTexture;
+    private int interfaceSupersampleFactor = 1;
+
+    final Class258 getInterfaceSupersampleTexture(int factor) {
+        if (factor <= 1 || this.anInt4849 != 3553) {
+            if (factor <= 1) {
+                releaseInterfaceSupersampleTexture();
+            }
+            return this;
+        }
+        if (interfaceSupersampleTexture != null && interfaceSupersampleFactor == factor) {
+            return interfaceSupersampleTexture;
+        }
+        releaseInterfaceSupersampleTexture();
+        Class258_Sub3 texture = this.aHa_Sub2_4851.createInterfaceSupersampleTexture(this, factor);
+        if (texture != null) {
+            interfaceSupersampleTexture = texture;
+            interfaceSupersampleFactor = factor;
+            return texture;
+        }
+        return this;
+    }
+
+    @Override
+    void invalidateInterfaceSupersampleTexture() {
+        releaseInterfaceSupersampleTexture();
+    }
+
+    @Override
+    void releaseInterfaceSupersampleTexture() {
+        if (interfaceSupersampleTexture != null) {
+            interfaceSupersampleTexture.method1952(-19948);
+            interfaceSupersampleTexture = null;
+        }
+        interfaceSupersampleFactor = 1;
+    }
 
     Class258_Sub3_Sub1(ha_Sub2 var_ha_Sub2, int i, int i_0_, int i_1_, int i_2_) {
         super(var_ha_Sub2, i, i_0_, i_1_, i_2_);

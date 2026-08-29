@@ -12,7 +12,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 	name = "Menu Entry Swapper",
 	description = "Promotes configured context-menu actions to the default left-click action.",
 	tags = {"menu", "left click", "swap", "bank", "pickpocket"},
-	enabledByDefault = true,
+	enabledByDefault = false,
 	loadWhenOutdated = true
 )
 public class MenuEntrySwapperPlugin extends Plugin

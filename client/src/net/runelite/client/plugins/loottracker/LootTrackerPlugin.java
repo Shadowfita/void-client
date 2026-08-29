@@ -31,7 +31,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 	name = "Loot Tracker",
 	description = "Tracks newly appearing ground item loot.",
 	tags = {"loot", "drops", "items", "tracker"},
-	enabledByDefault = true,
+	enabledByDefault = false,
 	loadWhenOutdated = true
 )
 public class LootTrackerPlugin extends Plugin

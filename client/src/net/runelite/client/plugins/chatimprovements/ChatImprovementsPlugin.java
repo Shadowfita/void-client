@@ -28,7 +28,7 @@ import net.runelite.client.util.Text;
 	name = "Chat Improvements",
 	description = "Adds searchable persistent chat history, timestamps, keyword highlights and notifications.",
 	tags = {"chat", "history", "timestamps", "highlight", "notification"},
-	enabledByDefault = true,
+	enabledByDefault = false,
 	loadWhenOutdated = true
 )
 public class ChatImprovementsPlugin extends Plugin
