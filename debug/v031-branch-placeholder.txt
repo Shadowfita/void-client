@@ -1,1 +1,0 @@
-v0.3.1 scaling, native projection and defaults work branch placeholder
