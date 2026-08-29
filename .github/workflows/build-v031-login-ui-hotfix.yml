@@ -1,0 +1,63 @@
+name: Build v0.3.1 login UI hotfix
+
+on:
+  push:
+    branches:
+      - fix/v0.3.1-scaling-projection-defaults
+    paths:
+      - '.github/workflows/build-v031-login-ui-hotfix.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out corrected branch
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Verify unsupported JAGGL call is absent
+        shell: bash
+        run: |
+          if grep -R "OpenGL\.glGetTexImageub" client/src --include='*.java'; then
+            echo "Unsupported glGetTexImageub call remains in source" >&2
+            exit 1
+          fi
+          grep -F "catch (UnsatisfiedLinkError unavailableReadback)" client/src/ha_Sub2.java
+
+      - name: Compile and test
+        run: ./gradlew :client:compileJava :client:test --no-daemon --stacktrace
+
+      - name: Build ProGuard release JAR
+        run: ./gradlew :client:proguardJar --no-daemon --stacktrace
+
+      - name: Stage verified test artifact
+        shell: bash
+        run: |
+          src="client/build/libs/void-client-0.3.1-release.jar"
+          test -f "$src"
+          mkdir -p artifact
+          cp "$src" artifact/void-client-0.3.1-login-ui-hotfix.jar
+          (cd artifact && sha256sum void-client-0.3.1-login-ui-hotfix.jar > void-client-0.3.1-login-ui-hotfix.jar.sha256)
+          unzip -p "$src" META-INF/MANIFEST.MF | tr -d '\r' | grep -Fx 'Main-Class: Loader'
+          javap -classpath "$src" -p Class373_Sub1 > /tmp/Class373_Sub1.txt
+          grep -F 'Class373_Sub1(java.awt.Component, boolean);' /tmp/Class373_Sub1.txt
+          grep -F 'java.awt.event.MouseWheelListener' /tmp/Class373_Sub1.txt
+
+      - name: Upload test JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: void-client-v0.3.1-login-ui-hotfix
+          path: artifact/*
+          retention-days: 7
