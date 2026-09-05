@@ -20,8 +20,12 @@ final class Class258_Sub3_Sub1 extends Class258_Sub3 {
     // capture byte-backed source pixels before subclass initializers run.
     private int interfaceByteFormat;
     private boolean interfaceSourceComplete;
+    private boolean interfaceSupersamplingDisabled;
 
     final void recordInterfaceIntPixels(int x, int y, int width, int height, int[] pixels, int offset, int stride) {
+        if (interfaceSupersamplingDisabled) {
+            return;
+        }
         if (!validRegion(x, y, width, height) || pixels == null) {
             clearInterfaceSource();
             return;
@@ -67,6 +71,9 @@ final class Class258_Sub3_Sub1 extends Class258_Sub3 {
 
     final void recordInterfaceBytePixels(int x, int y, int width, int height, byte[] pixels,
                                          int offset, int stridePixels, int format) {
+        if (interfaceSupersamplingDisabled) {
+            return;
+        }
         if (!validRegion(x, y, width, height) || pixels == null) {
             clearInterfaceSource();
             return;
@@ -121,7 +128,8 @@ final class Class258_Sub3_Sub1 extends Class258_Sub3 {
     }
 
     final Class258_Sub3 createInterfaceSupersampleTexture(int factor) {
-        if (factor <= 1 || this.anInt4849 != 3553 || !interfaceSourceComplete) {
+        if (interfaceSupersamplingDisabled
+                || factor <= 1 || this.anInt4849 != 3553 || !interfaceSourceComplete) {
             return null;
         }
         int width = this.anInt8547;
@@ -144,8 +152,8 @@ final class Class258_Sub3_Sub1 extends Class258_Sub3 {
                 Class258_Sub3 result = new Class258_Sub3(this.aHa_Sub2_4851, 3553, this.anInt4858,
                         targetWidth, targetHeight, false, target, 0, 0, false);
                 // Stage one is exact integer nearest-neighbour. Linear filtering
-                // performs only the unavoidable final fractional reduction and
-                // materially improves thin 634 font strokes at 1.3x-1.5x.
+                // performs the final fractional reduction for colour UI sprites.
+                // Pixel-grid font atlases opt out and retain native nearest sampling.
                 result.method1957(9728, true);
                 result.method1965(false, false, 10243);
                 return result;
@@ -182,6 +190,11 @@ final class Class258_Sub3_Sub1 extends Class258_Sub3 {
         // Render-target, framebuffer-copy, oversized and partially populated
         // textures have no safe complete CPU source. Bind the original texture.
         return null;
+    }
+
+    final void disableInterfaceSupersampling() {
+        interfaceSupersamplingDisabled = true;
+        clearInterfaceSource();
     }
 
     private void clearInterfaceSource() {
@@ -251,10 +264,8 @@ final class Class258_Sub3_Sub1 extends Class258_Sub3 {
     }
 
     final Class258 getInterfaceSupersampleTexture(int factor) {
-        if (factor <= 1 || this.anInt4849 != 3553) {
-            if (factor <= 1) {
-                releaseInterfaceSupersampleTexture();
-            }
+        if (interfaceSupersamplingDisabled || factor <= 1 || this.anInt4849 != 3553) {
+            releaseInterfaceSupersampleTexture();
             return this;
         }
         if (interfaceSupersampleTexture != null && interfaceSupersampleFactor == factor) {
@@ -273,6 +284,11 @@ final class Class258_Sub3_Sub1 extends Class258_Sub3 {
     @Override
     void invalidateInterfaceSupersampleTexture() {
         releaseInterfaceSupersampleTexture();
+    }
+
+    @Override
+    void discardInterfaceSupersampleSource() {
+        clearInterfaceSource();
     }
 
     @Override

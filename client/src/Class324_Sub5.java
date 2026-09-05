@@ -83,6 +83,10 @@ final class Class324_Sub5 extends Class324 {
             aClass258_Sub3_Sub1_6511 = Class348_Sub40_Sub32.method3132(is, 0, 0, i_1_, i_1_, var_ha_Sub2, false, (byte) 12);
             aBoolean6512 = false;
         }
+        // The 634 glyph atlas is rasterized for a fixed pixel grid. Rebuilding
+        // and fractionally reducing it softens one-pixel stems and counters, so
+        // keep the original atlas and its native nearest-neighbour sampling.
+        aClass258_Sub3_Sub1_6511.disableInterfaceSupersampling();
         aClass258_Sub3_Sub1_6511.method1957(9728, false);
         aClass61_6510 = new Class61(var_ha_Sub2, 256);
         float f = (aClass258_Sub3_Sub1_6511.aFloat9937 / (float) (aClass258_Sub3_Sub1_6511.anInt9940));

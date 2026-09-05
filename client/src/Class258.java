@@ -106,6 +106,12 @@ abstract class Class258 implements Interface9 {
         /* Only 2D UI textures override this. */
     }
 
+    void discardInterfaceSupersampleSource() {
+        // GPU-side rendering or framebuffer copies make any retained CPU
+        // snapshot stale. Ordinary textures only need their proxy invalidated.
+        invalidateInterfaceSupersampleTexture();
+    }
+
     void releaseInterfaceSupersampleTexture() {
         /* Only 2D UI textures override this. */
     }

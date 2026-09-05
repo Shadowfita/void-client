@@ -35,6 +35,7 @@ class Class258_Sub3 extends Class258 {
     final void method1963(int i, int i_3_, int i_4_, int i_5_) {
         anInt8541++;
         if (i_4_ != 0) anInt8550 = -125;
+        this.discardInterfaceSupersampleSource();
         OpenGL.glFramebufferTexture2DEXT(i, i_5_, this.anInt4849, this.anInt4859, i_3_);
         anInt8549 = i;
         anInt8545 = i_5_;
@@ -179,7 +180,7 @@ class Class258_Sub3 extends Class258 {
         this.aHa_Sub2_4851.method3771((byte) -100, this);
         OpenGL.glCopyTexSubImage2D(this.anInt4849, 0, i, -i_51_ - (i_53_ - (this.anInt8551)), i_54_, i_57_, i_56_, i_51_);
         if (i_55_ != -120) method1965(true, true, -57);
-        this.invalidateInterfaceSupersampleTexture();
+        this.discardInterfaceSupersampleSource();
         OpenGL.glFlush();
     }
 
