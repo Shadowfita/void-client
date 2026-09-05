@@ -1,0 +1,282 @@
+name: Apply and verify v0.3.1 font and minimap supersampling hotfix
+
+on:
+  push:
+    branches:
+      - fix/v0.3.1-scaling-projection-defaults
+    paths:
+      - '.github/workflows/apply-v031-font-minimap-hotfix.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-build-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out current v0.3.1 branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply targeted font and minimap corrections
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def load(path):
+              p = Path(path)
+              raw = p.read_bytes()
+              crlf = b'\r\n' in raw
+              text = raw.decode('utf-8').replace('\r\n', '\n')
+              return p, text, crlf
+
+          def save(p, text, crlf):
+              if crlf:
+                  text = text.replace('\n', '\r\n')
+              p.write_bytes(text.encode('utf-8'))
+
+          def replace_once(path, old, new):
+              p, text, crlf = load(path)
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit('%s: expected one patch anchor, found %d' % (path, count))
+              save(p, text.replace(old, new, 1), crlf)
+
+          replace_once(
+              'client/src/Class258.java',
+              '''    void invalidateInterfaceSupersampleTexture() {
+                  /* Only 2D UI textures override this. */
+              }
+
+              void releaseInterfaceSupersampleTexture() {
+          ''',
+              '''    void invalidateInterfaceSupersampleTexture() {
+                  /* Only 2D UI textures override this. */
+              }
+
+              void discardInterfaceSupersampleSource() {
+                  // GPU-side rendering or framebuffer copies make any retained CPU
+                  // snapshot stale. Ordinary textures only need their proxy invalidated.
+                  invalidateInterfaceSupersampleTexture();
+              }
+
+              void releaseInterfaceSupersampleTexture() {
+          ''')
+
+          replace_once(
+              'client/src/Class258_Sub3.java',
+              '''        if (i_4_ != 0) anInt8550 = -125;
+                      OpenGL.glFramebufferTexture2DEXT(i, i_5_, this.anInt4849, this.anInt4859, i_3_);''',
+              '''        if (i_4_ != 0) anInt8550 = -125;
+                      this.discardInterfaceSupersampleSource();
+                      OpenGL.glFramebufferTexture2DEXT(i, i_5_, this.anInt4849, this.anInt4859, i_3_);''')
+
+          replace_once(
+              'client/src/Class258_Sub3.java',
+              '''        this.invalidateInterfaceSupersampleTexture();
+                      OpenGL.glFlush();''',
+              '''        this.discardInterfaceSupersampleSource();
+                      OpenGL.glFlush();''')
+
+          replace_once(
+              'client/src/Class258_Sub3_Sub1.java',
+              '''    private int interfaceByteFormat;
+              private boolean interfaceSourceComplete;
+          ''',
+              '''    private int interfaceByteFormat;
+              private boolean interfaceSourceComplete;
+              private boolean interfaceSupersamplingDisabled;
+          ''')
+
+          replace_once(
+              'client/src/Class258_Sub3_Sub1.java',
+              '''    final void recordInterfaceIntPixels(int x, int y, int width, int height, int[] pixels, int offset, int stride) {
+                  if (!validRegion(x, y, width, height) || pixels == null) {''',
+              '''    final void recordInterfaceIntPixels(int x, int y, int width, int height, int[] pixels, int offset, int stride) {
+                  if (interfaceSupersamplingDisabled) {
+                      return;
+                  }
+                  if (!validRegion(x, y, width, height) || pixels == null) {''')
+
+          replace_once(
+              'client/src/Class258_Sub3_Sub1.java',
+              '''    final void recordInterfaceBytePixels(int x, int y, int width, int height, byte[] pixels,
+                                                       int offset, int stridePixels, int format) {
+                  if (!validRegion(x, y, width, height) || pixels == null) {''',
+              '''    final void recordInterfaceBytePixels(int x, int y, int width, int height, byte[] pixels,
+                                                       int offset, int stridePixels, int format) {
+                  if (interfaceSupersamplingDisabled) {
+                      return;
+                  }
+                  if (!validRegion(x, y, width, height) || pixels == null) {''')
+
+          replace_once(
+              'client/src/Class258_Sub3_Sub1.java',
+              '''    final Class258_Sub3 createInterfaceSupersampleTexture(int factor) {
+                  if (factor <= 1 || this.anInt4849 != 3553 || !interfaceSourceComplete) {''',
+              '''    final Class258_Sub3 createInterfaceSupersampleTexture(int factor) {
+                  if (interfaceSupersamplingDisabled
+                          || factor <= 1 || this.anInt4849 != 3553 || !interfaceSourceComplete) {''')
+
+          replace_once(
+              'client/src/Class258_Sub3_Sub1.java',
+              '''                // Stage one is exact integer nearest-neighbour. Linear filtering
+                              // performs only the unavoidable final fractional reduction and
+                              // materially improves thin 634 font strokes at 1.3x-1.5x.
+          ''',
+              '''                // Stage one is exact integer nearest-neighbour. Linear filtering
+                              // performs the final fractional reduction for colour UI sprites.
+                              // Pixel-grid font atlases opt out and retain native nearest sampling.
+          ''')
+
+          replace_once(
+              'client/src/Class258_Sub3_Sub1.java',
+              '''    private void clearInterfaceSource() {
+          ''',
+              '''    final void disableInterfaceSupersampling() {
+                  interfaceSupersamplingDisabled = true;
+                  clearInterfaceSource();
+              }
+
+              private void clearInterfaceSource() {
+          ''')
+
+          replace_once(
+              'client/src/Class258_Sub3_Sub1.java',
+              '''    final Class258 getInterfaceSupersampleTexture(int factor) {
+                  if (factor <= 1 || this.anInt4849 != 3553) {
+                      if (factor <= 1) {
+                          releaseInterfaceSupersampleTexture();
+                      }
+                      return this;
+                  }''',
+              '''    final Class258 getInterfaceSupersampleTexture(int factor) {
+                  if (interfaceSupersamplingDisabled || factor <= 1 || this.anInt4849 != 3553) {
+                      releaseInterfaceSupersampleTexture();
+                      return this;
+                  }''')
+
+          replace_once(
+              'client/src/Class258_Sub3_Sub1.java',
+              '''    @Override
+              void invalidateInterfaceSupersampleTexture() {
+                  releaseInterfaceSupersampleTexture();
+              }
+
+              @Override
+              void releaseInterfaceSupersampleTexture() {''',
+              '''    @Override
+              void invalidateInterfaceSupersampleTexture() {
+                  releaseInterfaceSupersampleTexture();
+              }
+
+              @Override
+              void discardInterfaceSupersampleSource() {
+                  clearInterfaceSource();
+              }
+
+              @Override
+              void releaseInterfaceSupersampleTexture() {''')
+
+          replace_once(
+              'client/src/Class324_Sub5.java',
+              '''            aBoolean6512 = false;
+                  }
+                  aClass258_Sub3_Sub1_6511.method1957(9728, false);''',
+              '''            aBoolean6512 = false;
+                  }
+                  // The 634 glyph atlas is rasterized for a fixed pixel grid. Rebuilding
+                  // and fractionally reducing it softens one-pixel stems and counters, so
+                  // keep the original atlas and its native nearest-neighbour sampling.
+                  aClass258_Sub3_Sub1_6511.disableInterfaceSupersampling();
+                  aClass258_Sub3_Sub1_6511.method1957(9728, false);''')
+          PY
+
+          git diff --check
+
+          grep -F 'void discardInterfaceSupersampleSource()' client/src/Class258.java
+          grep -F 'void discardInterfaceSupersampleSource()' client/src/Class258_Sub3_Sub1.java
+          test "$(grep -c 'this.discardInterfaceSupersampleSource();' client/src/Class258_Sub3.java)" -eq 2
+          grep -F 'aClass258_Sub3_Sub1_6511.disableInterfaceSupersampling();' client/src/Class324_Sub5.java
+          grep -F 'interfaceSupersamplingDisabled || factor <= 1' client/src/Class258_Sub3_Sub1.java
+          if grep -R -n -F 'OpenGL.glGetTexImageub' client/src; then
+            echo 'Unsupported JAGGL texture readback remains in source' >&2
+            exit 1
+          fi
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compile, test and build ProGuard release JAR
+        run: ./gradlew :client:compileJava :client:test :client:proguardJar --no-daemon --stacktrace
+
+      - name: Verify executable output
+        shell: bash
+        run: |
+          javap -classpath client/build/classes/java/main -c -p Class258_Sub3 > /tmp/Class258_Sub3.txt
+          test "$(grep -c 'discardInterfaceSupersampleSource' /tmp/Class258_Sub3.txt)" -eq 2
+
+          javap -classpath client/build/classes/java/main -c -p Class324_Sub5 > /tmp/Class324_Sub5.txt
+          grep -F 'disableInterfaceSupersampling' /tmp/Class324_Sub5.txt
+
+          javap -classpath client/build/classes/java/main -c -p ha_Sub2 > /tmp/ha_Sub2.txt
+          if grep -F 'glGetTexImageub' /tmp/ha_Sub2.txt; then
+            echo 'Unsupported JAGGL readback remains in executable renderer bytecode' >&2
+            exit 1
+          fi
+
+          jar_path='client/build/libs/void-client-0.3.1-release.jar'
+          test -f "$jar_path"
+          unzip -t "$jar_path" >/dev/null
+          unzip -p "$jar_path" META-INF/MANIFEST.MF | tr -d '\r' | grep -Fx 'Main-Class: Loader'
+          unzip -p "$jar_path" net/runelite/client/runelite.properties | tr -d '\r' | grep -Fx 'void.version= 0.3.1'
+          javap -classpath "$jar_path" -p Class373_Sub1 > /tmp/Class373_Sub1.txt
+          grep -F 'Class373_Sub1(java.awt.Component, boolean);' /tmp/Class373_Sub1.txt
+          grep -F 'java.awt.event.MouseWheelListener' /tmp/Class373_Sub1.txt
+
+      - name: Commit verified source correction
+        id: source
+        shell: bash
+        run: |
+          git config user.name 'Ryan Palmer'
+          git config user.email 'www.ryan.palmer@hotmail.com'
+          git add \
+            client/src/Class258.java \
+            client/src/Class258_Sub3.java \
+            client/src/Class258_Sub3_Sub1.java \
+            client/src/Class324_Sub5.java
+          git rm .github/workflows/apply-v031-font-minimap-hotfix.yml
+          git commit -m 'Fix font and minimap fractional supersampling'
+          git push origin HEAD:fix/v0.3.1-scaling-projection-defaults
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Stage downloadable test build
+        shell: bash
+        run: |
+          mkdir -p release
+          cp client/build/libs/void-client-0.3.1-release.jar \
+            release/void-client-0.3.1-font-minimap-hotfix.jar
+          (cd release && sha256sum void-client-0.3.1-font-minimap-hotfix.jar \
+            > void-client-0.3.1-font-minimap-hotfix.jar.sha256)
+          cat > release/void-client-0.3.1-font-minimap-hotfix.build-info <<EOF
+          branch=fix/v0.3.1-scaling-projection-defaults
+          source_sha=${{ steps.source.outputs.sha }}
+          workflow_run=${{ github.run_id }}
+          fix=font atlas keeps native nearest sampling; GPU-updated and framebuffer textures discard stale CPU supersampling sources
+          EOF
+
+      - name: Upload verified hotfix artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: void-client-v0.3.1-font-minimap-hotfix
+          path: release/
+          retention-days: 7
