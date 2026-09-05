@@ -23,4 +23,5 @@ jobs:
             !**/build
             !out
           include-hidden-files: true
-          retention-days: 2
+          # Keep diagnostic source snapshots available alongside test builds.
+          retention-days: 7
