@@ -15,7 +15,9 @@ def insert_after_line(data, anchor, inserted, label):
         ending = b'\n'
     else:
         raise SystemExit(f'{label}: anchor is not followed by a line ending')
-    return data[:start + len(ending)] + inserted + ending + data[start + len(ending):]
+    # Preserve the anchor's existing ending byte-for-byte, but keep the newly
+    # inserted line LF-only so git diff --check does not treat CR as whitespace.
+    return data[:start + len(ending)] + inserted + b'\n' + data[start + len(ending):]
 
 
 if b'import net.runelite.client.util.BuildIdentity;' in data:
