@@ -17,11 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Decode as much of the staged payload as possible
+      - name: Decode and scan the staged payload
         shell: bash
         run: |
           set -u
-          mkdir -p diagnostic/extracted
+          mkdir -p diagnostic/extracted diagnostic/recovered
           parts=(.tmp/wave2-payload.part*)
           printf 'parts=%s\n' "${#parts[@]}" | tee diagnostic/summary.txt
           wc -c "${parts[@]}" | tee -a diagnostic/summary.txt
@@ -45,16 +45,90 @@ jobs:
           printf 'listed_paths=%s\n' "$(wc -l < diagnostic/tar-listing.txt)" | tee -a diagnostic/summary.txt
           printf 'extracted_files=%s\n' "$(find diagnostic/extracted -type f | wc -l)" | tee -a diagnostic/summary.txt
 
+          python3 - <<'PY'
+          from pathlib import Path, PurePosixPath
+
+          data = Path('diagnostic/payload.partial.tar').read_bytes()
+          report = []
+          recovered = 0
+
+          def parse_octal(raw):
+              raw = raw.split(b'\0', 1)[0].strip() or b'0'
+              try:
+                  return int(raw, 8)
+              except ValueError:
+                  return None
+
+          def valid_header(offset):
+              if offset + 512 > len(data):
+                  return None
+              h = data[offset:offset + 512]
+              if h[257:262] != b'ustar':
+                  return None
+              expected = parse_octal(h[148:156])
+              if expected is None:
+                  return None
+              actual = sum(h[:148]) + (32 * 8) + sum(h[156:])
+              if actual != expected:
+                  return None
+              name = h[:100].split(b'\0', 1)[0]
+              prefix = h[345:500].split(b'\0', 1)[0]
+              if prefix:
+                  name = prefix + b'/' + name
+              try:
+                  name = name.decode('utf-8')
+              except UnicodeDecodeError:
+                  return None
+              size = parse_octal(h[124:136])
+              if size is None or size < 0:
+                  return None
+              return name, size, chr(h[156] or 48)
+
+          # Missing compressed bytes can destroy 512-byte alignment, so scan every byte.
+          for offset in range(max(0, len(data) - 511)):
+              parsed = valid_header(offset)
+              if not parsed:
+                  continue
+              name, size, typeflag = parsed
+              report.append(f'offset={offset} size={size} type={typeflag} path={name}')
+              end = offset + 512 + size
+              path = PurePosixPath(name)
+              if typeflag in ('0', '\0') and end <= len(data) and not path.is_absolute() and '..' not in path.parts:
+                  target = Path('diagnostic/recovered').joinpath(*path.parts)
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_bytes(data[offset + 512:end])
+                  recovered += 1
+
+          Path('diagnostic/valid-tar-headers.txt').write_text('\n'.join(report) + ('\n' if report else ''))
+          Path('diagnostic/recovery-summary.txt').write_text(
+              f'valid_headers={len(report)}\nrecovered_regular_files={recovered}\n')
+
+          # Independently collect path-like strings even when their tar header checksum was damaged.
+          strings = []
+          current = bytearray()
+          for value in data:
+              if 32 <= value < 127:
+                  current.append(value)
+              else:
+                  if len(current) >= 8:
+                      text = current.decode('ascii', errors='ignore')
+                      if 'client/' in text or 'release-notes/' in text:
+                          strings.append(text)
+                  current.clear()
+          Path('diagnostic/path-like-strings.txt').write_text('\n'.join(strings) + ('\n' if strings else ''))
+          print(f'valid tar headers={len(report)}, recovered files={recovered}')
+          PY
+
           echo '--- gzip error ---'
           cat diagnostic/gzip-error.txt || true
           echo '--- tar error ---'
           cat diagnostic/tar-error.txt || true
-          echo '--- extract error ---'
-          cat diagnostic/extract-error.txt || true
-          echo '--- final 30 listed paths ---'
-          tail -30 diagnostic/tar-listing.txt || true
-          echo '--- extracted paths ---'
-          find diagnostic/extracted -type f | sed 's#^diagnostic/extracted/##' | sort | tail -80
+          echo '--- recovery summary ---'
+          cat diagnostic/recovery-summary.txt || true
+          echo '--- valid headers ---'
+          cat diagnostic/valid-tar-headers.txt || true
+          echo '--- path-like strings tail ---'
+          tail -100 diagnostic/path-like-strings.txt || true
 
       - name: Upload diagnostics
         uses: actions/upload-artifact@v4
