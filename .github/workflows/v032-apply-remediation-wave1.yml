@@ -21,7 +21,12 @@ jobs:
           fetch-depth: 0
 
       - name: Apply source remediations
-        run: python3 tools/apply_v032_remediation_wave1.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/apply_v032_remediation_wave1.py
+          git checkout -- client/src/net/runelite/client/RuneLite.java
+          python3 tools/patch_v032_runtime_identity.py
 
       - name: Verify source invariants
         shell: bash
@@ -86,6 +91,7 @@ jobs:
           git add client release-notes/v0.3.2.md
           git rm \
             tools/apply_v032_remediation_wave1.py \
+            tools/patch_v032_runtime_identity.py \
             .github/workflows/v032-remediation-diagnostic.yml \
             .github/workflows/v032-apply-remediation-wave1.yml
           git commit -m 'Begin v0.3.2 plugin remediation'
