@@ -1,0 +1,64 @@
+name: Diagnose v0.3.2 wave 2 payload
+
+on:
+  push:
+    branches:
+      - fix/v0.3.2-plugin-remediation-wave2
+    paths:
+      - '.github/workflows/v032-wave2-payload-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Decode as much of the staged payload as possible
+        shell: bash
+        run: |
+          set -u
+          mkdir -p diagnostic/extracted
+          parts=(.tmp/wave2-payload.part*)
+          printf 'parts=%s\n' "${#parts[@]}" | tee diagnostic/summary.txt
+          wc -c "${parts[@]}" | tee -a diagnostic/summary.txt
+          cat "${parts[@]}" > diagnostic/payload.b64
+          printf 'base64_bytes=%s\n' "$(wc -c < diagnostic/payload.b64)" | tee -a diagnostic/summary.txt
+
+          base64 --decode diagnostic/payload.b64 > diagnostic/payload.partial.gz
+          printf 'compressed_bytes=%s\n' "$(wc -c < diagnostic/payload.partial.gz)" | tee -a diagnostic/summary.txt
+
+          set +e
+          gzip -dc diagnostic/payload.partial.gz > diagnostic/payload.partial.tar 2> diagnostic/gzip-error.txt
+          gzip_rc=$?
+          tar -tvf diagnostic/payload.partial.tar > diagnostic/tar-listing.txt 2> diagnostic/tar-error.txt
+          tar_list_rc=$?
+          tar -xf diagnostic/payload.partial.tar -C diagnostic/extracted 2> diagnostic/extract-error.txt
+          extract_rc=$?
+          set -e
+
+          printf 'gzip_rc=%s\ntar_list_rc=%s\nextract_rc=%s\n' "$gzip_rc" "$tar_list_rc" "$extract_rc" | tee -a diagnostic/summary.txt
+          printf 'tar_bytes=%s\n' "$(wc -c < diagnostic/payload.partial.tar)" | tee -a diagnostic/summary.txt
+          printf 'listed_paths=%s\n' "$(wc -l < diagnostic/tar-listing.txt)" | tee -a diagnostic/summary.txt
+          printf 'extracted_files=%s\n' "$(find diagnostic/extracted -type f | wc -l)" | tee -a diagnostic/summary.txt
+
+          echo '--- gzip error ---'
+          cat diagnostic/gzip-error.txt || true
+          echo '--- tar error ---'
+          cat diagnostic/tar-error.txt || true
+          echo '--- extract error ---'
+          cat diagnostic/extract-error.txt || true
+          echo '--- final 30 listed paths ---'
+          tail -30 diagnostic/tar-listing.txt || true
+          echo '--- extracted paths ---'
+          find diagnostic/extracted -type f | sed 's#^diagnostic/extracted/##' | sort | tail -80
+
+      - name: Upload diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: void-client-v032-wave2-payload-diagnostic
+          path: diagnostic/
+          retention-days: 7
