@@ -1,0 +1,88 @@
+name: v0.3.2 remediation diagnostic
+
+on:
+  push:
+    branches:
+      - fix/v0.3.2-plugin-remediation-wave1
+    paths:
+      - '.github/workflows/v032-remediation-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out remediation branch
+        uses: actions/checkout@v4
+
+      - name: Set up Java 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Clean compile, test and build release JAR
+        run: ./gradlew clean :client:compileJava :client:test :client:proguardJar --no-daemon --stacktrace
+
+      - name: Locate packaged glGetTexImageub references and callers
+        shell: bash
+        run: |
+          set -euo pipefail
+          jar_path='client/build/libs/void-client-0.3.1-release.jar'
+          test -f "$jar_path"
+          rm -rf /tmp/v032-jar
+          mkdir -p /tmp/v032-jar build/remediation-diagnostic
+          unzip -q "$jar_path" -d /tmp/v032-jar
+
+          report='build/remediation-diagnostic/glGetTexImageub-report.txt'
+          : > "$report"
+          echo "release_jar=$jar_path" >> "$report"
+          echo "source_sha=$(git rev-parse HEAD)" >> "$report"
+          echo >> "$report"
+          echo '[class files whose constant pool contains glGetTexImageub]' >> "$report"
+          grep -R -l -a -F 'glGetTexImageub' /tmp/v032-jar --include='*.class' \
+            | sort | sed 's#^/tmp/v032-jar/##' | tee -a "$report" || true
+
+          echo >> "$report"
+          echo '[executable call sites]' >> "$report"
+          callers=0
+          while IFS= read -r class_file; do
+            [ -n "$class_file" ] || continue
+            class_name="${class_file%.class}"
+            class_name="${class_name//\//.}"
+            # The OpenGL class itself declares the native method; it is not a caller.
+            if [ "$class_name" = 'jaggl.OpenGL' ]; then
+              continue
+            fi
+            disassembly="$(javap -classpath "$jar_path" -c -p "$class_name" 2>/dev/null || true)"
+            if printf '%s\n' "$disassembly" | grep -F 'jaggl/OpenGL.glGetTexImageub' >/dev/null; then
+              callers=$((callers + 1))
+              echo "$class_name" | tee -a "$report"
+              printf '%s\n' "$disassembly" \
+                | grep -B 8 -A 8 -F 'jaggl/OpenGL.glGetTexImageub' \
+                >> "$report" || true
+              echo >> "$report"
+            fi
+          done < <(
+            grep -R -l -a -F 'glGetTexImageub' /tmp/v032-jar --include='*.class' \
+              | sort | sed 's#^/tmp/v032-jar/##' || true
+          )
+
+          echo "caller_count=$callers" | tee -a "$report"
+          cat "$report"
+
+      - name: Upload diagnostic report and release JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: void-client-v032-remediation-diagnostic
+          path: |
+            build/remediation-diagnostic/glGetTexImageub-report.txt
+            client/build/libs/void-client-0.3.1-release.jar
+          if-no-files-found: error
+          retention-days: 7
