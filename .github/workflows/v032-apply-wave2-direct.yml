@@ -6,6 +6,7 @@ on:
       - fix/v0.3.2-plugin-remediation-wave2
     paths:
       - '.github/workflows/v032-apply-wave2-direct.yml'
+      - 'tools/wave2_04_tests.py'
   workflow_dispatch:
 
 permissions:
@@ -37,11 +38,13 @@ jobs:
             tools/wave2_01_events.py \
             tools/wave2_02_items.py \
             tools/wave2_03_projection.py \
-            tools/wave2_04_tests.py \
+            tools/wave2_04_tests.py
+          git rm -f \
             .github/workflows/v032-wave2-source-export.yml \
             .github/workflows/v032-apply-remediation-wave2.yml \
             .github/workflows/v032-wave2-payload-diagnostic.yml \
-            .github/workflows/v032-apply-wave2-direct.yml
+            .github/workflows/v032-wave2-prerelease.yml \
+            .github/workflows/v032-apply-wave2-direct.yml || true
 
       - name: Verify source contracts before compilation
         shell: bash
