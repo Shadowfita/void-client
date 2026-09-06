@@ -1,0 +1,691 @@
+name: Apply v0.3.2 plugin remediation wave 1
+
+on:
+  push:
+    branches:
+      - fix/v0.3.2-plugin-remediation-wave1
+    paths:
+      - '.github/workflows/v032-apply-remediation-wave1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-build-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out remediation branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply lifecycle, state and thread-safety remediations
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new, label):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{label}: expected exactly one match, got {count}")
+              p.write_text(text.replace(old, new, 1))
+
+          # 1. Plugin startup is transactional. A partial start must not leave a
+          # plugin marked active, subscribed, scheduled or holding UI resources.
+          path = 'client/src/net/runelite/client/plugins/PluginManager.java'
+          old = '''\tpublic boolean startPlugin(Plugin plugin) throws PluginInstantiationException
+\t{
+\t\t// plugins always start in the EDT
+\t\tassert SwingUtilities.isEventDispatchThread();
+
+\t\tif (!canPluginRun(plugin))
+\t\t{
+\t\t\tsetPluginEnabled(plugin, false);
+\t\t\treturn false;
+\t\t}
+
+\t\tif (activePlugins.contains(plugin) || !isPluginEnabled(plugin))
+\t\t{
+\t\t\treturn false;
+\t\t}
+
+\t\tactivePlugins.add(plugin);
+
+\t\ttry
+\t\t{
+\t\t\tplugin.startUp();
+
+\t\t\tlog.debug("Plugin {} is now running", plugin.getClass().getSimpleName());
+\t\t\tif (!isOutdated && sceneTileManager != null)
+\t\t\t{
+\t\t\t\tfinal GameEventManager gameEventManager = this.sceneTileManager.get();
+\t\t\t\tif (gameEventManager != null)
+\t\t\t\t{
+\t\t\t\t\tgameEventManager.simulateGameEvents(plugin);
+\t\t\t\t}
+\t\t\t}
+
+\t\t\teventBus.register(plugin);
+\t\t\tschedule(plugin);
+\t\t\teventBus.post(new PluginChanged(plugin, true));
+\t\t}
+\t\tcatch (ThreadDeath e)
+\t\t{
+\t\t\tthrow e;
+\t\t}
+\t\tcatch (Throwable ex)
+\t\t{
+\t\t\tthrow new PluginInstantiationException(ex);
+\t\t}
+
+\t\treturn true;
+\t}
+'''
+          new = '''\tpublic boolean startPlugin(Plugin plugin) throws PluginInstantiationException
+\t{
+\t\t// plugins always start in the EDT
+\t\tassert SwingUtilities.isEventDispatchThread();
+
+\t\tif (!canPluginRun(plugin))
+\t\t{
+\t\t\tsetPluginEnabled(plugin, false);
+\t\t\treturn false;
+\t\t}
+
+\t\tif (activePlugins.contains(plugin) || !isPluginEnabled(plugin))
+\t\t{
+\t\t\treturn false;
+\t\t}
+
+\t\tboolean startupInvoked = false;
+\t\tboolean registered = false;
+\t\tboolean scheduled = false;
+\t\ttry
+\t\t{
+\t\t\tstartupInvoked = true;
+\t\t\tplugin.startUp();
+
+\t\t\tif (!isOutdated && sceneTileManager != null)
+\t\t\t{
+\t\t\t\tfinal GameEventManager gameEventManager = this.sceneTileManager.get();
+\t\t\t\tif (gameEventManager != null)
+\t\t\t\t{
+\t\t\t\t\tgameEventManager.simulateGameEvents(plugin);
+\t\t\t\t}
+\t\t\t}
+
+\t\t\teventBus.register(plugin);
+\t\t\tregistered = true;
+\t\t\tschedule(plugin);
+\t\t\tscheduled = true;
+\t\t\tactivePlugins.add(plugin);
+\t\t\teventBus.post(new PluginChanged(plugin, true));
+\t\t\tlog.debug("Plugin {} is now running", plugin.getClass().getSimpleName());
+\t\t\treturn true;
+\t\t}
+\t\tcatch (ThreadDeath e)
+\t\t{
+\t\t\trollbackFailedStart(plugin, startupInvoked, registered, scheduled, e);
+\t\t\tthrow e;
+\t\t}
+\t\tcatch (Throwable ex)
+\t\t{
+\t\t\trollbackFailedStart(plugin, startupInvoked, registered, scheduled, ex);
+\t\t\tthrow new PluginInstantiationException(ex);
+\t\t}
+\t}
+
+\tprivate void rollbackFailedStart(
+\t\tPlugin plugin,
+\t\tboolean startupInvoked,
+\t\tboolean registered,
+\t\tboolean scheduled,
+\t\tThrowable cause)
+\t{
+\t\tactivePlugins.remove(plugin);
+\t\tif (scheduled)
+\t\t{
+\t\t\ttry
+\t\t\t{
+\t\t\t\tunschedule(plugin);
+\t\t\t}
+\t\t\tcatch (Throwable cleanupFailure)
+\t\t\t{
+\t\t\t\tcause.addSuppressed(cleanupFailure);
+\t\t\t}
+\t\t}
+\t\tif (registered)
+\t\t{
+\t\t\ttry
+\t\t\t{
+\t\t\t\teventBus.unregister(plugin);
+\t\t\t}
+\t\t\tcatch (Throwable cleanupFailure)
+\t\t\t{
+\t\t\t\tcause.addSuppressed(cleanupFailure);
+\t\t\t}
+\t\t}
+\t\tif (startupInvoked)
+\t\t{
+\t\t\ttry
+\t\t\t{
+\t\t\t\tplugin.shutDown();
+\t\t\t}
+\t\t\tcatch (Throwable cleanupFailure)
+\t\t\t{
+\t\t\t\tcause.addSuppressed(cleanupFailure);
+\t\t\t}
+\t\t}
+\t\tlog.warn("Rolled back failed start of plugin {}", plugin.getClass().getSimpleName(), cause);
+\t}
+'''
+          replace_once(path, old, new, 'transactional plugin startup')
+
+          # 2. NPC polling keys must not include mutable positions. Also reset
+          # scene-local snapshots when the loaded scene changes.
+          path = 'client/src/net/runelite/client/game/GameStateBridge.java'
+          replace_once(path,
+          '''\tprivate boolean groundItemsInitialized;
+\tprivate boolean npcsInitialized;
+\tprivate boolean skillsInitialized;
+''',
+          '''\tprivate boolean groundItemsInitialized;
+\tprivate boolean npcsInitialized;
+\tprivate boolean skillsInitialized;
+\tprivate int lastBaseX = Integer.MIN_VALUE;
+\tprivate int lastBaseY = Integer.MIN_VALUE;
+\tprivate int lastPlane = Integer.MIN_VALUE;
+''', 'scene identity fields')
+          replace_once(path,
+          '''\t\tif (client == null)
+\t\t{
+\t\t\treturn;
+\t\t}
+
+\t\tif (!GameEventBridgeHooks.hasDirectNpcHooks())
+''',
+          '''\t\tif (client == null)
+\t\t{
+\t\t\treturn;
+\t\t}
+
+\t\tresetSceneTrackingIfNeeded();
+
+\t\tif (!GameEventBridgeHooks.hasDirectNpcHooks())
+''', 'scene reset invocation')
+          replace_once(path,
+          '''\tprivate void updateGroundItems()
+''',
+          '''\tprivate void resetSceneTrackingIfNeeded()
+\t{
+\t\tint baseX = client.getBaseX();
+\t\tint baseY = client.getBaseY();
+\t\tint plane = client.getPlane();
+\t\tif (baseX == lastBaseX && baseY == lastBaseY && plane == lastPlane)
+\t\t{
+\t\t\treturn;
+\t\t}
+
+\t\tgroundItems.clear();
+\t\tnpcs.clear();
+\t\trecentNpcDespawns.clear();
+\t\tgroundItemsInitialized = false;
+\t\tnpcsInitialized = false;
+\t\tlastBaseX = baseX;
+\t\tlastBaseY = baseY;
+\t\tlastPlane = plane;
+\t}
+
+\tprivate void updateGroundItems()
+''', 'scene reset method')
+          replace_once(path,
+          '''\tprivate static String npcKey(GameClient.NpcInfo npc)
+\t{
+\t\treturn npc.getId() + ":" + npc.getPlane() + ":" + npc.getLocalX() + ":" + npc.getLocalY() + ":" + npc.getName();
+\t}
+''',
+          '''\tprivate static String npcKey(GameClient.NpcInfo npc)
+\t{
+\t\tif (npc.getIndex() >= 0)
+\t\t{
+\t\t\treturn "index:" + npc.getIndex();
+\t\t}
+\t\t// Legacy fallback only. Current 634 snapshots expose the native NPC index.
+\t\treturn "fallback:" + npc.getId() + ":" + npc.getPlane() + ":"
+\t\t\t+ npc.getLocalX() + ":" + npc.getLocalY() + ":" + npc.getName();
+\t}
+''', 'stable NPC key')
+
+          # 3. Ignore zero/uninitialised stat arrays and baseline valid vitals
+          # before emitting threshold notifications.
+          path = 'client/src/net/runelite/client/plugins/idlenotifier/IdleNotifierPlugin.java'
+          replace_once(path,
+          '''\tprivate boolean idleNotified;
+\tprivate boolean hitpointsNotified;
+\tprivate boolean prayerNotified;
+''',
+          '''\tprivate boolean idleNotified;
+\tprivate boolean hitpointsNotified;
+\tprivate boolean prayerNotified;
+\tprivate boolean hitpointsInitialised;
+\tprivate boolean prayerInitialised;
+''', 'vital baseline fields')
+          replace_once(path,
+          '''\t\t\t\telse if (config.notifyLogout() && now - playerMissingSince >= 1500L)
+\t\t\t\t{
+\t\t\t\t\tnotifier.notify("You have logged out.");
+\t\t\t\t\thadPlayer = false;
+\t\t\t\t}
+''',
+          '''\t\t\t\telse if (config.notifyLogout() && now - playerMissingSince >= 1500L)
+\t\t\t\t{
+\t\t\t\t\tnotifier.notify("You have logged out.");
+\t\t\t\t\thadPlayer = false;
+\t\t\t\t\tresetVitals();
+\t\t\t\t}
+''', 'logout vital reset')
+          old = '''\tprivate void checkVitals()
+\t{
+\t\tfor (GameClient.SkillSnapshot skill : client.getSkillSnapshots())
+\t\t{
+\t\t\tif (skill.getSkill() == Skill.HITPOINTS)
+\t\t\t{
+\t\t\t\tint current = skill.getBoostedLevel();
+\t\t\t\tif (config.notifyLowHitpoints() && current > 0 && current <= config.hitpointsThreshold())
+\t\t\t\t{
+\t\t\t\t\tif (!hitpointsNotified)
+\t\t\t\t\t{
+\t\t\t\t\t\tnotifier.notify("Low hitpoints: " + current + ".");
+\t\t\t\t\t\thitpointsNotified = true;
+\t\t\t\t\t}
+\t\t\t\t}
+\t\t\t\telse if (current > config.hitpointsThreshold())
+\t\t\t\t{
+\t\t\t\t\thitpointsNotified = false;
+\t\t\t\t}
+\t\t\t}
+\t\t\telse if (skill.getSkill() == Skill.PRAYER)
+\t\t\t{
+\t\t\t\tint current = skill.getBoostedLevel();
+\t\t\t\tif (config.notifyLowPrayer() && current <= config.prayerThreshold())
+\t\t\t\t{
+\t\t\t\t\tif (!prayerNotified)
+\t\t\t\t\t{
+\t\t\t\t\t\tnotifier.notify("Low prayer: " + current + ".");
+\t\t\t\t\t\tprayerNotified = true;
+\t\t\t\t\t}
+\t\t\t\t}
+\t\t\t\telse if (current > config.prayerThreshold())
+\t\t\t\t{
+\t\t\t\t\tprayerNotified = false;
+\t\t\t\t}
+\t\t\t}
+\t\t}
+\t}
+'''
+          new = '''\tprivate void checkVitals()
+\t{
+\t\tfor (GameClient.SkillSnapshot skill : client.getSkillSnapshots())
+\t\t{
+\t\t\tint base = skill.getLevel();
+\t\t\tint current = skill.getBoostedLevel();
+\t\t\tif (base <= 0 || current <= 0)
+\t\t\t{
+\t\t\t\tcontinue;
+\t\t\t}
+
+\t\t\tif (skill.getSkill() == Skill.HITPOINTS)
+\t\t\t{
+\t\t\t\tif (!hitpointsInitialised)
+\t\t\t\t{
+\t\t\t\t\thitpointsInitialised = true;
+\t\t\t\t\thitpointsNotified = current <= config.hitpointsThreshold();
+\t\t\t\t\tcontinue;
+\t\t\t\t}
+\t\t\t\tif (config.notifyLowHitpoints() && current <= config.hitpointsThreshold())
+\t\t\t\t{
+\t\t\t\t\tif (!hitpointsNotified)
+\t\t\t\t\t{
+\t\t\t\t\t\tnotifier.notify("Low hitpoints: " + current + ".");
+\t\t\t\t\t\thitpointsNotified = true;
+\t\t\t\t\t}
+\t\t\t\t}
+\t\t\t\telse if (current > config.hitpointsThreshold())
+\t\t\t\t{
+\t\t\t\t\thitpointsNotified = false;
+\t\t\t\t}
+\t\t\t}
+\t\t\telse if (skill.getSkill() == Skill.PRAYER)
+\t\t\t{
+\t\t\t\tif (!prayerInitialised)
+\t\t\t\t{
+\t\t\t\t\tprayerInitialised = true;
+\t\t\t\t\tprayerNotified = current <= config.prayerThreshold();
+\t\t\t\t\tcontinue;
+\t\t\t\t}
+\t\t\t\tif (config.notifyLowPrayer() && current <= config.prayerThreshold())
+\t\t\t\t{
+\t\t\t\t\tif (!prayerNotified)
+\t\t\t\t\t{
+\t\t\t\t\t\tnotifier.notify("Low prayer: " + current + ".");
+\t\t\t\t\t\tprayerNotified = true;
+\t\t\t\t\t}
+\t\t\t\t}
+\t\t\t\telse if (current > config.prayerThreshold())
+\t\t\t\t{
+\t\t\t\t\tprayerNotified = false;
+\t\t\t\t}
+\t\t\t}
+\t\t}
+\t}
+'''
+          replace_once(path, old, new, 'valid vital snapshots')
+          replace_once(path,
+          '''\t\tidleNotified = false;
+\t\thitpointsNotified = false;
+\t\tprayerNotified = false;
+\t}
+''',
+          '''\t\tidleNotified = false;
+\t\tresetVitals();
+\t}
+
+\tprivate void resetVitals()
+\t{
+\t\thitpointsNotified = false;
+\t\tprayerNotified = false;
+\t\thitpointsInitialised = false;
+\t\tprayerInitialised = false;
+\t}
+''', 'reset vital baselines')
+
+          # 4. Bank search callbacks run on Swing's EDT. They now publish only a
+          # query snapshot; all client/container reads remain on ClientTick.
+          path = 'client/src/net/runelite/client/plugins/banktags/BankTagsPanel.java'
+          replace_once(path,
+          '''import java.util.List;
+import java.util.Map;
+''',
+          '''import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+''', 'BankTagsPanel Consumer import')
+          replace_once(path, 'private Runnable searchListener;', 'private Consumer<String> searchListener;', 'BankTagsPanel listener type')
+          replace_once(path,
+          '''\t\t\tprivate void changed() { if (searchListener != null) searchListener.run(); }
+''',
+          '''\t\t\tprivate void changed() { if (searchListener != null) searchListener.accept(search.getText()); }
+''', 'BankTagsPanel callback')
+          replace_once(path,
+          '''\tvoid setSearchListener(Runnable listener) { this.searchListener = listener; }
+\tString getSearchText() { return search.getText(); }
+''',
+          '''\tvoid setSearchListener(Consumer<String> listener) { this.searchListener = listener; }
+''', 'BankTagsPanel API')
+
+          path = 'client/src/net/runelite/client/plugins/banktags/BankTagsPlugin.java'
+          replace_once(path,
+          '''\tprivate long lastRefresh;
+\tprivate int lastFingerprint;
+''',
+          '''\tprivate long lastRefresh;
+\tprivate int lastFingerprint;
+\tprivate volatile String searchQuery = "";
+\tprivate volatile boolean refreshRequested;
+''', 'BankTags state fields')
+          replace_once(path,
+          '''\t\tpanel = injector.getInstance(BankTagsPanel.class);
+\t\tpanel.setSearchListener(this::forceRefresh);
+''',
+          '''\t\tpanel = injector.getInstance(BankTagsPanel.class);
+\t\tpanel.setSearchListener(this::onSearchChanged);
+''', 'BankTags listener')
+          replace_once(path, '\t\tforceRefresh();\n', '\t\trequestRefresh();\n', 'BankTags startup refresh')
+          replace_once(path,
+          '''\t\tlastFingerprint = 0;
+\t\tlastRefresh = 0L;
+''',
+          '''\t\tlastFingerprint = 0;
+\t\tlastRefresh = 0L;
+\t\tsearchQuery = "";
+\t\trefreshRequested = false;
+''', 'BankTags shutdown state')
+          old = '''\t@Subscribe
+\tpublic void onClientTick(ClientTick tick)
+\t{
+\t\tif (panel == null || System.currentTimeMillis() - lastRefresh < 500L)
+\t\t{
+\t\t\treturn;
+\t\t}
+\t\trefresh(false);
+\t}
+
+\tprivate void forceRefresh()
+\t{
+\t\tlastFingerprint = Integer.MIN_VALUE;
+\t\trefresh(true);
+\t}
+'''
+          new = '''\t@Subscribe
+\tpublic void onClientTick(ClientTick tick)
+\t{
+\t\tif (panel == null)
+\t\t{
+\t\t\treturn;
+\t\t}
+\t\tboolean forced = refreshRequested;
+\t\tif (!forced && System.currentTimeMillis() - lastRefresh < 500L)
+\t\t{
+\t\t\treturn;
+\t\t}
+\t\trefreshRequested = false;
+\t\trefresh(forced);
+\t}
+
+\tprivate void onSearchChanged(String query)
+\t{
+\t\tsearchQuery = query == null ? "" : query;
+\t\trequestRefresh();
+\t}
+
+\tprivate void requestRefresh()
+\t{
+\t\tlastFingerprint = Integer.MIN_VALUE;
+\t\trefreshRequested = true;
+\t}
+'''
+          replace_once(path, old, new, 'BankTags client-thread refresh')
+          replace_once(path,
+          '''\t\tString query = panel == null ? "" : panel.getSearchText();
+''',
+          '''\t\tString query = searchQuery;
+''', 'BankTags cached query')
+
+          # 5. Inventory-grid rendering must never dereference a missing dragged
+          # item or activate for an unrelated canvas drag.
+          path = 'client/src/net/runelite/client/plugins/inventorygrid/InventoryGridOverlay.java'
+          replace_once(path,
+          '''\t\tif (inventoryItems.size() < INVENTORY_SIZE)
+\t\t{
+\t\t\treturn null;
+\t\t}
+
+\t\tRectangle initialBounds = draggedItem.getCanvasBounds(false);
+''',
+          '''\t\tif (inventoryItems.size() < INVENTORY_SIZE || draggedItem == null)
+\t\t{
+\t\t\treturn null;
+\t\t}
+
+\t\tRectangle initialBounds = draggedItem.getCanvasBounds(false);
+\t\tif (initialBounds == null)
+\t\t{
+\t\t\treturn null;
+\t\t}
+''', 'InventoryGrid null drag guard')
+          replace_once(path,
+          '''\t\tmouseDown = true;
+\t\thoverActive = false;
+\t\tdraggedItem = findItemAt(lastInventoryItems, mousePoint);
+\t\treturn mouseEvent;
+''',
+          '''\t\thoverActive = false;
+\t\tdraggedItem = findItemAt(lastInventoryItems, mousePoint);
+\t\tmouseDown = draggedItem != null;
+\t\tif (!mouseDown)
+\t\t{
+\t\t\tinitialMousePoint = null;
+\t\t}
+\t\treturn mouseEvent;
+''', 'InventoryGrid scoped drag activation')
+
+          # 6. Optional supersampling must fail closed if a legacy JAGGL build
+          # exposes a Java declaration without the corresponding native symbol.
+          path = 'client/src/Class258_Sub3_Sub1.java'
+          old = '''        releaseInterfaceSupersampleTexture();
+        Class258_Sub3 texture = this.aHa_Sub2_4851.createInterfaceSupersampleTexture(this, factor);
+        if (texture != null) {
+            interfaceSupersampleTexture = texture;
+            interfaceSupersampleFactor = factor;
+            return texture;
+        }
+        return this;
+'''
+          new = '''        releaseInterfaceSupersampleTexture();
+        try {
+            Class258_Sub3 texture = this.aHa_Sub2_4851.createInterfaceSupersampleTexture(this, factor);
+            if (texture != null) {
+                interfaceSupersampleTexture = texture;
+                interfaceSupersampleFactor = factor;
+                return texture;
+            }
+        } catch (UnsatisfiedLinkError unsupportedJagglReadback) {
+            // Some legacy JAGGL bundles declare texture readback methods which
+            // their native library does not export. Supersampling is optional;
+            // permanently fall back to the original texture for this instance.
+            disableInterfaceSupersampling();
+        }
+        return this;
+'''
+          replace_once(path, old, new, 'JAGGL supersampling failsafe')
+
+          # 7. Advance the branch/runtime version and document this bounded wave.
+          replace_once('client/build.gradle.kts', 'version = "0.3.1"', 'version = "0.3.2"', 'Gradle version')
+          replace_once('client/src/net/runelite/client/runelite.properties', 'void.version= 0.3.1', 'void.version= 0.3.2', 'runtime version')
+          Path('release-notes/v0.3.2.md').write_text('''# Void Client v0.3.2 — remediation wave 1
+
+This development branch begins the adversarial plugin-remediation programme.
+
+## Correctness and lifecycle
+
+- Plugin startup is transactional and rolls back partial overlay, event-bus and scheduler state when startup fails.
+- Polled NPC identity now uses the native NPC index rather than mutable coordinates, preventing movement from appearing as despawn/spawn churn.
+- Scene-local NPC and ground-item snapshots are reset when base coordinates or plane change.
+- Idle notifications ignore uninitialised zero stat arrays and baseline valid hitpoints/prayer values before alerting.
+
+## Threading and safety
+
+- Bank-tag search callbacks no longer read live client containers from Swing's event-dispatch thread.
+- Inventory-grid drag rendering is scoped to a real inventory item and guards null bounds.
+- Fractional supersampling falls back to the original texture if a packaged legacy JAGGL library lacks an advertised native symbol.
+
+This is the first implementation wave, not final qualification of every plugin.
+''')
+          PY
+
+          git diff --check
+          grep -F 'rollbackFailedStart' client/src/net/runelite/client/plugins/PluginManager.java
+          grep -F 'return "index:" + npc.getIndex();' client/src/net/runelite/client/game/GameStateBridge.java
+          grep -F 'base <= 0 || current <= 0' client/src/net/runelite/client/plugins/idlenotifier/IdleNotifierPlugin.java
+          grep -F 'private volatile String searchQuery' client/src/net/runelite/client/plugins/banktags/BankTagsPlugin.java
+          grep -F 'inventoryItems.size() < INVENTORY_SIZE || draggedItem == null' client/src/net/runelite/client/plugins/inventorygrid/InventoryGridOverlay.java
+          grep -F 'catch (UnsatisfiedLinkError unsupportedJagglReadback)' client/src/Class258_Sub3_Sub1.java
+
+      - name: Set up Java 21 for Gradle
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Clean compile, test and build release JAR
+        run: ./gradlew clean :client:compileJava :client:test :client:proguardJar --no-daemon --stacktrace
+
+      - name: Verify release output and prohibited readback calls
+        shell: bash
+        run: |
+          set -euo pipefail
+          jar_path='client/build/libs/void-client-0.3.2-release.jar'
+          test -f "$jar_path"
+          unzip -t "$jar_path" >/dev/null
+          unzip -p "$jar_path" META-INF/MANIFEST.MF | tr -d '\r' | grep -Fx 'Main-Class: Loader'
+          unzip -p "$jar_path" net/runelite/client/runelite.properties | tr -d '\r' | grep -Fx 'void.version= 0.3.2'
+
+          rm -rf /tmp/v032-release
+          mkdir -p /tmp/v032-release
+          unzip -q "$jar_path" -d /tmp/v032-release
+          candidates=/tmp/v032-glgetteximage-candidates.txt
+          grep -R -l -a -F 'glGetTexImageub' /tmp/v032-release --include='*.class' \
+            | sort | sed 's#^/tmp/v032-release/##' > "$candidates" || true
+          while IFS= read -r class_file; do
+            [ -n "$class_file" ] || continue
+            class_name="${class_file%.class}"
+            class_name="${class_name//\//.}"
+            [ "$class_name" = 'jaggl.OpenGL' ] && continue
+            if javap -classpath "$jar_path" -c -p "$class_name" 2>/dev/null \
+              | grep -F 'jaggl/OpenGL.glGetTexImageub' >/dev/null; then
+              echo "Unsupported executable JAGGL readback caller remains: $class_name" >&2
+              exit 1
+            fi
+          done < "$candidates"
+
+      - name: Commit verified remediation source
+        id: source
+        shell: bash
+        run: |
+          git config user.name 'Ryan Palmer'
+          git config user.email 'www.ryan.palmer@hotmail.com'
+          git add \
+            client/build.gradle.kts \
+            client/src/Class258_Sub3_Sub1.java \
+            client/src/net/runelite/client/game/GameStateBridge.java \
+            client/src/net/runelite/client/plugins/PluginManager.java \
+            client/src/net/runelite/client/plugins/banktags/BankTagsPanel.java \
+            client/src/net/runelite/client/plugins/banktags/BankTagsPlugin.java \
+            client/src/net/runelite/client/plugins/idlenotifier/IdleNotifierPlugin.java \
+            client/src/net/runelite/client/plugins/inventorygrid/InventoryGridOverlay.java \
+            client/src/net/runelite/client/runelite.properties \
+            release-notes/v0.3.2.md
+          git rm .github/workflows/v032-apply-remediation-wave1.yml
+          git commit -m 'Begin v0.3.2 plugin remediation'
+          git push origin HEAD:fix/v0.3.2-plugin-remediation-wave1
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Stage verified test build
+        shell: bash
+        run: |
+          mkdir -p release
+          cp client/build/libs/void-client-0.3.2-release.jar \
+            release/void-client-0.3.2-remediation-wave1.jar
+          (cd release && sha256sum void-client-0.3.2-remediation-wave1.jar \
+            > void-client-0.3.2-remediation-wave1.jar.sha256)
+          cat > release/void-client-0.3.2-remediation-wave1.build-info <<EOF
+          branch=fix/v0.3.2-plugin-remediation-wave1
+          source_sha=${{ steps.source.outputs.sha }}
+          workflow_run=${{ github.run_id }}
+          scope=transactional plugin lifecycle; stable NPC polling identity; scene reset; valid vital baselines; Bank Tags thread ownership; Inventory Grid null safety; JAGGL optional-feature fallback
+          EOF
+
+      - name: Upload verified remediation build
+        uses: actions/upload-artifact@v4
+        with:
+          name: void-client-v0.3.2-remediation-wave1
+          path: release/
+          if-no-files-found: error
+          retention-days: 7
