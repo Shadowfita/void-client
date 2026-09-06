@@ -1,0 +1,37 @@
+name: Export v0.3.2 wave 2 source
+
+on:
+  push:
+    branches:
+      - fix/v0.3.2-plugin-remediation-wave2
+    paths:
+      - '.github/workflows/v032-wave2-source-export.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p export
+          git archive --format=zip --output=export/void-client-v032-wave2-source.zip HEAD
+          git rev-parse HEAD > export/source-sha.txt
+
+      - name: Upload source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: void-client-v032-wave2-source
+          path: export/
+          if-no-files-found: error
+          retention-days: 7
