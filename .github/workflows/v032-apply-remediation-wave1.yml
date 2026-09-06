@@ -6,6 +6,8 @@ on:
       - fix/v0.3.2-plugin-remediation-wave1
     paths:
       - '.github/workflows/v032-apply-remediation-wave1.yml'
+      - 'tools/apply_v032_remediation_wave1.py'
+      - 'tools/patch_v032_runtime_identity.py'
   workflow_dispatch:
 
 permissions:
