@@ -490,10 +490,12 @@ public class PluginManager
 				}
 			}
 
-			eventBus.register(plugin);
+			// Mark cleanup eligibility before invoking operations which may
+			// partially mutate their registries and then throw.
 			registered = true;
-			schedule(plugin);
+			eventBus.register(plugin);
 			scheduled = true;
+			schedule(plugin);
 			activePlugins.add(plugin);
 			eventBus.post(new PluginChanged(plugin, true));
 			log.debug("Plugin {} is now running", plugin.getClass().getSimpleName());

@@ -34,7 +34,7 @@ public class BankTagsPlugin extends Plugin
 	@Inject private GameClient client;
 	@Inject private ClientToolbar clientToolbar;
 	@Inject private BankTagsConfig config;
-	private BankTagsPanel panel;
+	private volatile BankTagsPanel panel;
 	private NavigationButton navButton;
 	private long lastRefresh;
 	private int lastFingerprint;
@@ -108,9 +108,17 @@ public class BankTagsPlugin extends Plugin
 		Map<String, List<GameClient.ItemStackInfo>> groups = group(bank, query);
 		int itemCount = bank == null ? 0 : bank.getOccupiedSlots();
 		int totalValue = bank == null ? 0 : bank.getTotalValue();
-		if (panel != null)
+		BankTagsPanel target = panel;
+		if (target != null)
 		{
-			SwingUtilities.invokeLater(() -> panel.rebuild(groups, itemCount, totalValue, config.showValues()));
+			boolean showValues = config.showValues();
+			SwingUtilities.invokeLater(() ->
+			{
+				if (target == panel)
+				{
+					target.rebuild(groups, itemCount, totalValue, showValues);
+				}
+			});
 		}
 	}
 

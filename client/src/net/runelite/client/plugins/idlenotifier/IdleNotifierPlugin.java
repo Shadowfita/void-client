@@ -66,9 +66,12 @@ public class IdleNotifierPlugin extends Plugin
 				{
 					playerMissingSince = now;
 				}
-				else if (config.notifyLogout() && now - playerMissingSince >= 1500L)
+				else if (now - playerMissingSince >= 1500L)
 				{
-					notifier.notify("You have logged out.");
+					if (config.notifyLogout())
+					{
+						notifier.notify("You have logged out.");
+					}
 					hadPlayer = false;
 					resetVitals();
 				}
@@ -111,13 +114,18 @@ public class IdleNotifierPlugin extends Plugin
 		{
 			int base = skill.getLevel();
 			int current = skill.getBoostedLevel();
-			if (base <= 0 || current <= 0)
+			if (base <= 0 || current < 0)
 			{
 				continue;
 			}
 
 			if (skill.getSkill() == Skill.HITPOINTS)
 			{
+				// Zero hitpoints is a death state rather than a useful threshold alert.
+				if (current == 0)
+				{
+					continue;
+				}
 				if (!hitpointsInitialised)
 				{
 					hitpointsInitialised = true;
