@@ -4,10 +4,13 @@ import com.google.inject.Provides;
 import javax.inject.Inject;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.input.MouseManager;
+import net.runelite.client.compatibility.ClientCapability;
+import net.runelite.client.compatibility.RequiresCapabilities;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 
+@RequiresCapabilities({ClientCapability.VERIFIED_INVENTORY_CONTAINER, ClientCapability.VISIBLE_INVENTORY_SLOT_BOUNDS})
 @PluginDescriptor(
 	name = "Inventory Grid",
 	description = "Adds a grid and drop preview to the inventory when dragging.",

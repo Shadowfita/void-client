@@ -51,6 +51,7 @@ class InventoryTagsOverlay extends Overlay
 				continue;
 			}
 			Rectangle slot = QolInventoryLayout.slotBounds(client, item.getSlot());
+			if (slot == null) continue;
 			graphics.setColor(color);
 			graphics.fill(slot);
 			if (config.outline())

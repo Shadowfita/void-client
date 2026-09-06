@@ -9,6 +9,7 @@ import java.awt.Polygon;
 import javax.inject.Inject;
 import net.runelite.api.Perspective;
 import net.runelite.api.coords.LocalPoint;
+import net.runelite.client.compatibility.ClientCapabilityService;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -21,13 +22,16 @@ class TileIndicatorsOverlay extends Overlay
 
 	private final GameClient client;
 	private final TileIndicatorsConfig config;
+	private final ClientCapabilityService capabilities;
 
 	@Inject
-	TileIndicatorsOverlay(GameClient client, TileIndicatorsPlugin plugin, TileIndicatorsConfig config)
+	TileIndicatorsOverlay(GameClient client, TileIndicatorsPlugin plugin, TileIndicatorsConfig config,
+		ClientCapabilityService capabilities)
 	{
 		super(plugin);
 		this.client = client;
 		this.config = config;
+		this.capabilities = capabilities;
 		setPosition(OverlayPosition.DYNAMIC);
 		setLayer(OverlayLayer.ABOVE_SCENE);
 		setPriority(OverlayPriority.HIGH);
@@ -36,7 +40,7 @@ class TileIndicatorsOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!client.hasLocalPlayer())
+		if (!client.hasLocalPlayer() || !capabilities.canUse(TileIndicatorsPlugin.class))
 		{
 			return null;
 		}

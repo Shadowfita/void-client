@@ -14,6 +14,8 @@ import javax.swing.SwingUtilities;
 import net.runelite.api.events.ClientTick;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.compatibility.ClientCapability;
+import net.runelite.client.compatibility.RequiresCapabilities;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.qol.QolIcon;
@@ -22,6 +24,7 @@ import net.runelite.client.plugins.qol.QolPatterns;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 
+@RequiresCapabilities(ClientCapability.VERIFIED_BANK_CONTAINER)
 @PluginDescriptor(
 	name = "Bank Tags",
 	description = "Provides a searchable, tagged sidebar view of the current 634 bank container.",

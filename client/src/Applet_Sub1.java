@@ -7,6 +7,9 @@ import jagex3.jagmisc.jagmisc;
 import net.runelite.api.Skill;
 import net.runelite.api.hooks.Callbacks;
 import net.runelite.client.RuneLite;
+import net.runelite.client.game.ItemContainerRole;
+import net.runelite.client.game.ItemSnapshotService;
+import net.runelite.client.game.WidgetItemSnapshotStore;
 
 import java.applet.Applet;
 import java.applet.AppletContext;
@@ -786,6 +789,23 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
         rectangle.setBounds(left, top, Math.max(1, right - left), Math.max(1, bottom - top));
     }
 
+    static void captureRuneLiteWidgetItem(Class46 widget, int x, int y,
+            int clipLeft, int clipTop, int clipRight, int clipBottom) {
+        if (widget == null || widget.anInt704 < 0 || widget.anInt709 <= 0 || widget.anInt789 <= 0) return;
+        int left = interfaceToPhysicalX(x);
+        int top = interfaceToPhysicalY(y);
+        int right = interfaceToPhysicalRight(x + widget.anInt709);
+        int bottom = interfaceToPhysicalBottom(y + widget.anInt789);
+        int clipX = interfaceToPhysicalX(clipLeft);
+        int clipY = interfaceToPhysicalY(clipTop);
+        int clipR = interfaceToPhysicalRight(clipRight);
+        int clipB = interfaceToPhysicalBottom(clipBottom);
+        WidgetItemSnapshotStore.capture(widget.anInt830, widget.anInt704, widget.anInt774,
+                widget.anInt812, widget.anInt781,
+                new Rectangle(left, top, Math.max(1, right - left), Math.max(1, bottom - top)),
+                new Rectangle(clipX, clipY, Math.max(1, clipR - clipX), Math.max(1, clipB - clipY)));
+    }
+
     static void applyCanvasSize() {
         if (Class305.aCanvas3869 == null) {
             return;
@@ -1439,7 +1459,9 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
             }
 
             Class348_Sub13 container = (Class348_Sub13) node;
+            ItemContainerRole role = ItemContainerRole.fromKey(node.key);
             int capacity = Math.max(container.anIntArray6757.length, container.anIntArray6758.length);
+            if (role.getExpectedCapacity() > 0) capacity = Math.max(capacity, role.getExpectedCapacity());
             List<ItemStackInfo> items = new ArrayList<>();
             for (int slot = 0; slot < capacity; slot++) {
                 int id = slot < container.anIntArray6757.length ? container.anIntArray6757[slot] : -1;
@@ -1453,10 +1475,39 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
                 int price = definition == null ? 0 : Math.max(0, definition.cost);
                 items.add(new ItemStackInfo(id, quantity, name, price, slot));
             }
-            snapshots.add(new ItemContainerSnapshot(node.key, items, capacity));
+            boolean authoritative = role != ItemContainerRole.UNKNOWN;
+            snapshots.add(new ItemContainerSnapshot(node.key, items, capacity, role,
+                    authoritative, Class367_Sub11.anInt7396));
         }
 
         return snapshots;
+    }
+
+    @Override
+    public ItemContainerSnapshot getItemContainer(ItemContainerRole role) {
+        try {
+            if (RuneLite.getInjector() != null)
+                return RuneLite.getInjector().getInstance(ItemSnapshotService.class).getContainer(role);
+        } catch (Throwable ignored) {}
+        return super.getItemContainer(role);
+    }
+
+    @Override
+    public List<VisibleItemSlot> getVisibleItemSlots() {
+        try {
+            if (RuneLite.getInjector() != null)
+                return RuneLite.getInjector().getInstance(ItemSnapshotService.class).getVisibleItemSlots();
+        } catch (Throwable ignored) {}
+        return Collections.emptyList();
+    }
+
+    @Override
+    public long getVisibleItemSlotGeneration() {
+        try {
+            if (RuneLite.getInjector() != null)
+                return RuneLite.getInjector().getInstance(ItemSnapshotService.class).getGeneration();
+        } catch (Throwable ignored) {}
+        return -1L;
     }
 
     @Override
@@ -1590,10 +1641,36 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
 
     @Override
     public int getLocalTileHeight(int localX, int localY, int plane) {
-        if (localX < 0 || localY < 0 || plane < 0) {
-            return 0;
-        }
+        if (localX < 0 || localY < 0 || plane < 0) return 0;
         return Class275.method2064(localX << 2, plane, 11219, localY << 2);
+    }
+
+    @Override
+    public NativeActorProjection getNativeLocalPlayerProjection() {
+        return nativeActorProjection(Class132.aPlayer_1907);
+    }
+
+    @Override
+    public NativeActorProjection getNativeNpcProjection(int npcIndex) {
+        if (npcIndex < 0 || Class282.aClass356_3654 == null) return null;
+        Class348_Sub22 entry = (Class348_Sub22) Class282.aClass356_3654.method3480(npcIndex, -6008);
+        return entry == null ? null : nativeActorProjection(entry.aNpc_6859);
+    }
+
+    private NativeActorProjection nativeActorProjection(Class318_Sub1_Sub3_Sub3 actor) {
+        if (actor == null || Class348_Sub8.aHa6654 == null) return null;
+        int height = Math.max(1, actor.method2426(200));
+        net.runelite.api.Point ground = nativeActorPoint(actor, 0);
+        net.runelite.api.Point overhead = nativeActorPoint(actor, height);
+        return ground == null || overhead == null ? null : new NativeActorProjection(ground, overhead, height);
+    }
+
+    private net.runelite.api.Point nativeActorPoint(Class318_Sub1_Sub3_Sub3 actor, int heightOffset) {
+        aa_Sub2.method165(actor.plane, 0, heightOffset, 0, actor.x, 0, actor.y, (byte) 110, 0, 0);
+        int x = Class239_Sub21.anIntArray6062[0];
+        int y = Class239_Sub21.anIntArray6062[1];
+        if (x < 0 || y < 0) return null;
+        return new net.runelite.api.Point(Class295.anInt3764 + x, Class234.anInt3047 + y);
     }
 
     @Override

@@ -52,6 +52,7 @@ class ItemChargesOverlay extends Overlay
 				continue;
 			}
 			Rectangle bounds = QolInventoryLayout.slotBounds(client, item.getSlot());
+			if (bounds == null) continue;
 			int x = bounds.x + 2;
 			int y = bounds.y + graphics.getFontMetrics().getAscent();
 			OverlayUtil.renderTextLocation(graphics, new net.runelite.api.Point(x, y), count, config.textColor());

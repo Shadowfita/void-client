@@ -2,6 +2,7 @@ package com;
 
 import net.runelite.client.RuneLite;
 import net.runelite.api.Skill;
+import net.runelite.client.game.ItemContainerRole;
 
 import java.applet.Applet;
 import java.awt.*;
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -132,6 +134,9 @@ public abstract class GameClient extends Applet {
      */
     public abstract int getLocalTileHeight(int localX, int localY, int plane);
 
+    public NativeActorProjection getNativeLocalPlayerProjection() { return null; }
+    public NativeActorProjection getNativeNpcProjection(int npcIndex) { return null; }
+
     public abstract Canvas getCanvas();
 
     public abstract int getCanvasWidth();
@@ -218,6 +223,22 @@ public abstract class GameClient extends Applet {
     {
         return Collections.emptyList();
     }
+
+    public ItemContainerSnapshot getItemContainer(ItemContainerRole role)
+    {
+        if (role == null || role == ItemContainerRole.UNKNOWN) return null;
+        ItemContainerSnapshot match = null;
+        for (ItemContainerSnapshot value : getItemContainers())
+        {
+            if (value.getRole() != role || !value.isAuthoritative()) continue;
+            if (match != null) return null;
+            match = value;
+        }
+        return match;
+    }
+
+    public List<VisibleItemSlot> getVisibleItemSlots() { return Collections.emptyList(); }
+    public long getVisibleItemSlotGeneration() { return -1L; }
 
     public int getLocalPlayerAnimation()
     {
@@ -458,43 +479,91 @@ public abstract class GameClient extends Applet {
         private final long id;
         private final List<ItemStackInfo> items;
         private final int capacity;
+        private final ItemContainerRole role;
+        private final boolean authoritative;
+        private final long generation;
 
         public ItemContainerSnapshot(long id, List<ItemStackInfo> items, int capacity)
         {
+            this(id, items, capacity, ItemContainerRole.fromKey(id),
+                ItemContainerRole.fromKey(id) != ItemContainerRole.UNKNOWN, 0L);
+        }
+
+        public ItemContainerSnapshot(long id, List<ItemStackInfo> items, int capacity,
+            ItemContainerRole role, boolean authoritative, long generation)
+        {
             this.id = id;
-            this.items = Collections.unmodifiableList(items);
+            this.items = Collections.unmodifiableList(new ArrayList<>(items));
             this.capacity = capacity;
+            this.role = role == null ? ItemContainerRole.UNKNOWN : role;
+            this.authoritative = authoritative;
+            this.generation = generation;
         }
 
-        public long getId()
+        public long getId() { return id; }
+        public List<ItemStackInfo> getItems() { return items; }
+        public int getCapacity() { return capacity; }
+        public ItemContainerRole getRole() { return role; }
+        public boolean isAuthoritative() { return authoritative; }
+        public long getGeneration() { return generation; }
+        public int getOccupiedSlots() { return items.size(); }
+        public ItemStackInfo getItemAt(int slot)
         {
-            return id;
+            for (ItemStackInfo item : items) if (item.getSlot() == slot) return item;
+            return null;
         }
-
-        public List<ItemStackInfo> getItems()
-        {
-            return items;
-        }
-
-        public int getCapacity()
-        {
-            return capacity;
-        }
-
-        public int getOccupiedSlots()
-        {
-            return items.size();
-        }
-
         public int getTotalValue()
         {
             long total = 0L;
-            for (ItemStackInfo item : items)
-            {
-                total += item.getStackValue();
-            }
+            for (ItemStackInfo item : items) total += item.getStackValue();
             return (int) Math.min(Integer.MAX_VALUE, total);
         }
+    }
+
+    public static final class VisibleItemSlot
+    {
+        private final int packedWidgetId, childIndex, itemId, quantity;
+        private final long containerId, generation;
+        private final ItemContainerRole role;
+        private final Rectangle bounds, clipBounds;
+        private final boolean authoritative;
+
+        public VisibleItemSlot(int packedWidgetId, int childIndex, long containerId,
+            ItemContainerRole role, int itemId, int quantity, Rectangle bounds,
+            Rectangle clipBounds, long generation, boolean authoritative)
+        {
+            this.packedWidgetId = packedWidgetId; this.childIndex = childIndex;
+            this.containerId = containerId; this.role = role == null ? ItemContainerRole.UNKNOWN : role;
+            this.itemId = itemId; this.quantity = quantity;
+            this.bounds = bounds == null ? new Rectangle() : new Rectangle(bounds);
+            this.clipBounds = clipBounds == null ? new Rectangle() : new Rectangle(clipBounds);
+            this.generation = generation; this.authoritative = authoritative;
+        }
+
+        public int getPackedWidgetId() { return packedWidgetId; }
+        public int getChildIndex() { return childIndex; }
+        public long getContainerId() { return containerId; }
+        public ItemContainerRole getRole() { return role; }
+        public int getItemId() { return itemId; }
+        public int getQuantity() { return quantity; }
+        public Rectangle getBounds() { return new Rectangle(bounds); }
+        public Rectangle getClipBounds() { return new Rectangle(clipBounds); }
+        public long getGeneration() { return generation; }
+        public boolean isAuthoritative() { return authoritative; }
+        public boolean isOccupied() { return itemId >= 0; }
+    }
+
+    public static final class NativeActorProjection
+    {
+        private final net.runelite.api.Point ground;
+        private final net.runelite.api.Point overhead;
+        private final int height;
+        public NativeActorProjection(net.runelite.api.Point ground,
+            net.runelite.api.Point overhead, int height)
+        { this.ground = ground; this.overhead = overhead; this.height = height; }
+        public net.runelite.api.Point getGround() { return ground; }
+        public net.runelite.api.Point getOverhead() { return overhead; }
+        public int getHeight() { return height; }
     }
 
     public static final class OpponentInfo

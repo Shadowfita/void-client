@@ -8,6 +8,8 @@ import net.runelite.api.Skill;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.events.*;
 import net.runelite.client.RuneLite;
+import net.runelite.client.compatibility.EventConformance;
+import net.runelite.client.compatibility.EventOrigin;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.util.DeferredEventBus;
 
@@ -212,7 +214,13 @@ public final class GameEventBridgeHooks
 
 	public static void postItemContainerChanged(int containerId, Object itemContainer)
 	{
-		post(new ItemContainerChanged(containerId, itemContainer));
+		postItemContainerChanged(containerId, false, itemContainer);
+	}
+
+	public static void postItemContainerChanged(int containerId, boolean alternateNamespace, Object itemContainer)
+	{
+		long key = (containerId & 0xffffffffL) | (alternateNamespace ? 0xffffffff80000000L : 0L);
+		post(new ItemContainerChanged(containerId, key, itemContainer));
 	}
 
 	public static void postChatMessage(Object type, String name, String message, String sender, int timestamp)
@@ -650,31 +658,39 @@ public final class GameEventBridgeHooks
 
 	private static void post(Object event)
 	{
+		EventConformance.DeliveryToken token = EventConformance.produced(event, EventOrigin.DIRECT);
 		try
 		{
-			if (RuneLite.getInjector() != null)
+			if (RuneLite.getInjector() == null)
 			{
-				RuneLite.getInjector().getInstance(EventBus.class).post(event);
+				EventConformance.dropped(token, null);
+				return;
 			}
+			RuneLite.getInjector().getInstance(EventBus.class).post(event);
+			EventConformance.delivered(token);
 		}
-		catch (Throwable ignored)
+		catch (Throwable failure)
 		{
-			// Packet handlers must not fail because the RuneLite shell is still starting.
+			EventConformance.dropped(token, failure);
 		}
 	}
 
 	private static void postDeferred(Object event)
 	{
+		EventConformance.DeliveryToken token = EventConformance.produced(event, EventOrigin.DIRECT);
 		try
 		{
-			if (RuneLite.getInjector() != null)
+			if (RuneLite.getInjector() == null)
 			{
-				RuneLite.getInjector().getInstance(DeferredEventBus.class).post(event);
+				EventConformance.dropped(token, null);
+				return;
 			}
+			RuneLite.getInjector().getInstance(DeferredEventBus.class).post(event);
+			EventConformance.delivered(token);
 		}
-		catch (Throwable ignored)
+		catch (Throwable failure)
 		{
-			// Packet handlers must not fail because the RuneLite shell is still starting.
+			EventConformance.dropped(token, failure);
 		}
 	}
 }

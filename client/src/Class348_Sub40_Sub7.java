@@ -116,6 +116,8 @@ final class Class348_Sub40_Sub7 extends Class348_Sub40 {
                                 i_33_ = (Math.min(i_17_, i_36_));
                             }
                             if (i_31_ < i_34_ && i_32_ < i_33_) {
+                                Applet_Sub1.captureRuneLiteWidgetItem(class46, i_24_, i_25_,
+                                        i_31_, i_32_, i_34_, i_33_);
                                 if (class46.anInt765 != 0) {
                                     if ((Class239_Sub10.anInt5943 == class46.anInt765) || (class46.anInt765 == Class312.anInt3932)) {
                                         if (Applet_Sub1.isInterfaceRenderScaleActive()) {

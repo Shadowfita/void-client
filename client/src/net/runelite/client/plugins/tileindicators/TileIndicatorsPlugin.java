@@ -3,10 +3,13 @@ package net.runelite.client.plugins.tileindicators;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.compatibility.ClientCapability;
+import net.runelite.client.compatibility.RequiresCapabilities;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 
+@RequiresCapabilities(ClientCapability.NATIVE_SCENE_PROJECTION)
 @PluginDescriptor(
 	name = "Tile Indicators",
 	description = "Highlights useful scene tiles.",

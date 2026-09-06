@@ -34,6 +34,7 @@ dependencies {
     implementation("com.formdev:flatlaf:3.2.5")
     implementation("org.slf4j:slf4j-api:1.7.7")
     implementation("com.google.code.findbugs:jsr305:3.0.2")
+    testImplementation("junit:junit:4.13.2")
 
     implementation(files(
         "../libs/clientlibs.jar",
@@ -51,6 +52,9 @@ java {
             java.srcDirs("src")
             resources.srcDirs("resources", "src")
             resources.exclude("**/*.java")
+        }
+        test {
+            java.srcDirs("tests")
         }
     }
     toolchain {

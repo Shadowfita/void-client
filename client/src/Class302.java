@@ -44,9 +44,17 @@ final class Class302 {
             // markers, etc.) must be drawn into the JAGGL backbuffer before the
             // native RuneScape interface so chat/tabs remain above them.
             Applet_Sub1.renderRuneLiteHardwareOverlay(false);
-            if (r.anInt9721 != -1) {
-                Class348_Sub38.anInt7008 = 0;
-                Class88.method842(false);
+            net.runelite.client.game.WidgetItemSnapshotStore.beginFrame(Class367_Sub11.anInt7396, r.anInt9721);
+            boolean widgetSnapshotComplete = false;
+            try {
+                if (r.anInt9721 != -1) {
+                    Class348_Sub38.anInt7008 = 0;
+                    Class88.method842(false);
+                }
+                widgetSnapshotComplete = true;
+            } finally {
+                if (widgetSnapshotComplete) net.runelite.client.game.WidgetItemSnapshotStore.endFrame();
+                else net.runelite.client.game.WidgetItemSnapshotStore.abortFrame();
             }
             Class348_Sub8.aHa6654.la();
             Class348_Sub42_Sub20.method3281((byte) 46, Class348_Sub8.aHa6654);

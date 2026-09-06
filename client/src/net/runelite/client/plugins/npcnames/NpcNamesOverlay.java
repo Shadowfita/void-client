@@ -7,6 +7,7 @@ import javax.inject.Inject;
 import net.runelite.api.Perspective;
 import net.runelite.api.Point;
 import net.runelite.api.coords.LocalPoint;
+import net.runelite.client.compatibility.ClientCapabilityService;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -17,13 +18,16 @@ class NpcNamesOverlay extends Overlay
 {
 	private final GameClient client;
 	private final NpcNamesConfig config;
+	private final ClientCapabilityService capabilities;
 
 	@Inject
-	NpcNamesOverlay(GameClient client, NpcNamesPlugin plugin, NpcNamesConfig config)
+	NpcNamesOverlay(GameClient client, NpcNamesPlugin plugin, NpcNamesConfig config,
+		ClientCapabilityService capabilities)
 	{
 		super(plugin);
 		this.client = client;
 		this.config = config;
+		this.capabilities = capabilities;
 		setPosition(OverlayPosition.DYNAMIC);
 		setLayer(OverlayLayer.ABOVE_SCENE);
 		setPriority(OverlayPriority.MED);
@@ -32,7 +36,8 @@ class NpcNamesOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!config.showNames() || !client.hasLocalPlayer())
+		if (!config.showNames() || !client.hasLocalPlayer()
+			|| !capabilities.canUse(NpcNamesPlugin.class))
 		{
 			return null;
 		}

@@ -19,6 +19,8 @@ import net.runelite.api.events.ItemSpawned;
 import net.runelite.api.events.NpcDespawned;
 import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.events.StatChanged;
+import net.runelite.client.compatibility.EventConformance;
+import net.runelite.client.compatibility.EventOrigin;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 
@@ -149,11 +151,11 @@ public class GameStateBridge
 
 			if (previous == null)
 			{
-				eventBus.post(new ItemSpawned(tileKey(item), item));
+				postPolled(new ItemSpawned(tileKey(item), item));
 			}
 			else if (previous.getQuantity() != item.getQuantity())
 			{
-				eventBus.post(new ItemQuantityChanged(item, tileKey(item), previous.getQuantity(), item.getQuantity()));
+				postPolled(new ItemQuantityChanged(item, tileKey(item), previous.getQuantity(), item.getQuantity()));
 			}
 		}
 
@@ -164,7 +166,7 @@ public class GameStateBridge
 				if (!current.containsKey(previous.getKey()))
 				{
 					GameClient.GroundItemInfo item = previous.getValue();
-					eventBus.post(new ItemDespawned(tileKey(item), item));
+					postPolled(new ItemDespawned(tileKey(item), item));
 				}
 			}
 		}
@@ -196,7 +198,7 @@ public class GameStateBridge
 
 			if (npcsInitialized && !npcs.containsKey(key))
 			{
-				eventBus.post(new NpcSpawned(npc));
+				postPolled(new NpcSpawned(npc));
 			}
 		}
 
@@ -208,7 +210,7 @@ public class GameStateBridge
 				{
 					GameClient.NpcInfo npc = previous.getValue();
 					recentNpcDespawns.addLast(new RecentNpc(npc.getId(), npc.getName(), npc.getLocalX(), npc.getLocalY(), npc.getPlane(), System.currentTimeMillis()));
-					eventBus.post(new NpcDespawned(npc));
+					postPolled(new NpcDespawned(npc));
 				}
 			}
 		}
@@ -254,7 +256,7 @@ public class GameStateBridge
 			GameClient.SkillSnapshot previous = skills.get(skill);
 			if (skillsInitialized && changed(previous, snapshot))
 			{
-				eventBus.post(new StatChanged(skill, snapshot.getXp(), snapshot.getLevel(), snapshot.getBoostedLevel()));
+				postPolled(new StatChanged(skill, snapshot.getXp(), snapshot.getLevel(), snapshot.getBoostedLevel()));
 			}
 			skills.put(skill, snapshot);
 		}
@@ -283,6 +285,21 @@ public class GameStateBridge
 			{
 				it.remove();
 			}
+		}
+	}
+
+	private void postPolled(Object event)
+	{
+		EventConformance.DeliveryToken token = EventConformance.produced(event, EventOrigin.POLLED);
+		try
+		{
+			eventBus.post(event);
+			EventConformance.delivered(token);
+		}
+		catch (RuntimeException failure)
+		{
+			EventConformance.dropped(token, failure);
+			throw failure;
 		}
 	}
 

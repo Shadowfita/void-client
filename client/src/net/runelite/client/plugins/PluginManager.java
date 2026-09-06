@@ -101,6 +101,7 @@ public class PluginManager
 		"banktagsplugin",
 		"boostsplugin",
 		"chatimprovementsplugin",
+		"compatibilitydiagnosticsplugin",
 		"cluehelperplugin",
 		"entityhiderplugin",
 		"grounditemnamesplugin",
