@@ -473,13 +473,14 @@ public class PluginManager
 			return false;
 		}
 
-		activePlugins.add(plugin);
-
+		boolean startupInvoked = false;
+		boolean registered = false;
+		boolean scheduled = false;
 		try
 		{
+			startupInvoked = true;
 			plugin.startUp();
 
-			log.debug("Plugin {} is now running", plugin.getClass().getSimpleName());
 			if (!isOutdated && sceneTileManager != null)
 			{
 				final GameEventManager gameEventManager = this.sceneTileManager.get();
@@ -490,19 +491,68 @@ public class PluginManager
 			}
 
 			eventBus.register(plugin);
+			registered = true;
 			schedule(plugin);
+			scheduled = true;
+			activePlugins.add(plugin);
 			eventBus.post(new PluginChanged(plugin, true));
+			log.debug("Plugin {} is now running", plugin.getClass().getSimpleName());
+			return true;
 		}
 		catch (ThreadDeath e)
 		{
+			rollbackFailedStart(plugin, startupInvoked, registered, scheduled, e);
 			throw e;
 		}
 		catch (Throwable ex)
 		{
+			rollbackFailedStart(plugin, startupInvoked, registered, scheduled, ex);
 			throw new PluginInstantiationException(ex);
 		}
+	}
 
-		return true;
+	private void rollbackFailedStart(
+		Plugin plugin,
+		boolean startupInvoked,
+		boolean registered,
+		boolean scheduled,
+		Throwable cause)
+	{
+		activePlugins.remove(plugin);
+		if (scheduled)
+		{
+			try
+			{
+				unschedule(plugin);
+			}
+			catch (Throwable cleanupFailure)
+			{
+				cause.addSuppressed(cleanupFailure);
+			}
+		}
+		if (registered)
+		{
+			try
+			{
+				eventBus.unregister(plugin);
+			}
+			catch (Throwable cleanupFailure)
+			{
+				cause.addSuppressed(cleanupFailure);
+			}
+		}
+		if (startupInvoked)
+		{
+			try
+			{
+				plugin.shutDown();
+			}
+			catch (Throwable cleanupFailure)
+			{
+				cause.addSuppressed(cleanupFailure);
+			}
+		}
+		log.warn("Rolled back failed start of plugin {}", plugin.getClass().getSimpleName(), cause);
 	}
 
 	public boolean stopPlugin(Plugin plugin) throws PluginInstantiationException

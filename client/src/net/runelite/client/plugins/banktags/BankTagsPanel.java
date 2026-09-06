@@ -6,6 +6,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -23,7 +24,7 @@ class BankTagsPanel extends PluginPanel
 	private final JTextField search = new JTextField();
 	private final JLabel summary = new JLabel("Open a bank to populate items", SwingConstants.CENTER);
 	private final JPanel groups = new JPanel(new DynamicGridLayout(0, 1, 0, 6));
-	private Runnable searchListener;
+	private Consumer<String> searchListener;
 
 	BankTagsPanel()
 	{
@@ -38,7 +39,7 @@ class BankTagsPanel extends PluginPanel
 			@Override public void insertUpdate(DocumentEvent e) { changed(); }
 			@Override public void removeUpdate(DocumentEvent e) { changed(); }
 			@Override public void changedUpdate(DocumentEvent e) { changed(); }
-			private void changed() { if (searchListener != null) searchListener.run(); }
+			private void changed() { if (searchListener != null) searchListener.accept(search.getText()); }
 		});
 		add(search);
 		summary.setForeground(Color.LIGHT_GRAY);
@@ -48,8 +49,7 @@ class BankTagsPanel extends PluginPanel
 		add(groups);
 	}
 
-	void setSearchListener(Runnable listener) { this.searchListener = listener; }
-	String getSearchText() { return search.getText(); }
+	void setSearchListener(Consumer<String> listener) { this.searchListener = listener; }
 
 	void rebuild(Map<String, List<GameClient.ItemStackInfo>> data, int itemCount, int totalValue, boolean showValues)
 	{

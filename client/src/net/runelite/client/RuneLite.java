@@ -62,6 +62,7 @@ import net.runelite.client.ui.FatalErrorDialog;
 import net.runelite.client.ui.SplashScreen;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.tooltip.TooltipOverlay;
+import net.runelite.client.util.BuildIdentity;
 import org.slf4j.LoggerFactory;
 
 @Singleton
@@ -199,6 +200,7 @@ public class RuneLite
 			log.info("RuneLite {} (launcher version {}) starting up, args: {}",
 				RuneLiteProperties.getVersion(), RuneLiteProperties.getLauncherVersion() == null ? "unknown" : RuneLiteProperties.getLauncherVersion(),
 				args.length == 0 ? "none" : String.join(" ", args));
+			log.info("Runtime artifact: {}", BuildIdentity.describe(RuneLite.class));
 
 			final long start = System.currentTimeMillis();
 

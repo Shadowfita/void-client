@@ -38,6 +38,8 @@ public class BankTagsPlugin extends Plugin
 	private NavigationButton navButton;
 	private long lastRefresh;
 	private int lastFingerprint;
+	private volatile String searchQuery = "";
+	private volatile boolean refreshRequested;
 
 	@Provides BankTagsConfig provideConfig(ConfigManager manager) { return manager.getConfig(BankTagsConfig.class); }
 
@@ -45,11 +47,11 @@ public class BankTagsPlugin extends Plugin
 	protected void startUp()
 	{
 		panel = injector.getInstance(BankTagsPanel.class);
-		panel.setSearchListener(this::forceRefresh);
+		panel.setSearchListener(this::onSearchChanged);
 		BufferedImage icon = QolIcon.letter("B", new Color(220, 138, 0));
 		navButton = NavigationButton.builder().tooltip("Bank Tags").icon(icon).priority(6).panel(panel).build();
 		clientToolbar.addNavigation(navButton);
-		forceRefresh();
+		requestRefresh();
 	}
 
 	@Override
@@ -60,22 +62,36 @@ public class BankTagsPlugin extends Plugin
 		navButton = null;
 		lastFingerprint = 0;
 		lastRefresh = 0L;
+		searchQuery = "";
+		refreshRequested = false;
 	}
 
 	@Subscribe
 	public void onClientTick(ClientTick tick)
 	{
-		if (panel == null || System.currentTimeMillis() - lastRefresh < 500L)
+		if (panel == null)
 		{
 			return;
 		}
-		refresh(false);
+		boolean forced = refreshRequested;
+		if (!forced && System.currentTimeMillis() - lastRefresh < 500L)
+		{
+			return;
+		}
+		refreshRequested = false;
+		refresh(forced);
 	}
 
-	private void forceRefresh()
+	private void onSearchChanged(String query)
+	{
+		searchQuery = query == null ? "" : query;
+		requestRefresh();
+	}
+
+	private void requestRefresh()
 	{
 		lastFingerprint = Integer.MIN_VALUE;
-		refresh(true);
+		refreshRequested = true;
 	}
 
 	private void refresh(boolean forced)
@@ -88,7 +104,7 @@ public class BankTagsPlugin extends Plugin
 			return;
 		}
 		lastFingerprint = fingerprint;
-		String query = panel == null ? "" : panel.getSearchText();
+		String query = searchQuery;
 		Map<String, List<GameClient.ItemStackInfo>> groups = group(bank, query);
 		int itemCount = bank == null ? 0 : bank.getOccupiedSlots();
 		int totalValue = bank == null ? 0 : bank.getTotalValue();

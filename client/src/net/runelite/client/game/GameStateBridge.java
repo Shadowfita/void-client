@@ -36,6 +36,9 @@ public class GameStateBridge
 	private boolean groundItemsInitialized;
 	private boolean npcsInitialized;
 	private boolean skillsInitialized;
+	private int lastBaseX = Integer.MIN_VALUE;
+	private int lastBaseY = Integer.MIN_VALUE;
+	private int lastPlane = Integer.MIN_VALUE;
 
 	@Inject
 	private GameStateBridge(GameClient client, EventBus eventBus)
@@ -51,6 +54,8 @@ public class GameStateBridge
 		{
 			return;
 		}
+
+		resetSceneTrackingIfNeeded();
 
 		if (!GameEventBridgeHooks.hasDirectNpcHooks())
 		{
@@ -105,6 +110,26 @@ public class GameStateBridge
 		}
 
 		return nearest != null && nearestDistance <= 1536 ? nearest : null;
+	}
+
+	private void resetSceneTrackingIfNeeded()
+	{
+		int baseX = client.getBaseX();
+		int baseY = client.getBaseY();
+		int plane = client.getPlane();
+		if (baseX == lastBaseX && baseY == lastBaseY && plane == lastPlane)
+		{
+			return;
+		}
+
+		groundItems.clear();
+		npcs.clear();
+		recentNpcDespawns.clear();
+		groundItemsInitialized = false;
+		npcsInitialized = false;
+		lastBaseX = baseX;
+		lastBaseY = baseY;
+		lastPlane = plane;
 	}
 
 	private void updateGroundItems()
@@ -281,7 +306,13 @@ public class GameStateBridge
 
 	private static String npcKey(GameClient.NpcInfo npc)
 	{
-		return npc.getId() + ":" + npc.getPlane() + ":" + npc.getLocalX() + ":" + npc.getLocalY() + ":" + npc.getName();
+		if (npc.getIndex() >= 0)
+		{
+			return "index:" + npc.getIndex();
+		}
+		// Legacy fallback only. Current 634 snapshots expose the native NPC index.
+		return "fallback:" + npc.getId() + ":" + npc.getPlane() + ":"
+			+ npc.getLocalX() + ":" + npc.getLocalY() + ":" + npc.getName();
 	}
 
 	@Value

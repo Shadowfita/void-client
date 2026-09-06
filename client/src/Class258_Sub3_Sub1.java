@@ -272,11 +272,17 @@ final class Class258_Sub3_Sub1 extends Class258_Sub3 {
             return interfaceSupersampleTexture;
         }
         releaseInterfaceSupersampleTexture();
-        Class258_Sub3 texture = this.aHa_Sub2_4851.createInterfaceSupersampleTexture(this, factor);
-        if (texture != null) {
-            interfaceSupersampleTexture = texture;
-            interfaceSupersampleFactor = factor;
-            return texture;
+        try {
+            Class258_Sub3 texture = this.aHa_Sub2_4851.createInterfaceSupersampleTexture(this, factor);
+            if (texture != null) {
+                interfaceSupersampleTexture = texture;
+                interfaceSupersampleFactor = factor;
+                return texture;
+            }
+        } catch (UnsatisfiedLinkError unsupportedJagglReadback) {
+            // Legacy/mixed JAGGL bundles can expose Java declarations without
+            // the corresponding native symbol. Supersampling is optional.
+            disableInterfaceSupersampling();
         }
         return this;
     }

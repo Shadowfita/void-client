@@ -33,6 +33,8 @@ public class IdleNotifierPlugin extends Plugin
 	private boolean idleNotified;
 	private boolean hitpointsNotified;
 	private boolean prayerNotified;
+	private boolean hitpointsInitialised;
+	private boolean prayerInitialised;
 
 	@Provides
 	IdleNotifierConfig provideConfig(ConfigManager configManager)
@@ -68,6 +70,7 @@ public class IdleNotifierPlugin extends Plugin
 				{
 					notifier.notify("You have logged out.");
 					hadPlayer = false;
+					resetVitals();
 				}
 			}
 			return;
@@ -106,10 +109,22 @@ public class IdleNotifierPlugin extends Plugin
 	{
 		for (GameClient.SkillSnapshot skill : client.getSkillSnapshots())
 		{
+			int base = skill.getLevel();
+			int current = skill.getBoostedLevel();
+			if (base <= 0 || current <= 0)
+			{
+				continue;
+			}
+
 			if (skill.getSkill() == Skill.HITPOINTS)
 			{
-				int current = skill.getBoostedLevel();
-				if (config.notifyLowHitpoints() && current > 0 && current <= config.hitpointsThreshold())
+				if (!hitpointsInitialised)
+				{
+					hitpointsInitialised = true;
+					hitpointsNotified = current <= config.hitpointsThreshold();
+					continue;
+				}
+				if (config.notifyLowHitpoints() && current <= config.hitpointsThreshold())
 				{
 					if (!hitpointsNotified)
 					{
@@ -124,7 +139,12 @@ public class IdleNotifierPlugin extends Plugin
 			}
 			else if (skill.getSkill() == Skill.PRAYER)
 			{
-				int current = skill.getBoostedLevel();
+				if (!prayerInitialised)
+				{
+					prayerInitialised = true;
+					prayerNotified = current <= config.prayerThreshold();
+					continue;
+				}
 				if (config.notifyLowPrayer() && current <= config.prayerThreshold())
 				{
 					if (!prayerNotified)
@@ -150,7 +170,14 @@ public class IdleNotifierPlugin extends Plugin
 		lastX = -1;
 		lastY = -1;
 		idleNotified = false;
+		resetVitals();
+	}
+
+	private void resetVitals()
+	{
 		hitpointsNotified = false;
 		prayerNotified = false;
+		hitpointsInitialised = false;
+		prayerInitialised = false;
 	}
 }

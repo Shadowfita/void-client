@@ -102,12 +102,16 @@ class InventoryGridOverlay extends Overlay implements MouseListener
 		{
 			inventoryItems = new ArrayList<>(lastInventoryItems);
 		}
-		if (inventoryItems.size() < INVENTORY_SIZE)
+		if (inventoryItems.size() < INVENTORY_SIZE || draggedItem == null)
 		{
 			return null;
 		}
 
 		Rectangle initialBounds = draggedItem.getCanvasBounds(false);
+		if (initialBounds == null)
+		{
+			return null;
+		}
 		for (int i = 0; i < INVENTORY_SIZE; i++)
 		{
 			WidgetItem targetItem = inventoryItems.get(i);
@@ -150,9 +154,13 @@ class InventoryGridOverlay extends Overlay implements MouseListener
 	{
 		mousePoint = mouseEvent.getPoint();
 		initialMousePoint = mouseEvent.getPoint();
-		mouseDown = true;
 		hoverActive = false;
 		draggedItem = findItemAt(lastInventoryItems, mousePoint);
+		mouseDown = draggedItem != null;
+		if (!mouseDown)
+		{
+			initialMousePoint = null;
+		}
 		return mouseEvent;
 	}
 
