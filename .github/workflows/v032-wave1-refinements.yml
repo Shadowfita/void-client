@@ -1,0 +1,103 @@
+name: Verify v0.3.2 wave 1 refinements
+
+on:
+  push:
+    branches:
+      - fix/v0.3.2-plugin-remediation-wave1
+    paths:
+      - '.github/workflows/v032-wave1-refinements.yml'
+      - 'tools/apply_v032_wave1_refinements.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refine-build-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out remediation branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply refinements
+        run: python3 tools/apply_v032_wave1_refinements.py
+
+      - name: Verify source invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          python3 - <<'PY'
+          from pathlib import Path
+          text = Path('client/src/net/runelite/client/plugins/PluginManager.java').read_text()
+          assert text.index('registered = true;') < text.index('eventBus.register(plugin);')
+          assert text.index('scheduled = true;') < text.index('schedule(plugin);')
+          idle = Path('client/src/net/runelite/client/plugins/idlenotifier/IdleNotifierPlugin.java').read_text()
+          assert 'base <= 0 || current < 0' in idle
+          assert 'if (current == 0)' in idle
+          PY
+
+      - name: Set up Java 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Clean compile, test and build release JAR
+        run: ./gradlew clean :client:compileJava :client:test :client:proguardJar --no-daemon --stacktrace
+
+      - name: Verify release artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          jar_path='client/build/libs/void-client-0.3.2-release.jar'
+          test -f "$jar_path"
+          unzip -t "$jar_path" >/dev/null
+          unzip -p "$jar_path" META-INF/MANIFEST.MF | tr -d '\r' | grep -Fx 'Main-Class: Loader'
+          javap -classpath "$jar_path" -c -p net.runelite.client.plugins.idlenotifier.IdleNotifierPlugin \
+            | grep -F 'ifgt'
+
+      - name: Commit verified refinements
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Ryan Palmer'
+          git config user.email 'www.ryan.palmer@hotmail.com'
+          git add \
+            client/src/net/runelite/client/plugins/PluginManager.java \
+            client/src/net/runelite/client/plugins/idlenotifier/IdleNotifierPlugin.java \
+            release-notes/v0.3.2.md
+          git rm \
+            tools/apply_v032_wave1_refinements.py \
+            .github/workflows/v032-wave1-refinements.yml
+          git commit -m 'Tighten v0.3.2 remediation edge cases'
+          git push origin HEAD:fix/v0.3.2-plugin-remediation-wave1
+
+      - name: Stage final wave 1 test build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          cp client/build/libs/void-client-0.3.2-release.jar \
+            release/void-client-0.3.2-remediation-wave1-final.jar
+          sha256sum release/void-client-0.3.2-remediation-wave1-final.jar \
+            > release/void-client-0.3.2-remediation-wave1-final.jar.sha256
+          {
+            echo 'branch=fix/v0.3.2-plugin-remediation-wave1'
+            echo "source_sha=$(git rev-parse HEAD)"
+            echo "workflow_run=${GITHUB_RUN_ID}"
+            echo 'scope=verified remediation wave 1 with zero-prayer transition and partial-registration rollback refinements'
+          } > release/void-client-0.3.2-remediation-wave1-final.build-info
+
+      - name: Upload final wave 1 build
+        uses: actions/upload-artifact@v4
+        with:
+          name: void-client-v0.3.2-remediation-wave1-final
+          path: release/
+          if-no-files-found: error
+          retention-days: 7
