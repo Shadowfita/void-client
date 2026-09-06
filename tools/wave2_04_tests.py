@@ -21,31 +21,28 @@ def replace_once(path, old, new, label):
 path = 'client/build.gradle.kts'
 text = Path(path).read_text()
 if 'testImplementation("junit:junit:4.13.2")' not in text:
-    anchor = '    implementation("org.jetbrains:annotations:23.0.0")\n'
-    if text.count(anchor) != 1:
+    dependency_anchor = '    implementation("com.google.code.findbugs:jsr305:3.0.2")\n'
+    if text.count(dependency_anchor) != 1:
         raise SystemExit('build dependency anchor mismatch')
-    text = text.replace(anchor, anchor + '    testImplementation("junit:junit:4.13.2")\n', 1)
+    text = text.replace(
+        dependency_anchor,
+        dependency_anchor + '    testImplementation("junit:junit:4.13.2")\n',
+        1,
+    )
 if 'java.srcDirs("tests")' not in text:
-    anchor = '''sourceSets {
-    main {
-        java.srcDirs("src")
-        resources.srcDirs("src")
-    }
-}
+    source_set_anchor = '''        main {
+            java.srcDirs("src")
+            resources.srcDirs("resources", "src")
+            resources.exclude("**/*.java")
+        }
 '''
-    replacement = '''sourceSets {
-    main {
-        java.srcDirs("src")
-        resources.srcDirs("src")
-    }
-    test {
-        java.srcDirs("tests")
-    }
-}
+    source_set_replacement = source_set_anchor + '''        test {
+            java.srcDirs("tests")
+        }
 '''
-    if text.count(anchor) != 1:
+    if text.count(source_set_anchor) != 1:
         raise SystemExit('build source-set anchor mismatch')
-    text = text.replace(anchor, replacement, 1)
+    text = text.replace(source_set_anchor, source_set_replacement, 1)
 Path(path).write_text(text)
 
 write('client/tests/net/runelite/client/compatibility/EventConformanceTest.java', '''package net.runelite.client.compatibility;
