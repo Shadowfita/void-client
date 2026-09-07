@@ -1,0 +1,145 @@
+name: Publish v0.3.2 Wave 2 RC1
+
+on:
+  push:
+    branches:
+      - release/v0.3.2-wave2-rc1
+    paths:
+      - '.github/workflows/publish-v032-wave2-rc1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out exact verified source commit
+        uses: actions/checkout@v4
+        with:
+          ref: 2af0c0fe1b15db386994cda5b18fdf2d9728d26d
+          fetch-depth: 0
+
+      - name: Set up Java 21 for Gradle
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Clean build and deterministic tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew clean :client:test :client:proguardJar --no-daemon --stacktrace
+
+      - name: Verify tests and packaged JAR
+        shell: bash
+        run: |
+          set -euo pipefail
+          jar_path='client/build/libs/void-client-0.3.2-release.jar'
+          test -f "$jar_path"
+          unzip -t "$jar_path" >/dev/null
+          unzip -p "$jar_path" META-INF/MANIFEST.MF | tr -d '\r' | grep -Fx 'Main-Class: Loader'
+          unzip -p "$jar_path" net/runelite/client/runelite.properties | tr -d '\r' | grep -Fx 'void.version= 0.3.2'
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          files = sorted(Path('client/build/test-results/test').glob('TEST-*.xml'))
+          if not files:
+              raise SystemExit('No JUnit XML files were produced')
+          tests = failures = errors = skipped = 0
+          suites = []
+          for path in files:
+              root = ET.parse(path).getroot()
+              suites.append(root.attrib.get('name', path.name))
+              tests += int(root.attrib.get('tests', 0))
+              failures += int(root.attrib.get('failures', 0))
+              errors += int(root.attrib.get('errors', 0))
+              skipped += int(root.attrib.get('skipped', 0))
+          print(f'suites={suites}')
+          print(f'tests={tests}, failures={failures}, errors={errors}, skipped={skipped}')
+          if tests < 10 or failures or errors:
+              raise SystemExit('Wave 2 deterministic test gate failed')
+          Path('/tmp/test-count.txt').write_text(str(tests))
+          PY
+
+          for class_name in \
+            net.runelite.client.compatibility.ClientCapabilityService \
+            net.runelite.client.compatibility.EventConformance \
+            net.runelite.client.compatibility.ProjectionCalibrationService \
+            net.runelite.client.game.ItemSnapshotService \
+            net.runelite.client.game.WidgetItemSnapshotStore \
+            net.runelite.client.plugins.compatibilitydiagnostics.CompatibilityDiagnosticsPlugin; do
+            javap -classpath "$jar_path" -p "$class_name" >/dev/null
+          done
+
+          javap -classpath "$jar_path" -v net.runelite.client.plugins.tileindicators.TileIndicatorsPlugin \
+            | grep -F 'net.runelite.client.compatibility.RequiresCapabilities'
+          javap -classpath "$jar_path" -v net.runelite.client.plugins.npcnames.NpcNamesPlugin \
+            | grep -F 'net.runelite.client.compatibility.RequiresCapabilities'
+
+      - name: Prepare prerelease assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          cp client/build/libs/void-client-0.3.2-release.jar \
+            release/void-client-0.3.2-wave2-rc1.jar
+          sha256sum release/void-client-0.3.2-wave2-rc1.jar \
+            > release/void-client-0.3.2-wave2-rc1.jar.sha256
+          {
+            echo 'release=v0.3.2-wave2-rc1'
+            echo 'source_sha=2af0c0fe1b15db386994cda5b18fdf2d9728d26d'
+            echo "workflow_run=${GITHUB_RUN_ID}"
+            echo "deterministic_tests=$(cat /tmp/test-count.txt)"
+            echo 'status=development prerelease; requires Linux/JAGGL runtime calibration'
+            echo 'scope=capability registry; event conformance; authoritative item/container snapshots; physical widget bounds; projection canaries; compatibility diagnostics; fail-closed Tile Indicators and NPC Names'
+          } > release/void-client-0.3.2-wave2-rc1.build-info
+          cat > /tmp/release-notes.md <<'EOF'
+          # Void Client v0.3.2 Wave 2 RC1
+
+          Development prerelease built from exact source commit `2af0c0fe1b15db386994cda5b18fdf2d9728d26d`.
+
+          This tranche adds the explicit compatibility-capability registry, event-conformance accounting, authoritative item-container and visible widget-slot snapshots, native/RuneLite projection calibration canaries, and the opt-in Compatibility Diagnostics plugin. Tile Indicators and NPC Names now fail closed until their required projection capabilities have been established at runtime.
+
+          The build includes the prior wave-1 lifecycle, NPC identity, idle-notifier, Bank Tags threading, Inventory Grid safety and JAGGL fallback corrections.
+
+          Verification completed before publication:
+
+          - clean Gradle build and ProGuard packaging;
+          - 10 deterministic JUnit tests, with no failures or errors;
+          - executable `Main-Class: Loader` manifest;
+          - embedded runtime version `0.3.2`;
+          - packaged compatibility and snapshot classes;
+          - retained runtime capability annotations on Tile Indicators and NPC Names.
+
+          This remains a prerelease because the projection canaries and authoritative widget/container capture require qualification against the live Void 634 client on Linux/JAGGL.
+          EOF
+
+      - name: Publish immutable prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view v0.3.2-wave2-rc1 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo 'Release v0.3.2-wave2-rc1 already exists; refusing to replace assets.' >&2
+            exit 1
+          fi
+          gh release create v0.3.2-wave2-rc1 \
+            --repo "$GITHUB_REPOSITORY" \
+            --target 2af0c0fe1b15db386994cda5b18fdf2d9728d26d \
+            --title 'Void Client v0.3.2 Wave 2 RC1' \
+            --notes-file /tmp/release-notes.md \
+            --prerelease \
+            release/void-client-0.3.2-wave2-rc1.jar \
+            release/void-client-0.3.2-wave2-rc1.jar.sha256 \
+            release/void-client-0.3.2-wave2-rc1.build-info
