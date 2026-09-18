@@ -54,6 +54,7 @@ abstract class Class348_Sub23 extends Node {
     abstract void method2964(byte i, OggPacket oggpacket);
 
     static final void method2965(String string, int i, boolean bool, int i_1_) {
+        if (com.voidclient.mobile.MobileConfig.browser()) i = 0;
         anInt6866++;
         Class187.method1406(true);
         if (i == 0) {

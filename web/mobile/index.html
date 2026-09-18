@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#151a22">
+  <title>Void mobile preview</title>
+  <link rel="stylesheet" href="mobile.css">
+  <script src="config.js"></script>
+</head>
+<body>
+  <main id="app">
+    <section id="stage" aria-label="Game display">
+      <div id="display"></div>
+      <div id="input-surface" tabindex="0" role="group" aria-label="Game controls" aria-describedby="help"></div>
+      <div id="launch">
+        <h1>Void mobile preview</h1>
+        <p>Touch input and responsive interface foundation. Browser networking and the server cache must be configured separately.</p>
+        <button id="start">Start client</button>
+      </div>
+    </section>
+    <nav id="dock" aria-label="Game tools">
+      <button data-tool="actions" disabled>Actions</button>
+      <button data-tool="camera" disabled>Camera</button>
+      <button data-tool="text" disabled>Text</button>
+      <button data-tool="more" disabled>More</button>
+    </nav>
+    <p id="status" role="status" aria-live="polite">Ready to start. Desktop mode is unaffected.</p>
+  </main>
+  <p id="help" class="visually-hidden">Tap to interact. Hold for actions. Drag over the game to rotate the camera, or inside a scrollable panel to scroll. Pinch over the game to zoom. Camera buttons provide alternatives. Use Text for keyboard input.</p>
+  <dialog id="menu" aria-labelledby="menu-title">
+    <h2 id="menu-title">Choose action</h2><div id="menu-items" class="choices"></div>
+    <button data-close>Cancel</button>
+  </dialog>
+  <dialog id="camera" aria-labelledby="camera-title">
+    <h2 id="camera-title">Camera</h2>
+    <div class="grid">
+      <button data-action="cameraLeft">Left</button><button data-action="cameraRight">Right</button>
+      <button data-action="cameraUp">Up</button><button data-action="cameraDown">Down</button>
+      <button data-action="zoomIn">Zoom in</button><button data-action="zoomOut">Zoom out</button>
+    </div><button data-close>Return to game</button>
+  </dialog>
+  <dialog id="text" aria-labelledby="text-title">
+    <h2 id="text-title">Text entry</h2>
+    <p>Focus a game field first. Insert sends text without pressing Enter. The client retains its legacy character restrictions.</p>
+    <label for="compose">Text to send</label>
+    <input id="compose" type="password" maxlength="2048" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <label class="check"><input id="show-text" type="checkbox"> Show text</label>
+    <div class="grid">
+      <button id="insert">Insert text</button><button data-key="10">Enter</button>
+      <button data-key="8">Backspace</button><button data-key="9">Next field</button>
+      <button data-key="27">Escape</button><button id="new-text-session">Use current field</button>
+    </div>
+    <p id="text-status" role="status"></p><button data-close>Return to game</button>
+  </dialog>
+  <dialog id="more" aria-labelledby="more-title">
+    <h2 id="more-title">More tools</h2>
+    <label for="magnification">Game magnification</label>
+    <select id="magnification"><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option></select>
+    <p>Enlarges the legacy game canvas, not just text. Scroll oversized panels to reach clipped content.</p>
+    <button id="fullscreen">Toggle fullscreen</button>
+    <button id="inspect">Inspect visible widget geometry</button>
+    <p>Inspection exports IDs and geometry only, not chat or editable-field text.</p>
+    <pre id="geometry" tabindex="0"></pre><button data-close>Return to game</button>
+  </dialog>
+  <script type="module" src="mobile.mjs"></script>
+</body>
+</html>

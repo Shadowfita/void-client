@@ -41,6 +41,7 @@ public class Loader extends Applet {
 
     public static void main(String[] args) throws Exception {
         String[] runeLiteArgs = parseLoaderArguments(args);
+        if (com.voidclient.mobile.MobileConfig.enabled()) runelite = false;
         if (runelite) {
             startRuneLite(runeLiteArgs);
             return;
@@ -85,6 +86,13 @@ public class Loader extends Applet {
                 case "-t":
                 case "--trace":
                     trace = true;
+                    break;
+                case "--mobile":
+                    System.setProperty("void.mobile", "true");
+                    runelite = false;
+                    break;
+                case "--touch-mouse":
+                    System.setProperty("void.mobile.emulateTouch", "true");
                     break;
                 case "--classic":
                     runelite = false;
@@ -166,6 +174,10 @@ public class Loader extends Applet {
     }
 
     void openFrame() {
+        if (com.voidclient.mobile.MobileConfig.enabled()) {
+            MobileLauncher.open(this);
+            return;
+        }
         aJFrame2 = new JFrame("Client");
         aJFrame2.setLayout(new BorderLayout());
         aJPanel3.setLayout(new BorderLayout());

@@ -34,6 +34,12 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
     }
 
     public final synchronized void mouseReleased(MouseEvent mouseevent) {
+        if (MobileRuntime.blocksMouse()) { mouseevent.consume(); return; }
+        if (com.voidclient.mobile.MobileConfig.enabled() && Boolean.getBoolean("void.mobile.emulateTouch") && mouseevent.getButton() == MouseEvent.BUTTON1) {
+            Point origin = MobileLauncher.canvasOrigin(aComponent7425);
+            com.voidclient.mobile.MobileBridge.pointer("up", 1, origin.x + mouseevent.getX(), origin.y + mouseevent.getY(), com.voidclient.mobile.MobileBridge.revision());
+            mouseevent.consume(); return;
+        }
         int i = method3600(mouseevent, -75);
         int x = Applet_Sub1.scaleMouseX(mouseevent.getX());
         int y = Applet_Sub1.scaleMouseY(mouseevent.getY());
@@ -66,6 +72,12 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
     }
 
     public final synchronized void mousePressed(MouseEvent mouseevent) {
+        if (MobileRuntime.blocksMouse()) { mouseevent.consume(); return; }
+        if (com.voidclient.mobile.MobileConfig.enabled() && Boolean.getBoolean("void.mobile.emulateTouch") && mouseevent.getButton() == MouseEvent.BUTTON1) {
+            Point origin = MobileLauncher.canvasOrigin(aComponent7425);
+            com.voidclient.mobile.MobileBridge.pointer("down", 1, origin.x + mouseevent.getX(), origin.y + mouseevent.getY(), com.voidclient.mobile.MobileBridge.revision());
+            mouseevent.consume(); return;
+        }
         int i = method3600(mouseevent, -90);
         int x = Applet_Sub1.scaleMouseX(mouseevent.getX());
         int y = Applet_Sub1.scaleMouseY(mouseevent.getY());
@@ -93,6 +105,7 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
     }
 
     public final synchronized void mouseEntered(MouseEvent mouseevent) {
+        if (MobileRuntime.blocksMouse()) { mouseevent.consume(); return; }
         method3599(mouseevent.getX(), -1, mouseevent.getY());
     }
 
@@ -111,10 +124,26 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
     }
 
     public final synchronized void mouseMoved(MouseEvent mouseevent) {
+        if (MobileRuntime.blocksMouse()) { mouseevent.consume(); return; }
         method3599(mouseevent.getX(), -1, mouseevent.getY());
     }
 
+    final synchronized void mobileClick(int x, int y, boolean context) {
+        anInt7423 = x; anInt7421 = y;
+        method3598(x, -1, 0, y, false);
+        method3598(x, context ? 2 : 0, 1, y, false);
+        method3598(x, context ? 5 : 3, 1, y, false);
+    }
+
+    final synchronized void mobileCancel() {
+        anInt7422 = anInt7419 = 0;
+        if (aClass262_7420 != null) aClass262_7420.method1996(127);
+        if (aClass262_7418 != null) aClass262_7418.method1996(127);
+        if (Class318_Sub1_Sub3.aClass262_8744 != null) Class318_Sub1_Sub3.aClass262_8744.method1996(127);
+    }
+
     private final void method3601(int i) {
+        if (com.voidclient.mobile.MobileConfig.enabled()) com.voidclient.mobile.MobileBridge.cancel();
         if (null != aComponent7425) {
             int i_7_ = 11 % ((i - -21) / 55);
             aComponent7425.removeMouseWheelListener(this);
@@ -129,6 +158,7 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
     }
 
     final synchronized void method3589(int i) {
+        MobileRuntime.tick(this, aComponent7425);
         anInt7416 = anInt7421;
         anInt7417 = anInt7423;
         anInt7419 = anInt7422;
@@ -141,6 +171,7 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
     }
 
     public final synchronized void mouseWheelMoved(MouseWheelEvent mousewheelevent) {
+        if (MobileRuntime.blocksMouse()) { mousewheelevent.consume(); return; }
         int i = Applet_Sub1.scaleMouseX(mousewheelevent.getX());
         int i_8_ = Applet_Sub1.scaleMouseY(mousewheelevent.getY());
         int i_9_ = mousewheelevent.getWheelRotation();
@@ -149,10 +180,17 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
     }
 
     public final synchronized void mouseExited(MouseEvent mouseevent) {
+        if (MobileRuntime.blocksMouse()) { mouseevent.consume(); return; }
         method3599(mouseevent.getX(), -1, mouseevent.getY());
     }
 
     public final synchronized void mouseDragged(MouseEvent mouseevent) {
+        if (MobileRuntime.blocksMouse()) { mouseevent.consume(); return; }
+        if (com.voidclient.mobile.MobileConfig.enabled() && Boolean.getBoolean("void.mobile.emulateTouch") && (mouseevent.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) != 0) {
+            Point origin = MobileLauncher.canvasOrigin(aComponent7425);
+            com.voidclient.mobile.MobileBridge.pointer("move", 1, origin.x + mouseevent.getX(), origin.y + mouseevent.getY(), com.voidclient.mobile.MobileBridge.revision());
+            mouseevent.consume(); return;
+        }
         method3599(mouseevent.getX(), -1, mouseevent.getY());
     }
 

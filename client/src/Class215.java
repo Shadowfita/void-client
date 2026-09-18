@@ -13,6 +13,7 @@ final class Class215 {
     static int anInt2839;
 
     static final void method1580(byte i, boolean bool, int i_0_, int i_1_, int i_2_, int i_3_) {
+        if (com.voidclient.mobile.MobileConfig.enabled()) i_2_ = 2;
         if (Class34.aFrame476 != null && (i_2_ != 3 || i_0_ != Class346.anInt4276 || i_3_ != Class239_Sub8.anInt5911)) {
             Class56.method527(Class34.aFrame476, Class348_Sub23_Sub1.aClass297_8992, false);
             Class34.aFrame476 = null;

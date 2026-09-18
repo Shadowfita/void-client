@@ -130,6 +130,7 @@ final class Class261 {
             Class316.aClass348_Sub42_Sub12_3963 = null;
             Class135_Sub2.aClass348_Sub42_Sub12_4846 = null;
         }
+        if (MobileRuntime.afterMenuBuild()) return;
         int i_14_ = -1;
         Class348_Sub45 class348_sub45 = (Class348_Sub45) Class318_Sub1_Sub3.aClass262_8744.method1995(4);
         if (class348_sub45 != null) i_14_ = class348_sub45.method3310(58);

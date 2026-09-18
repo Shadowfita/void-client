@@ -37,6 +37,7 @@ public final class InventoryGridCanvasOverlay
 
 	public static void paint(Graphics graphics, Component canvas)
 	{
+		if (com.voidclient.mobile.MobileConfig.enabled()) return;
 		install();
 		currentCanvas = canvas;
 		if (!(graphics instanceof Graphics2D) || canvas == null || !mouseDown || mousePoint == null || initialMousePoint == null)

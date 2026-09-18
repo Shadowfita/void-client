@@ -1062,6 +1062,7 @@ public final class client extends Applet_Sub1 {
                 if (class46.anInt774 != 0 && !class46.aBoolean682 && method105(class46).anInt7098 == 0 && class46 != Class331.aClass46_4130 && class46.anInt765 != Class290.anInt3717 && (class46.anInt765 != Class348_Sub47.anInt7125)) {
                     if (i_45_ < i_47_ && i_46_ < i_48_) Class18.method273(class46, -2835);
                 } else if (!method111(class46)) {
+                    MobileRuntime.record(class46, i_45_, i_46_, i_47_, i_48_);
                     int i_51_ = 0;
                     int i_52_ = 0;
                     if (Class59_Sub1.aBoolean5300) {

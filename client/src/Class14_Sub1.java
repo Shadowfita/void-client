@@ -71,6 +71,7 @@ final class Class14_Sub1 extends Class14 implements Interface18_Impl3 {
                 if (i_3_ < (class46.anInt800 - -class46.anInt709)) class46.anInt800 = i_3_ + -class46.anInt709;
             } else class46.anInt800 = 0;
         }
+        MobileLayouts.position(class46, i_3_, i_4_);
     }
 
     Class14_Sub1(Class377 class377, Class304 class304, int i, int i_6_, boolean bool, byte[] is, int i_7_, int i_8_) {

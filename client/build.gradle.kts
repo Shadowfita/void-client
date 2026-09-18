@@ -47,6 +47,7 @@ dependencies {
 
 java {
     sourceSets {
+        test { java.setSrcDirs(listOf("test")) }
         main {
             java.srcDirs("src")
             resources.srcDirs("resources", "src")
@@ -123,3 +124,12 @@ tasks.register<Zip>("bundleApp") {
         into("void-bundle/jre")
     }
 }
+
+// Dependency-free deterministic core and actual native-hook regression checks.
+val mobileTest by tasks.registering(JavaExec::class) {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("MobileNativeRegression")
+    jvmArgs("-Djava.awt.headless=true")
+}
+tasks.test { dependsOn(mobileTest) }

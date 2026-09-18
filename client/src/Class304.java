@@ -89,6 +89,7 @@ final class Class304 {
     }
 
     static final void method2291(byte i, int i_4_, int i_5_) {
+        if (MobileRuntime.openMenu(i_4_, i_5_)) return;
         anInt3849++;
         int i_6_ = (Class369.aClass143_4962.method1183(true, Class274.aClass274_3507.method2063(Class348_Sub33.anInt6967, 544)));
         int i_7_;

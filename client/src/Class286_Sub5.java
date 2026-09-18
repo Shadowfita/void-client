@@ -25,6 +25,7 @@ final class Class286_Sub5 extends Class286 {
         anInt6256++;
         int i_0_ = 0;
         if (Class316.aClass348_Sub51_3959 != null) i_0_ = Class316.aClass348_Sub51_3959.aClass239_Sub23_7231.method1818(-32350);
+        if (com.voidclient.mobile.MobileConfig.enabled()) i_0_ = 0;
         if (i == 56) {
             if (i_0_ == 2) {
                 int i_1_ = (Math.min(Class272.anInt3473, 800));

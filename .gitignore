@@ -41,3 +41,7 @@ $RECYCLE.BIN/
 # Logs / tmp
 *.log
 *.tmp
+
+# Locally staged browser preview artifacts
+/web/mobile/*.jar
+/build/mobile-core/

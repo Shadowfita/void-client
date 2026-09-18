@@ -44,3 +44,10 @@
 
 # Silence unresolved references inside third-party jars
 -dontwarn **
+
+# Browser entry point referenced by name from CheerpJ library mode.
+-keep public class MobileLauncher {
+    public static void start(java.lang.String, int);
+    public static void resizeHost(int, int);
+    public static void setDisplayScale(double);
+}
