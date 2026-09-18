@@ -32,17 +32,28 @@ jobs:
         with:
           distribution: temurin
           java-version: '8'
+          cache: gradle
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Browser bridge unit tests
+        run: node --test web/mobile/test/*.test.mjs
       - name: Compile and test
         run: bash ./gradlew :client:compileJava :client:test --stacktrace
       - name: Build obfuscated release
         run: bash ./gradlew :client:proguardJar --stacktrace
+      - name: Check browser symbols in the obfuscated release
+        run: |
+          javap -classpath client/build/libs/void-client-0.3.0-release.jar MobileLauncher | grep 'setDisplayScale'
+          javap -classpath client/build/libs/void-client-0.3.0-release.jar com.voidclient.mobile.MobileBridge | grep 'insertText'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: void-client-mobile-verification
           path: |
             client/build/reports/tests/
+            client/build/reports/mobile/
             client/build/test-results/
-            client/build/libs/*release.jar
+            client/build/libs/*.jar
           if-no-files-found: warn
           retention-days: 7

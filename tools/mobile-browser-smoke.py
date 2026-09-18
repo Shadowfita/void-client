@@ -10,20 +10,26 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 MOCK = r"""
 window.__calls = [];
-window.__mock = { ready: true, hostSize: [0,0], viewport: {x:0,y:0,width:0,height:0}, displayScale:1, revision:1, textSession:7, status:'Test bridge ready', root:548, menu:[], menuId:0, textAck:0, textAccepted:false, inspecting:false, widgets:[] };
+window.__mock = { ready: true, hostSize: [0,0], viewport: {x:0,y:0,width:0,height:0}, displayScale:1, revision:1, textSession:7, status:'Test bridge ready', contextNextTap:false, root:548, menu:[], menuId:0, textAck:0, textAccepted:false, inspecting:false, widgets:[] };
 window.__rejectText = false;
 window.cheerpjInit = async () => {};
 window.cheerpjCreateDisplay = () => {};
 const bridge = {
   snapshot: async () => JSON.stringify(window.__mock),
-  cancel: async () => { window.__calls.push(['cancel']); window.__mock.menu = []; },
-  pointer: async (...a) => { window.__calls.push(['pointer', ...a]); },
+  cancel: async () => { window.__calls.push(['cancel']); window.__mock.menu = []; window.__mock.contextNextTap = false; },
+  pointer: async (...a) => {
+    window.__calls.push(['pointer', ...a]);
+    if (a[0] === 'up' && window.__mock.contextNextTap) {
+      window.__mock.contextNextTap = false; window.__mock.menuId++;
+      window.__mock.menu = Array.from({length:30},(_,i)=>({id:i,label:'Action '+i+' for a long named game target'}));
+    }
+  },
   wheel: async (...a) => { window.__calls.push(['wheel', ...a]); },
   setSuspended: async (v) => { window.__calls.push(['suspended',v]); },
   setTextFocus: async (v) => { window.__calls.push(['focus',v]); },
   action: async (...a) => {
     window.__calls.push(['action', ...a]);
-    if (a[0] === 'context') { window.__mock.menuId++; window.__mock.menu = Array.from({length:30},(_,i)=>({id:i,label:'Action '+i+' for a long named game target'})); }
+    if (a[0] === 'context') window.__mock.contextNextTap = !window.__mock.contextNextTap;
     if (a[0] === 'select' || a[0] === 'dismiss') window.__mock.menu = [];
     if (a[0] === 'key' && [10,9,27].includes(a[1])) window.__mock.textSession++;
   },
@@ -83,6 +89,9 @@ def run():
             phases = page.evaluate("__calls.filter(x=>x[0]==='pointer').map(x=>x[1])")
             check(phases == ['down','up'], f'one real touch emits one pair {width}')
             page.locator('[data-tool=actions]').tap()
+            page.wait_for_function("document.querySelector('[data-tool=actions]').getAttribute('aria-pressed')==='true'")
+            check(not page.locator('#menu').evaluate('(d)=>d.open'), 'Actions arms target selection without a menu or default click')
+            page.touchscreen.tap(stage['x']+80, stage['y']+80)
             page.locator('#menu[open]').wait_for()
             check(page.locator('#menu-items button').count() == 30, 'long context menu populated')
             check(page.locator('#menu-items button').evaluate_all('(bs)=>bs.every(b=>b.getBoundingClientRect().height>=48)'), '48px menu rows')

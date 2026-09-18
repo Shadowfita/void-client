@@ -89,7 +89,7 @@ Native reports are written to `client/build/reports/mobile/regression.txt`. CI a
 
 | Area | Remaining work |
 | --- | --- |
-| Cache-specific layouts | Capture real interface IDs, then adapt inventory/equipment, chat, minimap, bank/shop, trade, dialogue and navigation individually. The fallback preserves access; it does not provide those bespoke layouts. |
+| Cache-specific layouts | Capture real interface IDs, then adapt inventory/equipment, chat, minimap, bank/shop, trade, dialogue and navigation individually. The fallback aims to keep oversized content reachable; it does not provide those bespoke layouts. |
 | Item rearrangement | Add a verified tap-select/tap-destination alternative to native item dragging. This foundation intentionally avoids synthesizing unverified item-move actions. |
 | Plugins | Migrate/test interactive RuneLite panels and overlays against real widget geometry. The mobile preview currently uses the classic host. |
 | Accessibility | Audit labels, text size, contrast and focus in live interfaces. The game canvas is not a screen-reader semantic tree; larger HTML controls do not establish full accessibility conformance. |
@@ -108,4 +108,4 @@ The release gate is a real-device login → movement → interaction → invento
 
 ### Implementation-time verification
 
-The dependency-free core passed 1,353 assertions and the browser queue passed eight Node tests. The actual Chromium shell passed 68 checks at 320×568, 390×844, 844×390 and 1024×768 display pixels using a **mock Java bridge**. These checks cover host behaviour, not live CheerpJ networking/rendering or actual gameplay. Full native-hook and release validation is performed by the branch workflow; consult the exact commit's run before treating a build as verified.
+The implementation commit `e459902115936b2b4871c73462e568e56a1d1dc8` passed Java 8 compilation, 1,353 core assertions, 40 native integration assertions, eight Node tests and ProGuard release packaging. The browser entry points were verified in that obfuscated JAR. The actual Chromium shell passed 72 checks at 320×568, 390×844, 844×390 and 1024×768 display pixels using a **mock Java bridge**. These checks cover host behaviour, not live CheerpJ networking/rendering or actual gameplay. Full native-hook and release validation is performed by the branch workflow; consult the exact commit's run before treating a build as verified.
