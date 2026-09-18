@@ -1,0 +1,89 @@
+name: Apply and verify mobile foundation
+
+on:
+  push:
+    branches: [feature/mobile-responsive-ui]
+    paths: [.github/workflows/mobile-apply-once.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mobile-apply-once
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    if: github.repository == 'Shadowfita/void-client' && github.ref == 'refs/heads/feature/mobile-responsive-ui'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Refuse changes to the implementation base
+        run: |
+          git diff --exit-code 7ac28b710dd70f0df7ec47366c5d3d4437efa694 HEAD -- . ':!.github/workflows/mobile-apply-once.yml'
+      - name: Retrieve and verify the exact local patch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, lzma, pathlib, subprocess
+          parts = ['19425a9c03d6458181de7c2dc5722c5b0ba19fbc', '06c8c97eda3eef96c6540c8841da4a21a516b831', '549e7b5a3b1fd3cd2c04ea1126a2f4fbfda66770']
+          data = bytearray()
+          for sha in parts:
+              obj = json.loads(subprocess.check_output(['gh', 'api', 'repos/Shadowfita/void-client/git/blobs/' + sha]))
+              chunk = base64.b64decode(obj['content'])
+              actual = hashlib.sha1(b'blob ' + str(len(chunk)).encode() + b'\0' + chunk).hexdigest()
+              assert actual == sha, 'Git blob checksum mismatch'
+              data.extend(chunk)
+          patch = lzma.decompress(data)
+          assert hashlib.sha256(patch).hexdigest() == '28643cf7dc0f3cd2474e6761d3806f050f494c836cf58c9d68e35efcf3edf924', 'Patch checksum mismatch'
+          pathlib.Path('/tmp/mobile.patch').write_bytes(patch)
+          PY
+          git config core.whitespace 'blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol'
+          git apply --check /tmp/mobile.patch
+          git apply --index /tmp/mobile.patch
+          git diff --cached --check
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+          cache: gradle
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Browser queue regression tests
+        run: node --test web/mobile/test/*.test.mjs
+      - name: Compile and run actual native-hook tests
+        run: bash ./gradlew :client:compileJava :client:test --stacktrace
+      - name: Build and verify obfuscated browser entry points
+        run: |
+          bash ./gradlew :client:proguardJar --stacktrace
+          javap -classpath client/build/libs/void-client-0.3.0-release.jar MobileLauncher | grep 'setDisplayScale'
+          javap -classpath client/build/libs/void-client-0.3.0-release.jar com.voidclient.mobile.MobileBridge | grep 'insertText'
+      - name: Commit tested code without overwriting concurrent work
+        run: |
+          # Workflow updates are finalized through the connected GitHub app after verification.
+          # The Actions token only pushes source/test/documentation changes here.
+          git restore --source=HEAD --staged --worktree .github/workflows/mobile-ui-verify.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(mobile): add opt-in responsive host, touch routing and validated native action bridge'
+          git push origin HEAD:refs/heads/feature/mobile-responsive-ui
+          git rev-parse HEAD | tee mobile-implementation-commit.txt
+          git archive --format=zip --output=mobile-implemented-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-implementation-verification
+          path: |
+            mobile-implementation-commit.txt
+            mobile-implemented-source.zip
+            client/build/reports/mobile/
+            client/build/reports/tests/
+            client/build/test-results/
+            client/build/libs/*.jar
+          if-no-files-found: warn
+          retention-days: 7
