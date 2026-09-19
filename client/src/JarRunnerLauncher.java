@@ -6,10 +6,11 @@ public final class JarRunnerLauncher {
     private JarRunnerLauncher() { }
     public static void main(String[] args) throws Exception {
         if (Arrays.asList(args).contains("--help")) {
-            System.out.println("Void Jar Runner mobile host JR1\nOpen this JAR without arguments to configure server and display.\n"
+            System.out.println("Void Jar Runner mobile candidate JR2–JR5\nOpen this JAR without arguments to configure server and display.\n"
                 + "Optional: --address HOST --port PORT --skip-setup\nMobile mode is automatic. No Android APIs or raw multitouch are assumed.");
             return;
         }
+        com.voidclient.mobile.AccessibilityPreferences.load();
         StandaloneSettings settings = StandaloneMobileHost.loadSettings();
         List<String> forwarded = new ArrayList<>(); boolean skip = false;
         for (int i = 0; i < args.length; i++) {

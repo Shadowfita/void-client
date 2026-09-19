@@ -15,6 +15,7 @@ final class Class348_Sub11 extends Node implements Interface6 {
     static int anInt4769;
     static Js5Archive aClass45_4770;
     int anInt4771;
+    int mobileReceipt;
 
     public final int method27(int i) {
         if (i != 26276) method27(113);

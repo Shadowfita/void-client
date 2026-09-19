@@ -5,7 +5,7 @@ import java.util.Map;
 
 /** Deterministic, clock-injected recognizer. All calls occur on the client thread. */
 public final class GestureRecognizer {
-    public enum Kind { CONTROL, SCROLL, WORLD, BLOCKED }
+    public enum Kind { CONTROL, SCROLL, WORLD, MAP, BLOCKED }
     public static final class Target {
         public final long token;
         public final Kind kind;
@@ -19,9 +19,11 @@ public final class GestureRecognizer {
         void scroll(Target target, double dx, double dy);
         void camera(double dx, double dy);
         void zoom(double displayDelta);
+        default void map(double dx,double dy) {}
+        default void mapZoom(double delta) {}
         void cancel();
     }
-    private enum State { IDLE, PENDING, SCROLL, CAMERA, MULTI, CONSUMED }
+    private enum State { IDLE, PENDING, SCROLL, CAMERA, MAP, MULTI, CONSUMED }
     private static final class Point {
         double x, y;
         Point(double x, double y) { this.x = x; this.y = y; }
@@ -54,7 +56,7 @@ public final class GestureRecognizer {
         pointers.put(id, new Point(x, y));
         if (pointers.size() == 2) {
             Target second = sink.hit(x, y);
-            if (state != State.CONSUMED && owner.kind == Kind.WORLD && second != null && second.kind == Kind.WORLD) {
+            if (state != State.CONSUMED && (owner.kind == Kind.WORLD || owner.kind == Kind.MAP) && second != null && second.kind == owner.kind) {
                 state = State.MULTI; rememberPair();
             } else state = State.CONSUMED;
         } else if (pointers.size() > 2) state = State.CONSUMED;
@@ -66,18 +68,19 @@ public final class GestureRecognizer {
         point.x = x; point.y = y;
         if (state == State.MULTI && pointers.size() == 2) {
             double[] pair = pair();
-            sink.camera(pair[0] - lastCenterX, pair[1] - lastCenterY);
-            sink.zoom(pair[2] - lastDistance);
+            if(owner.kind==Kind.MAP){sink.map(pair[0]-lastCenterX,pair[1]-lastCenterY);sink.mapZoom(pair[2]-lastDistance);}
+            else {sink.camera(pair[0] - lastCenterX, pair[1] - lastCenterY);sink.zoom(pair[2] - lastDistance);}
             rememberPair(); return;
         }
         if (id != primary || state == State.CONSUMED) return;
         double dx = x - lastX, dy = y - lastY;
         if (state == State.PENDING && Math.hypot(x - startX, y - startY) > slop) {
-            state = owner.kind == Kind.SCROLL ? State.SCROLL : owner.kind == Kind.WORLD ? State.CAMERA : State.CONSUMED;
+            state = owner.kind == Kind.SCROLL ? State.SCROLL : owner.kind == Kind.WORLD ? State.CAMERA : owner.kind == Kind.MAP ? State.MAP : State.CONSUMED;
             // Movement over a control cancels its tap; it never silently becomes a world drag.
         }
         if (state == State.SCROLL) sink.scroll(owner, dx, dy);
         else if (state == State.CAMERA) sink.camera(dx, dy);
+        else if (state == State.MAP) sink.map(dx,dy);
         lastX = x; lastY = y;
     }
     public void up(int id, double x, double y, long time, long viewportRevision) {

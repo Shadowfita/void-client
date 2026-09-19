@@ -20,7 +20,7 @@ public final class StandaloneMobileRegression {
         for (Component c : root.getComponents()) { if (c instanceof JButton) result.add((JButton) c); if (c instanceof Container) result.addAll(buttons((Container) c)); }
         return result;
     }
-    private static JButton button(Container root, String name) { for (JButton b : buttons(root)) if (name.equals(b.getText())) return b; throw new AssertionError("Missing button " + name); }
+    private static JButton button(Container root, String name) { for (JButton b : buttons(root)) if (name.equals(b.getText()) || name.equals(b.getAccessibleContext().getAccessibleName())) return b; throw new AssertionError("Missing button " + name); }
     private static int[] size = {844, 390};
     public static void main(String[] args) throws Exception {
         try { run(); }
@@ -57,7 +57,7 @@ public final class StandaloneMobileRegression {
         check(host.isUndecorated(), "dedicated host borderless");
         check(host.getBounds().equals(new Rectangle(0, 0, 844, 390)), "startup uses display not hard-coded 844x560");
         check(loader.getWidth() > 0 && loader.getHeight() > 0 && loader.getHeight() < 390, "actual applet fills remaining viewport");
-        for (String name : new String[] {"Actions", "Camera", "Text", "Inspect", "Display"}) check(button(host, name).getHeight() >= 48, "touch target " + name);
+        for (String name : new String[] {"Actions", "Camera", "Text", "Panels", "More"}) check(button(host, name).getHeight() >= 48, "touch target " + name);
         edt(() -> button(host, "Text").doClick()); flush(); // should be harmless before game ready
         check(eventFailure == null, "text during startup does not throw");
         for (int[] view : new int[][] {{320, 568}, {390, 844}, {844, 390}, {1024, 768}, {1920, 1080}}) {
@@ -69,7 +69,10 @@ public final class StandaloneMobileRegression {
                 check(p.x >= 0 && p.y >= 0 && p.x + b.getWidth() <= host.getContentPane().getWidth() && p.y + b.getHeight() <= host.getContentPane().getHeight(), "dock not clipped " + b.getText());
             }
         }
-        edt(() -> { size[0] = 390; size[1] = 844; StandaloneMobileHost.fitNow(); button(host, "Display").doClick(); }); flush();
+        edt(() -> { size[0] = 390; size[1] = 844; StandaloneMobileHost.fitNow(); button(host, "More").doClick(); }); flush();
+        JDialog tools=null;for(Window window:Window.getWindows())if(window instanceof JDialog&&window.isVisible()&&"Mobile tools".equals(((JDialog)window).getTitle()))tools=(JDialog)window;
+        check(tools!=null,"More tools route reachable");final JDialog toolsDialog=tools;
+        edt(()->button(toolsDialog,"Display and input").doClick());flush();
         JDialog display = null; for (Window w : Window.getWindows()) if (w instanceof JDialog && w.isVisible() && "Display and input".equals(((JDialog) w).getTitle())) display = (JDialog) w;
         check(display != null, "display dialog reachable"); final JDialog d = display;
         check(MobileBridge.hostOverlayActive() && MobileRuntime.blocksMouse(), "settings block game click-through");
@@ -81,7 +84,8 @@ public final class StandaloneMobileRegression {
             button(d, "Reset").doClick();
         }); flush();
         check("100".equals(System.getProperty("void.mobile.gameScale")), "reset applies game size");
-        edt(() -> button(d, "Close").doClick()); flush(); check(!MobileBridge.hostOverlayActive(), "closing releases overlay ownership");
+        edt(() -> button(d, "Close").doClick()); flush();check(MobileBridge.hostOverlayActive()&&toolsDialog.isEnabled(),"closing child surface restores parent without releasing game ownership");
+        edt(()->button(toolsDialog,"Close").doClick());flush();check(!MobileBridge.hostOverlayActive(), "closing releases overlay ownership");
         s.fit = false; s.width = 320; s.height = 480; s.touch = false; s.controlScale = 0;
         edt(() -> StandaloneMobileHost.applySettings(s, false)); flush();
         check(host.getWidth() == 320 && host.getHeight() == 480, "manual window override applies");
@@ -89,8 +93,8 @@ public final class StandaloneMobileRegression {
         check(StandaloneMobileHost.controlScale() == 100, "auto controls use manual window rather than virtual desktop");
         s.controlScale = 250; edt(() -> StandaloneMobileHost.applySettings(s, false)); flush();
         check(StandaloneMobileHost.controlScale() < 250, "excessive toolbar scale capped to keep controls reachable");
-        Point displayPosition = SwingUtilities.convertPoint(button(host, "Display"), 0, 0, host.getContentPane());
-        check(displayPosition.y + button(host, "Display").getHeight() <= host.getContentPane().getHeight(), "Display accessible after large scale request");
+        Point displayPosition = SwingUtilities.convertPoint(button(host, "More"), 0, 0, host.getContentPane());
+        check(displayPosition.y + button(host, "More").getHeight() <= host.getContentPane().getHeight(), "Display accessible after large scale request");
         MobileBridge.drain();
         edt(() -> host.setSize(300, 460)); flush();
         boolean cancelled = false; for (MobileBridge.Command c : MobileBridge.drain()) cancelled |= "cancel".equals(c.type);

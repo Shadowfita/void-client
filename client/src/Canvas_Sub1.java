@@ -5,6 +5,9 @@
 import java.awt.*;
 
 final class Canvas_Sub1 extends Canvas {
+    @Override public javax.accessibility.AccessibleContext getAccessibleContext() {
+        return com.voidclient.mobile.MobileConfig.enabled()?com.voidclient.mobile.MobileAccessibleCanvas.forCanvas(this):super.getAccessibleContext();
+    }
     static int[] anIntArray60;
     static int anInt61;
     static int anInt62;

@@ -10,7 +10,9 @@ public final class MobileLauncher {
     private static volatile int requestedWidth = 844, requestedHeight = 390;
     private static boolean started;
     private static volatile double displayScale = 1.0;
-    private static JDialog actions;
+    private static JDialog actions,panels;
+    private static JLabel modeStatus;
+    private static JButton cancelMode;
     private static long shownMenu = -1;
     private MobileLauncher() { }
 
@@ -50,7 +52,7 @@ public final class MobileLauncher {
     }
     static void open(Loader loader) {
         Runnable build = () -> {
-            JFrame frame = new JFrame(Boolean.getBoolean("void.mobile.jarRunner") ? "Void — Android / Jar Runner JR1" : "Void — Mobile preview");
+            JFrame frame = new JFrame(Boolean.getBoolean("void.mobile.jarRunner") ? "Void — Android / Jar Runner JR2–JR5 candidate" : "Void — Mobile preview");
             host = frame; loader.aJFrame2 = frame;
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setUndecorated(MobileConfig.browser() || Boolean.getBoolean("void.mobile.jarRunner"));
@@ -66,8 +68,13 @@ public final class MobileLauncher {
                 dock.add(button("Actions", () -> send("context", 0)));
                 dock.add(button("Camera", MobileLauncher::cameraDialog));
                 dock.add(button("Text", MobileLauncher::textDialog));
-                dock.add(button("Inspect", MobileLauncher::inspectDialog));
-                frame.add(dock, BorderLayout.SOUTH);
+                dock.add(button("Panels", MobileLauncher::panelsDialog));
+                JPanel footer=new JPanel(new BorderLayout(4,4));
+                JPanel modes=new JPanel(new BorderLayout(4,4)); modeStatus=new JLabel("Single-pointer mobile controls");
+                cancelMode=button("Cancel selection",()->MobileBridge.nodeAction("cancelMode",0,0,0));cancelMode.setVisible(false);
+                modes.add(modeStatus,BorderLayout.CENTER);modes.add(cancelMode,BorderLayout.EAST);footer.add(modes,BorderLayout.NORTH);footer.add(dock,BorderLayout.CENTER);
+                if(AccessibilityPreferences.current().leftHanded) {Component[] buttons=dock.getComponents();dock.removeAll();for(int i=buttons.length-1;i>=0;i--)dock.add(buttons[i]);}
+                frame.add(footer, BorderLayout.SOUTH);
                 StandaloneMobileHost.install(frame, dock);
                 Timer actionTimer = new Timer(100, event -> refreshActions()); actionTimer.start();
                 frame.addWindowListener(new WindowAdapter() {
@@ -98,7 +105,8 @@ public final class MobileLauncher {
         d.addWindowListener(new WindowAdapter() {
             @Override public void windowClosing(WindowEvent e) { MobileBridge.cancel(); }
         });
-        d.add(new JScrollPane(content), BorderLayout.CENTER);
+        TouchScrollPane scroll=new TouchScrollPane(content);d.add(scroll, BorderLayout.CENTER);
+        JPanel pages=new JPanel(new GridLayout(1,2,4,4));pages.add(button("Page up",()->scroll.page(-1)));pages.add(button("Page down",()->scroll.page(1)));d.add(pages,BorderLayout.NORTH);
         d.add(button("Close", () -> { MobileBridge.cancel(); d.dispose(); }), BorderLayout.SOUTH);
         int scale = StandaloneMobileHost.controlScale();
         d.setSize(Math.min(420 * scale / 100, host.getWidth()), Math.min(440 * scale / 100, host.getHeight()));
@@ -112,33 +120,17 @@ public final class MobileLauncher {
         for (String[] option : options) p.add(button(option[0], () -> send(option[1], 0)));
         dialog("Camera", p);
     }
-    private static void textDialog() {
+    static void textDialog() {
         MobileBridge.cancel();
-        JsonObject snapshot = JsonParser.parseString(MobileBridge.snapshot()).getAsJsonObject();
-        if (!snapshot.has("textSession")) return; // Client is still loading; do not throw on the EDT.
-        final long session = snapshot.get("textSession").getAsLong();
+        JsonObject snapshot=JsonParser.parseString(MobileBridge.snapshot()).getAsJsonObject();
+        if(!snapshot.has("textSession")) return;
         MobileBridge.setTextFocus(true);
-        JPanel panel = new JPanel(new BorderLayout(4, 4));
-        JPasswordField field = new JPasswordField(); field.setFont(field.getFont().deriveFont(18f));
-        field.getAccessibleContext().setAccessibleName("Text to insert into the focused game field");
-        JPanel controls = new JPanel(new GridLayout(0, 2, 4, 4));
-        JCheckBox show = new JCheckBox("Show text"); show.addActionListener(e -> field.setEchoChar(show.isSelected() ? '\0' : '\u2022'));
-        panel.add(new JLabel("Focus a game field first. Insert does not press Enter."), BorderLayout.NORTH);
-        panel.add(field, BorderLayout.CENTER);
-        controls.add(show);
-        controls.add(button("Insert", () -> {
-            char[] value = field.getPassword();
-            try { MobileBridge.insertText(new String(value), session); }
-            finally { java.util.Arrays.fill(value, '\0'); field.setText(""); }
-        }));
-        controls.add(button("Enter", () -> MobileBridge.action("key", KeyEvent.VK_ENTER, session)));
-        controls.add(button("Backspace", () -> MobileBridge.action("key", KeyEvent.VK_BACK_SPACE, session)));
-        controls.add(button("Next field", () -> MobileBridge.action("key", KeyEvent.VK_TAB, session)));
-        controls.add(button("Escape", () -> MobileBridge.action("key", KeyEvent.VK_ESCAPE, session)));
-        panel.add(controls, BorderLayout.SOUTH);
-        JDialog d = dialog("Text entry", panel);
-        d.addWindowListener(new WindowAdapter() { @Override public void windowClosed(WindowEvent e) { field.setText(""); MobileBridge.setTextFocus(false); } });
-        field.requestFocusInWindow();
+        MobileTextEditor editor=new MobileTextEditor(snapshot.get("textSession").getAsLong());
+        JDialog d=dialog("Text entry",editor);
+        d.addWindowListener(new WindowAdapter() {
+            @Override public void windowClosed(WindowEvent e) { editor.close(); }
+        });
+        editor.focusEditor();
     }
     private static void inspectDialog() {
         send("inspect", 0);
@@ -149,7 +141,32 @@ public final class MobileLauncher {
         Timer timer = new Timer(250, e -> text.setText(MobileBridge.snapshot())); timer.start();
         d.addWindowListener(new WindowAdapter() { @Override public void windowClosed(WindowEvent e) { timer.stop(); MobileBridge.cancel(); } });
     }
+    private static void panelsDialog() {
+        if(panels!=null&&panels.isDisplayable()){panels.toFront();return;}
+        MobileBridge.cancel();MobilePanels content=new MobilePanels();
+        JDialog d=new JDialog(host,"Mobile panels — live interfaces",false);panels=d;
+        d.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);d.add(content,BorderLayout.CENTER);
+        d.add(button("Close panels / return to game",()->{MobileBridge.cancel();d.dispose();}),BorderLayout.SOUTH);
+        d.setSize(Math.max(1,host.getWidth()),Math.max(1,host.getHeight()));StandaloneMobileHost.track(d);
+        d.addWindowListener(new WindowAdapter(){public void windowClosed(WindowEvent e){content.close();panels=null;}});d.setVisible(true);
+    }
+    static void moreDialog() {
+        MobileBridge.cancel();MobileWidgets.Vertical p=new MobileWidgets.Vertical();
+        p.row(MobileWidgets.button("Display and input",StandaloneMobileHost::displayDialog));
+        p.row(MobileWidgets.button("Accessibility and gestures",()->MobileAccessibilityDialog.open(host)));
+        p.row(MobileWidgets.button("Text entry",MobileLauncher::textDialog));
+        p.row(MobileWidgets.button("Inspect current interface",MobileLauncher::inspectDialog));
+        p.row(MobileWidgets.button("Export redacted catalogue",()->MobileDiagnostics.export(host)));
+        p.row(MobileWidgets.button("Runtime capabilities",()->MobileDiagnostics.show(host)));
+        p.row(MobileWidgets.button("Cancel item / spell / Move mode",()->MobileBridge.nodeAction("cancelMode",0,0,0)));
+        dialog("Mobile tools",p);
+    }
     private static void refreshActions() {
+        UiFrameSnapshot current=MobileBridge.ui();
+        if(modeStatus!=null) {
+            modeStatus.setText(current.moveArmed?"MOVE: choose destination in Panels":current.targetArmed?"TARGET: choose item / spell target":"Actions · Panels · Text · More");
+            cancelMode.setVisible(current.moveArmed||current.targetArmed);
+        }
         JsonObject state = JsonParser.parseString(MobileBridge.snapshot()).getAsJsonObject();
         if (!state.has("menu")) return;
         JsonArray entries = state.getAsJsonArray("menu");
@@ -158,13 +175,13 @@ public final class MobileLauncher {
         if (shownMenu == id) return;
         shownMenu = id;
         if (actions != null) actions.dispose();
-        JPanel panel = new JPanel(new GridLayout(0, 1, 0, 4));
+        MobileWidgets.Vertical panel = new MobileWidgets.Vertical();
         for (JsonElement element : entries) {
             JsonObject row = element.getAsJsonObject();
             int index = row.get("id").getAsInt();
-            panel.add(button(row.get("label").getAsString(), () -> MobileBridge.action("select", index, id)));
+            panel.row(MobileWidgets.button(row.get("label").getAsString(), () -> MobileBridge.action("select", index, id)));
         }
-        panel.add(button("Cancel", MobileBridge::cancel));
+        panel.row(MobileWidgets.button("Cancel", MobileBridge::cancel));
         actions = dialog("Choose action", panel);
     }
 }

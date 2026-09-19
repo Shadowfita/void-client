@@ -48,6 +48,8 @@ final class Class88 {
         if (Class59_Sub1.aBoolean5300 && Class348_Sub42_Sub12.method3229(-82) != 1) OutputStream_Sub1.method132(106, (Class240.anInt4674 == 3) || Class240.anInt4674 == 7, za_Sub1.method3439(107), 0, Class348_Sub44.method3306((byte) -111), 0);
 
         boolean interfaceScaled = Applet_Sub1.beginInterfaceRenderScale();
+        MobileRuntime.beginPaint();
+        boolean mobilePaintSuccess=false;
         try {
             int i = 0;
             if (bool != false) method847(null, -110);
@@ -65,7 +67,9 @@ final class Class88 {
                 Class348_Sub40_Sub7.method3064(interfaceX, Class136.anInt4792, true, Class348_Sub1.anInt6555, interfaceY, Class331.aClass46_4130.anInt760, interfaceX + interfaceWidth, false, Class138.aClass46Array1942, -1412584499, interfaceY + interfaceHeight);
                 Class138.aClass46Array1942 = null;
             }
+            mobilePaintSuccess=true;
         } finally {
+            MobileRuntime.endPaint(mobilePaintSuccess);
             if (interfaceScaled) {
                 Applet_Sub1.endInterfaceRenderScale();
             }

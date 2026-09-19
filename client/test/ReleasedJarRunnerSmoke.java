@@ -35,7 +35,7 @@ public final class ReleasedJarRunnerSmoke {
         for (int i = 0; i < 100 && dialog[0] == null && failed.get() == null; i++) {
             SwingUtilities.invokeAndWait(() -> {
                 for (Window w : Window.getWindows())
-                    if (w instanceof JDialog && w.isVisible() && ((JDialog) w).getTitle().contains("Jar Runner JR1")) dialog[0] = (JDialog) w;
+                    if (w instanceof JDialog && w.isVisible() && ((JDialog) w).getTitle().contains("Jar Runner JR2")) dialog[0] = (JDialog) w;
             });
             Thread.sleep(100);
         }

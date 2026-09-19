@@ -51,31 +51,36 @@ final class Class347 {
                         if (Class289.aClass46_3701.anInt729 < i_6_ || (-Class289.aClass46_3701.anInt729 > i_6_) || (i_7_ > Class289.aClass46_3701.anInt729) || i_7_ < -Class289.aClass46_3701.anInt729) Class300.aBoolean3819 = true;
                     }
                     if ((Class289.aClass46_3701.anObjectArray823 != null) && Class300.aBoolean3819) {
-                        Class348_Sub36 class348_sub36 = new Class348_Sub36();
-                        class348_sub36.aClass46_6989 = Class289.aClass46_3701;
-                        class348_sub36.anInt6984 = i_4_;
-                        class348_sub36.anObjectArray6987 = (Class289.aClass46_3701.anObjectArray823);
-                        class348_sub36.anInt6995 = i_5_;
-                        Class66.method705(class348_sub36);
+                        updateDrag(Class289.aClass46_3701,i_4_,i_5_);
                     }
                 } else {
                     if (Class300.aBoolean3819) {
-                        Class341.method2678(-2049);
-                        if (Class289.aClass46_3701.anObjectArray692 != null) {
-                            Class348_Sub36 class348_sub36 = new Class348_Sub36();
-                            class348_sub36.aClass46_6983 = Class318_Sub1_Sub3_Sub4.aClass46_10336;
-                            class348_sub36.anInt6984 = i_4_;
-                            class348_sub36.anObjectArray6987 = (Class289.aClass46_3701.anObjectArray692);
-                            class348_sub36.anInt6995 = i_5_;
-                            class348_sub36.aClass46_6989 = Class289.aClass46_3701;
-                            Class66.method705(class348_sub36);
-                        }
-                        if (Class318_Sub1_Sub3_Sub4.aClass46_10336 != null && (client.method108(Class289.aClass46_3701) != null)) Class2.method173(-67, Class289.aClass46_3701, (Class318_Sub1_Sub3_Sub4.aClass46_10336));
+                        completeDrag(Class289.aClass46_3701,Class318_Sub1_Sub3_Sub4.aClass46_10336,i_4_,i_5_);
                     } else if ((Class318_Sub1_Sub5.anInt8770 == 1 || Class318_Sub1_Sub5.method2485(-113)) && Class73.anInt4776 > 2) Class5_Sub2.method191(true, (ha_Sub3.anInt8001 + Class318_Sub4.anInt6411), (Class219.anInt2872 - -(Class348_Sub40_Sub13.anInt9203)));
                     else if (Class101_Sub1.method913((byte) 127)) Class5_Sub2.method191(true, (ha_Sub3.anInt8001 + Class318_Sub4.anInt6411), (Class219.anInt2872 + (Class348_Sub40_Sub13.anInt9203)));
                     Class289.aClass46_3701 = null;
                 }
             }
         }
+    }
+    /** Same native drag-update script used by pointer dragging and recognized setting nudges. */
+    static void updateDrag(Class46 source,int x,int y) {
+        if(source.anObjectArray823==null)return;
+        Class348_Sub36 event=new Class348_Sub36();event.aClass46_6989=source;event.anInt6984=x;
+        event.anObjectArray6987=source.anObjectArray823;event.anInt6995=y;Class66.method705(event);
+    }
+    /** Shared native drag completion: desktop release and explicit mobile source/destination use identical script/packet semantics. */
+    static void completeDrag(Class46 source,Class46 destination,int x,int y) {
+                        Class341.method2678(-2049);
+                        if (source.anObjectArray692 != null) {
+                            Class348_Sub36 class348_sub36 = new Class348_Sub36();
+                            class348_sub36.aClass46_6983 = destination;
+                            class348_sub36.anInt6984 = x;
+                            class348_sub36.anObjectArray6987 = (source.anObjectArray692);
+                            class348_sub36.anInt6995 = y;
+                            class348_sub36.aClass46_6989 = source;
+                            Class66.method705(class348_sub36);
+                        }
+                        if (destination != null && (client.method108(source) != null)) Class2.method173(-67, source, (destination));
     }
 }

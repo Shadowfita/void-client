@@ -142,7 +142,7 @@ val jarRunnerJar by tasks.registering(Jar::class) {
     from({ zipTree(layout.buildDirectory.file("libs/void-client-$version-release.jar").get().asFile) }) {
         exclude("META-INF/MANIFEST.MF", "META-INF/*.SF", "META-INF/*.RSA", "META-INF/*.DSA")
     }
-    manifest { attributes("Main-Class" to "JarRunnerLauncher", "Implementation-Version" to "JR1") }
+    manifest { attributes("Main-Class" to "JarRunnerLauncher", "Implementation-Version" to "JR2-JR5-candidate.1") }
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
@@ -159,5 +159,32 @@ val standaloneReleaseTest by tasks.registering(JavaExec::class) {
     // Deliberately exclude main output: these checks must exercise the obfuscated distribution.
     classpath = files(sourceSets["test"].output, layout.buildDirectory.file("libs/void-client-jarrunner-mobile.jar"))
     mainClass.set("ReleasedJarRunnerSmoke")
+    jvmArgs("-Djava.awt.headless=false")
+}
+
+val mobileMilestoneTest by tasks.registering(JavaExec::class) {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("MobileMilestoneRegression")
+    jvmArgs("-Djava.awt.headless=true")
+}
+val mobileWorkflowTest by tasks.registering(JavaExec::class) {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("MobileWorkflowRegression")
+    jvmArgs("-Djava.awt.headless=true")
+}
+tasks.test { dependsOn(mobileMilestoneTest, mobileWorkflowTest) }
+val responsiveHostTest by tasks.registering(JavaExec::class) {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("MobilePanelsRegression")
+    jvmArgs("-Djava.awt.headless=false")
+}
+val releasedMobileUiTest by tasks.registering(JavaExec::class) {
+    dependsOn(jarRunnerJar, tasks.testClasses)
+    classpath = files(sourceSets["test"].output, layout.buildDirectory.file("libs/void-client-jarrunner-mobile.jar"))
+    mainClass.set("ReleasedMobileUiSmoke")
+    args(layout.buildDirectory.file("proguard/mapping.txt").get().asFile.absolutePath)
     jvmArgs("-Djava.awt.headless=false")
 }

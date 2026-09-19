@@ -1008,6 +1008,10 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
         if (Math.abs(scale - 1.0) < 0.001) {
             return;
         }
+        if (com.voidclient.mobile.MobileConfig.enabled()) {
+            scale = com.voidclient.mobile.UniformScale.effective(Class321.anInt4017,
+                Class348_Sub42_Sub8_Sub2.anInt10432, scale);
+        }
         int logicalW = Math.max(256, (int) Math.round(Class321.anInt4017 / scale));
         int logicalH = Math.max(192, (int) Math.round(Class348_Sub42_Sub8_Sub2.anInt10432 / scale));
         Class321.anInt4017 = logicalW;
@@ -1086,7 +1090,7 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
         int ui = nativeUi ? factor : 100, whole = stretch ? factor : 100;
         if (stretchedEnabled == stretch && scalingFactor == whole && interfaceScalingFactor == ui) return false;
         endInterfaceRenderScale(); interfaceInputScaleActive = false;
-        stretchedEnabled = stretch; stretchedIntegerScaling = false; stretchedKeepAspectRatio = false; stretchedFast = false;
+        stretchedEnabled = stretch; stretchedIntegerScaling = false; stretchedKeepAspectRatio = true; stretchedFast = false;
         scalingFactor = whole; interfaceScalingFactor = ui;
         lastInterfaceLayoutWidth = lastInterfaceLayoutHeight = lastInterfaceLayoutFrame = -1;
         RuntimeException_Sub1.aBoolean4604 = true; // Existing client-thread resize path reallocates renderer and reflows roots.

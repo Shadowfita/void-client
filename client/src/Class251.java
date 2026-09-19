@@ -19,6 +19,7 @@ final class Class251 {
     static final void method1913(boolean bool, int i, Class46 class46) {
         anInt3235++;
         int i_0_ = -40 % ((-35 - i) / 51);
+        MobileItemGridLayout.prepare(class46);
         int i_1_ = (class46.anInt698 == 0 ? class46.anInt709 : class46.anInt698);
         int i_2_ = (class46.anInt791 != 0 ? class46.anInt791 : class46.anInt789);
         Class367_Sub1.method3534(false, class46.anInt830, i_1_, bool, i_2_, (Class348_Sub40_Sub33.aClass46ArrayArray9427[(class46.anInt830 >> 16)]));

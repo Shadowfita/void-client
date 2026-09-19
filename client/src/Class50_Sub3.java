@@ -35,6 +35,11 @@ final class Class50_Sub3 extends Class50 {
     static final void method466(boolean bool, String string, int i, byte i_0_, boolean bool_1_, int i_2_, int i_3_, boolean bool_4_, int i_5_, long l, String string_6_, long l_7_, int i_8_) {
         try {
             anInt5238++;
+            if (MobileNativeActions.capturing()) {
+                MobileNativeActions.collect(new Class348_Sub42_Sub12(string_6_,string,
+                    i_8_==-1?Class362.anInt4458:i_8_,i_5_,i_3_,l_7_,i_2_,i,bool_4_,bool,l,bool_1_));
+                return;
+            }
             if (!Class5_Sub1.aBoolean8335 && Class73.anInt4776 < 500) {
                 i_8_ = i_8_ != -1 ? i_8_ : Class362.anInt4458;
                 if (i_0_ >= -65) method469((byte) 19);

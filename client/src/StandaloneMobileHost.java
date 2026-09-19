@@ -42,7 +42,7 @@ final class StandaloneMobileHost {
     static boolean configureStartup(StandaloneSettings value) throws Exception {
         final boolean[] launch = {false};
         Runnable show = () -> {
-            JDialog d = new JDialog((Frame) null, "Void — Android / Jar Runner JR1", true);
+            JDialog d = new JDialog((Frame) null, "Void — Android / Jar Runner JR2–JR5 candidate", true);
             Rectangle area = screens.bounds(null);
             int scale = value.effectiveControlScale(area);
             JPanel panel = new JPanel(new BorderLayout(8, 8)); panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
@@ -51,10 +51,10 @@ final class StandaloneMobileHost {
             JTextField port = new JTextField(Integer.toString(value.port)); port.getAccessibleContext().setAccessibleName("Server TCP port");
             fields.add(new JLabel("Server hostname / IP (not a URL)")); fields.add(address);
             fields.add(new JLabel("TCP port")); fields.add(port);
-            JTextArea hint = note("Mobile mode is automatic. Open Display in the game toolbar to adjust sizing and input.");
+            JTextArea hint = note("Mobile mode is automatic. Open More → Display in the game toolbar to adjust sizing and input.");
             fields.add(hint);
             JLabel error = new JLabel(persistenceStatus); fields.add(error);
-            panel.add(new JScrollPane(fields), BorderLayout.CENTER);
+            panel.add(new TouchScrollPane(fields), BorderLayout.CENTER);
             JPanel buttons = new JPanel(new GridLayout(1, 2, 8, 0));
             buttons.add(makeButton("Cancel", d::dispose));
             buttons.add(makeButton("Start client", () -> {
@@ -92,7 +92,7 @@ final class StandaloneMobileHost {
                 frame = null; dock = null; lastContent = null; lastScreen = null; publishedSize = new Dimension();
             }
         });
-        toolbar.add(makeButton("Display", StandaloneMobileHost::displayDialog));
+        toolbar.add(makeButton("More", MobileLauncher::moreDialog));
         fitNow();
         monitor = new javax.swing.Timer(750, e -> {
             if (frame == null || !frame.isDisplayable() || (frame.getExtendedState() & Frame.ICONIFIED) != 0) return;
@@ -132,6 +132,7 @@ final class StandaloneMobileHost {
         b.addActionListener(e -> action.run()); style(b, toolScale); return b;
     }
     static void style(Component component, int scale) {
+        if(component instanceof MobilePanels || component instanceof MobileWidgets.WrappingButton || component instanceof MobileTextEditor) return;
         float fontSize = Math.max(16, 16f * scale / 100);
         if (component.getFont() != null) component.setFont(component.getFont().deriveFont(fontSize));
         int height = Math.max(48, 48 * scale / 100);
@@ -165,7 +166,7 @@ final class StandaloneMobileHost {
         @Override public boolean getScrollableTracksViewportHeight() { return false; }
     }
     static void track(JDialog dialog) {
-        overlays.add(dialog); MobileBridge.setHostOverlayActive(true);
+        overlays.add(dialog); MobileBridge.setHostOverlayActive(true); MobileInterfaceManager.track(dialog);
         style(dialog.getContentPane(), toolScale);
         dialog.addWindowListener(new WindowAdapter() {
             @Override public void windowClosed(WindowEvent e) {
@@ -218,7 +219,7 @@ final class StandaloneMobileHost {
         form.add(note("Software rendering scales the whole game, not just interfaces. Fitting cannot change Jar Runner's own virtual desktop. Tool size is capped when needed to keep Display reachable."));
         JTextArea info = new JTextArea(5, 20); info.setEditable(false); info.setLineWrap(true); info.setWrapStyleWord(true); form.add(info);
         JLabel result = new JLabel(persistenceStatus); form.add(result);
-        JPanel content = new JPanel(new BorderLayout(4, 4)); content.add(new JScrollPane(form), BorderLayout.CENTER);
+        JPanel content = new JPanel(new BorderLayout(4, 4)); content.add(new TouchScrollPane(form), BorderLayout.CENTER);
         JPanel buttons = new JPanel(new GridLayout(1, 3, 4, 4)); content.add(buttons, BorderLayout.SOUTH);
         JDialog dialog = new JDialog(frame, "Display and input", false);
         Runnable apply = () -> {

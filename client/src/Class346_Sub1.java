@@ -30,11 +30,14 @@ final class Class346_Sub1 extends Class346 implements KeyListener, FocusListener
     private Class262 aClass262_6542 = new Class262();
     private boolean[] aBooleanArray6543 = new boolean[112];
     private Component aComponent6544;
+    private int mobileReceipt;
 
     final Interface6 method2697(int i) {
         if (i != 0) aBooleanArray6543 = null;
         anInt6525++;
-        return (Interface6) aClass262_6541.method1997(8);
+        Class348_Sub11 event=(Class348_Sub11)aClass262_6541.method1997(8);
+        if(event!=null && event.mobileReceipt!=0) MobileRuntime.textConsumed(event.mobileReceipt,event.anInt4771);
+        return event;
     }
 
     final boolean method2696(int i, int i_0_) {
@@ -61,6 +64,7 @@ final class Class346_Sub1 extends Class346 implements KeyListener, FocusListener
 
     final synchronized void mobileCancel() {
         aClass262_6542.method1996(127);
+        aClass262_6541.method1996(127);
         method2702(0, 128, '\0', -1);
     }
 
@@ -75,8 +79,19 @@ final class Class346_Sub1 extends Class346 implements KeyListener, FocusListener
         method2701(press, 0, 0); method2701(release, 0, 1);
     }
 
+    final synchronized boolean mobileReceiptText(String value,int receipt) {
+        if(aComponent6544==null) return false;
+        mobileReceipt=receipt;
+        try { mobileText(value); return true; } finally { mobileReceipt=0; }
+    }
+    final synchronized boolean mobileReceiptKey(int key,int receipt) {
+        if(aComponent6544==null) return false;
+        mobileReceipt=receipt;
+        try { mobileKey(key); return true; } finally { mobileReceipt=0; }
+    }
+
     public final synchronized void keyPressed(KeyEvent keyevent) {
-        if (com.voidclient.mobile.MobileConfig.browser() || com.voidclient.mobile.MobileBridge.textFocused()) { keyevent.consume(); return; }
+        if (com.voidclient.mobile.MobileConfig.browser() || com.voidclient.mobile.MobileBridge.textFocused() || (com.voidclient.mobile.MobileConfig.enabled() && com.voidclient.mobile.MobileBridge.hostOverlayActive())) { keyevent.consume(); return; }
         anInt6526++;
         method2701(keyevent, 0, 0);
     }
@@ -107,6 +122,7 @@ final class Class346_Sub1 extends Class346 implements KeyListener, FocusListener
         anInt6532++;
         Class348_Sub11 class348_sub11 = new Class348_Sub11();
         class348_sub11.anInt4771 = i_5_;
+        class348_sub11.mobileReceipt=mobileReceipt;
         class348_sub11.anInt4767 = i;
         class348_sub11.aChar4761 = c;
         class348_sub11.aLong4764 = Class62.method599(-102);
@@ -115,13 +131,13 @@ final class Class346_Sub1 extends Class346 implements KeyListener, FocusListener
     }
 
     public final synchronized void keyReleased(KeyEvent keyevent) {
-        if (com.voidclient.mobile.MobileConfig.browser() || com.voidclient.mobile.MobileBridge.textFocused()) { keyevent.consume(); return; }
+        if (com.voidclient.mobile.MobileConfig.browser() || com.voidclient.mobile.MobileBridge.textFocused() || (com.voidclient.mobile.MobileConfig.enabled() && com.voidclient.mobile.MobileBridge.hostOverlayActive())) { keyevent.consume(); return; }
         anInt6529++;
         method2701(keyevent, 0, 1);
     }
 
     public final synchronized void keyTyped(KeyEvent keyevent) {
-        if (com.voidclient.mobile.MobileConfig.browser() || com.voidclient.mobile.MobileBridge.textFocused()) { keyevent.consume(); return; }
+        if (com.voidclient.mobile.MobileConfig.browser() || com.voidclient.mobile.MobileBridge.textFocused() || (com.voidclient.mobile.MobileConfig.enabled() && com.voidclient.mobile.MobileBridge.hostOverlayActive())) { keyevent.consume(); return; }
         anInt6527++;
         char c = keyevent.getKeyChar();
         if (c != 0 && Class122.method1089(-125, c)) {

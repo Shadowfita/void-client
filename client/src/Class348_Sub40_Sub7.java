@@ -115,6 +115,7 @@ final class Class348_Sub40_Sub7 extends Class348_Sub40 {
                                 i_34_ = Math.min(i_14_, i_35_);
                                 i_33_ = (Math.min(i_17_, i_36_));
                             }
+                            MobileRuntime.recordPaint(class46,i_24_,i_25_,i_31_,i_32_,i_34_,i_33_);
                             if (i_31_ < i_34_ && i_32_ < i_33_) {
                                 if (class46.anInt765 != 0) {
                                     if ((Class239_Sub10.anInt5943 == class46.anInt765) || (class46.anInt765 == Class312.anInt3932)) {
@@ -262,10 +263,13 @@ final class Class348_Sub40_Sub7 extends Class348_Sub40 {
                                 }
                                 if (class46.anInt774 == 0) {
                                     if ((class46.anInt765 == Class372.anInt4532) && Class348_Sub8.aHa6654.method3666()) Class348_Sub8.aHa6654.method3658(i_24_, i_25_, class46.anInt709, class46.anInt789);
+                                    MobileRuntime.paintParent(class46);
+                                    try {
                                     method3064(i_31_, -class46.anInt755 + i_25_, bool, i_24_ - class46.anInt747, i_32_, i_23_, i_34_, false, class46s, class46.anInt830, i_33_);
                                     if (class46.aClass46Array798 != null) method3064(i_31_, -(class46.anInt755) + i_25_, bool, i_24_ - (class46.anInt747), i_32_, i_23_, i_34_, false, (class46.aClass46Array798), (class46.anInt830), i_33_);
                                     Class348_Sub41 class348_sub41 = ((Class348_Sub41) (Class125.aClass356_4915.method3480(class46.anInt830, -6008)));
                                     if (class348_sub41 != null) Class159.method1252(i_25_, (class348_sub41.anInt7050), i_32_, i_23_, i_24_, i_34_, i_33_, (byte) 60, i_31_);
+                                    } finally { MobileRuntime.paintParentEnd(); }
                                     if ((class46.anInt765 == Class372.anInt4532) && Class348_Sub8.aHa6654.method3666()) Class348_Sub8.aHa6654.method3698();
                                     Class348_Sub8.aHa6654.KA(i, i_12_, i_14_, i_17_);
                                 }
@@ -302,6 +306,7 @@ final class Class348_Sub40_Sub7 extends Class348_Sub40 {
                                                 i_50_ = (class46.anInt749);
                                             }
                                             if (Class318_Sub1_Sub3_Sub2.aBoolean10046) Class348_Sub8.aHa6654.T(i_24_, i_25_, (class46.anInt709) + i_24_, (class46.anInt789) + i_25_);
+                                            MobileRuntime.renderedText(class46,string);
                                             class324.method2568(null, class46.anInt789, (byte) -77, null, 0, Class113.aClass105Array1744, (-(i_28_ & 0xff) + 255 << 24) | i_50_, i_25_, class46.anInt709, class46.anInt700, string, 0, i_24_, class46.anInt762, (!(class46.aBoolean769) ? -1 : (-(0xff & i_28_) + 255 << 24)), class46.anInt773, class46.anInt673);
                                             if (Class318_Sub1_Sub3_Sub2.aBoolean10046) Class348_Sub8.aHa6654.KA(i, i_12_, i_14_, i_17_);
                                             if (string.trim().length() > 0) {
@@ -334,6 +339,7 @@ final class Class348_Sub40_Sub7 extends Class348_Sub40 {
                                             if (class105 == null) {
                                                 if (Class348_Sub42_Sub13.aBoolean9616) Class251.method1916(-9343, class46);
                                             } else {
+                                                MobileVisuals.capture(class46,class105);
                                                 int i_53_ = class105.method966();
                                                 int i_54_ = class105.method980();
                                                 int i_55_ = ((-(i_28_ & 0xff) + 255 << 24) | ((class46.anInt749) != 0 ? (class46.anInt749 & 0xffffff) : 16777215));

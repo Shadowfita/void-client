@@ -58,3 +58,7 @@ Required token scope:
 Rotate the token by regenerating it at
 https://github.com/settings/personal-access-tokens and updating the
 `RELEASES_TOKEN` secret under Settings → Secrets and variables → Actions.
+
+## Mobile candidate
+
+The newer Jar Runner implementation and its exact remaining gates are documented in [JR2–JR5 candidate](docs/mobile-jr2-jr5-candidate.md). The desktop release remains separate.
