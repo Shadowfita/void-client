@@ -39,11 +39,11 @@ jobs:
       - name: Compile and run core, native, adversarial and workflow fixtures
         run: bash ./gradlew :client:compileJava :client:test --stacktrace
       - name: Real standalone host and responsive Swing fixtures
-        run: xvfb-run -a -s '-screen 0 1920x1200x24' bash ./gradlew --no-daemon :client:standaloneHostTest :client:responsiveHostTest :client:nativeCanvasTest --stacktrace
+        run: xvfb-run -a -s '-screen 0 1920x1200x24' bash ./gradlew --no-daemon :client:standaloneHostTest :client:responsiveHostTest :client:nativeCanvasTest :client:nativeTouchCanvasTest --stacktrace
       - name: Build obfuscated desktop and dedicated Jar Runner distributions
         run: bash ./gradlew :client:proguardJar :client:jarRunnerJar --stacktrace
       - name: Packaged portrait entry point and responsive UI
-        run: xvfb-run -a -s '-screen 0 390x844x24' bash ./gradlew --no-daemon :client:standaloneReleaseTest :client:releasedMobileUiTest :client:releasedNativeCanvasTest --stacktrace
+        run: xvfb-run -a -s '-screen 0 390x844x24' bash ./gradlew --no-daemon :client:standaloneReleaseTest :client:releasedMobileUiTest :client:releasedNativeCanvasTest :client:releasedNativeTouchTest --stacktrace
       - name: Check preserved entry points and artifact integrity
         run: |
           javap -classpath client/build/libs/void-client-0.3.0-release.jar MobileLauncher | grep 'setDisplayScale'
