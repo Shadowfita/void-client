@@ -1,0 +1,43 @@
+name: Mobile public interface catalogue
+on:
+  push:
+    branches: [feature/mobile-responsive-ui]
+    paths: [.github/workflows/mobile-public-catalogue.yml]
+permissions:
+  contents: read
+jobs:
+  catalogue:
+    if: github.repository == 'Shadowfita/void-client'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: GregHib/void
+          ref: d165e5be63e3232f64f08230448089a454bd35e6
+          path: upstream
+          persist-credentials: false
+          sparse-checkout: |
+            data
+            game/src/main/kotlin/content/entity/player
+            engine/src/main/kotlin/world/gregs/voidps/engine/client/ui
+      - name: Export public metadata, without executing upstream code or including binary assets
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import pathlib, zipfile, hashlib
+          root=pathlib.Path('upstream')
+          with zipfile.ZipFile('public-interface-source.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for p in sorted(root.rglob('*')):
+                  if not p.is_file() or '.git' in p.parts: continue
+                  rel=p.relative_to(root)
+                  if p.name in ('LICENSE','LICENSE.md','README.md') or p.name.endswith(('.ifaces.toml','.cs2.toml')) or (p.suffix=='.kt' and (str(rel).startswith('game/') or str(rel).startswith('engine/'))):
+                      if p.stat().st_size < 2000000: z.write(p,str(rel))
+              z.writestr('SOURCE.txt','Public source: GregHib/void at d165e5be63e3232f64f08230448089a454bd35e6\nNo private repository source or cache binaries included.\n')
+          print(hashlib.sha256(pathlib.Path('public-interface-source.zip').read_bytes()).hexdigest())
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mobile-public-interface-source
+          path: public-interface-source.zip
+          retention-days: 3
