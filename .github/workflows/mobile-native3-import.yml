@@ -1,0 +1,97 @@
+name: Import and verify native touch candidate 3
+on:
+  push:
+    branches: [feature/mobile-responsive-ui]
+    paths:
+      - '.github/workflows/mobile-native3-import.yml'
+      - '.github/mobile-native3-import/**'
+permissions:
+  contents: write
+concurrency:
+  group: mobile-native3-candidate-import
+  cancel-in-progress: false
+jobs:
+  import-and-verify:
+    if: github.ref == 'refs/heads/feature/mobile-responsive-ui'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: bash --noprofile --norc -euo pipefail {0}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify baseline and integrity of locally tested source
+        run: |
+          git merge-base --is-ancestor 5b14b647e7a38a605920e457fee67dc22111e763 HEAD
+          git diff --exit-code 5b14b647e7a38a605920e457fee67dc22111e763 HEAD -- client docs
+          python3 - <<'PY'
+          import base64, gzip, hashlib, pathlib
+          root = pathlib.Path('.github/mobile-native3-import')
+          encoded = ''.join((root / ('part%d.b64' % n)).read_text() for n in range(1, 25))
+          compressed = base64.b64decode(encoded, validate=True)
+          assert hashlib.sha256(compressed).hexdigest() == '5997f53b8af2821f8a3aef3f5efd4703e5cf3965e7a87809f696847422b2d97b'
+          patch = gzip.decompress(compressed)
+          assert len(patch) == 106191
+          pathlib.Path('/tmp/native3.patch').write_bytes(patch)
+          PY
+          git -c core.whitespace=cr-at-eol apply --unidiff-zero --check /tmp/native3.patch
+          git -c core.whitespace=cr-at-eol apply --unidiff-zero /tmp/native3.patch
+          git -c core.whitespace=cr-at-eol diff --check
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+          cache: gradle
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Browser bridge regression tests
+        run: node --test web/mobile/test/*.test.mjs
+      - name: Full Java 8 compilation and native touch regressions
+        run: bash ./gradlew :client:compileJava :client:test --stacktrace
+      - name: Real standalone host and native rendered touch controls
+        run: xvfb-run -a -s '-screen 0 1920x1200x24' bash ./gradlew --no-daemon :client:standaloneHostTest :client:responsiveHostTest :client:nativeCanvasTest :client:nativeTouchCanvasTest --stacktrace
+      - name: Build obfuscated desktop and dedicated Jar Runner artifacts
+        run: bash ./gradlew :client:proguardJar :client:jarRunnerJar --stacktrace
+      - name: Test actual obfuscated startup and native touch controls
+        run: xvfb-run -a -s '-screen 0 390x844x24' bash ./gradlew --no-daemon :client:standaloneReleaseTest :client:releasedMobileUiTest :client:releasedNativeCanvasTest :client:releasedNativeTouchTest --stacktrace
+      - name: Check release entry points and integrity
+        run: |
+          javap -classpath client/build/libs/void-client-0.3.0-release.jar MobileLauncher | grep 'setDisplayScale'
+          javap -classpath client/build/libs/void-client-0.3.0-release.jar com.voidclient.mobile.MobileBridge | grep 'insertText'
+          java -Djava.awt.headless=true -jar client/build/libs/void-client-jarrunner-mobile.jar --help | grep 'JR2'
+          unzip -p client/build/libs/void-client-0.3.0-release.jar META-INF/MANIFEST.MF | grep 'Main-Class: Loader'
+          unzip -p client/build/libs/void-client-jarrunner-mobile.jar META-INF/MANIFEST.MF | grep 'Main-Class: JarRunnerLauncher'
+          unzip -p client/build/libs/void-client-jarrunner-mobile.jar META-INF/MANIFEST.MF | grep 'Implementation-Version: JR2-JR5-native-candidate.3'
+          unzip -t client/build/libs/void-client-jarrunner-mobile.jar
+          mkdir -p client/build/reports/mobile
+          sha256sum client/build/libs/*.jar | tee client/build/reports/mobile/SHA256SUMS.txt
+      - name: Commit only tested application source to the feature branch
+        run: |
+          git fetch origin refs/heads/feature/mobile-responsive-ui
+          test "$(git rev-parse FETCH_HEAD)" = "$GITHUB_SHA"
+          git rm -r .github/mobile-native3-import
+          git add client/src client/test client/build.gradle.kts docs/mobile-native-candidate-3.md
+          git diff --cached --exit-code -- .github/workflows
+          git -c core.whitespace=cr-at-eol diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(mobile): integrate native touch action menus, camera zoom and slider gestures'
+          git push origin HEAD:refs/heads/feature/mobile-responsive-ui
+          git rev-parse HEAD | tee client/build/reports/mobile/SOURCE_COMMIT.txt
+          git archive --format=zip --output=mobile-native3-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: void-native3-candidate-build
+          path: |
+            mobile-native3-source.zip
+            client/build/reports/tests/
+            client/build/reports/mobile/
+            client/build/test-results/
+            client/build/proguard/mapping.txt
+            client/build/libs/*.jar
+          if-no-files-found: warn
+          retention-days: 7
