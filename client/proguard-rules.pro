@@ -51,3 +51,8 @@
     public static void resizeHost(int, int);
     public static void setDisplayScale(double);
 }
+
+# Dedicated Jar Runner distribution; does not change Loader's normal startup.
+-keep public class JarRunnerLauncher {
+    public static void main(java.lang.String[]);
+}

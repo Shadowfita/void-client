@@ -24,6 +24,9 @@ public final class MobileBridge {
     private static final java.util.concurrent.atomic.AtomicInteger textIds = new java.util.concurrent.atomic.AtomicInteger();
     private static volatile long acknowledgedRevision;
     private static volatile boolean textFocused;
+    private static volatile boolean hostOverlayActive;
+    public static boolean hostOverlayActive() { return hostOverlayActive; }
+    public static void setHostOverlayActive(boolean value) { hostOverlayActive = value; }
     private MobileBridge() { }
 
     public static String snapshot() { return state; }

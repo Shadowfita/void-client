@@ -24,7 +24,8 @@ final class MobileRuntime implements GestureRecognizer.Sink {
     private int menuX, menuY, selected = -1;
     private volatile boolean inspecting;
     private int textAck;
-    private boolean textAccepted, contextNextTap;
+    private boolean textAccepted;
+    private volatile boolean contextNextTap;
 
     private static final class Widget {
         final Class46 nativeWidget;
@@ -71,8 +72,12 @@ final class MobileRuntime implements GestureRecognizer.Sink {
         if (MobileConfig.enabled() && l < r && t < b && INSTANCE.building.size() < 10000)
             INSTANCE.building.add(new Widget(w, l, t, r, b));
     }
+    static boolean touchPointerRequired() {
+        return MobileConfig.enabled() && (Boolean.getBoolean("void.mobile.emulateTouch") || INSTANCE.contextNextTap);
+    }
     static boolean blocksMouse() {
         return MobileConfig.enabled() && (MobileConfig.browser() || MobileBridge.suspended()
+            || MobileBridge.hostOverlayActive() || MobileBridge.textFocused()
             || !INSTANCE.menu.isEmpty() || INSTANCE.inspecting);
     }
     static void tick(Class373_Sub1 mouse, Component canvas) {
@@ -86,6 +91,11 @@ final class MobileRuntime implements GestureRecognizer.Sink {
         }
     }
     private void update(Component canvas) {
+        Applet_Sub1 applet = Class348_Sub40_Sub9.anApplet_Sub1_9169;
+        if (!MobileConfig.browser() && applet != null
+                && applet.applyStandaloneMobileScale(MobileConfig.integer("void.mobile.gameScale", 100, 100, 200))) {
+            cancelAll(); revision++;
+        }
         if (canvas == null || canvas.getWidth() < 1 || canvas.getHeight() < 1
                 || Class321.anInt4017 < 1 || Class348_Sub42_Sub8_Sub2.anInt10432 < 1) return;
         Point p = MobileLauncher.canvasOrigin(canvas);
@@ -305,6 +315,14 @@ final class MobileRuntime implements GestureRecognizer.Sink {
         result.put("hostSize", MobileLauncher.hostSize()); result.put("textSession", textSession);
         result.put("textAck", textAck); result.put("textAccepted", textAccepted);
         result.put("displayScale", MobileLauncher.displayScale());
+        if (!MobileConfig.browser()) {
+            int scale = MobileConfig.integer("void.mobile.gameScale", 100, 100, 200);
+            result.put("gameScale", scale);
+            result.put("scaleMode", Class348_Sub8.aHa6654 == null ? "Waiting for renderer"
+                : scale == 100 ? "Game size 100%"
+                : Class348_Sub8.aHa6654.supportsNativeInterfaceScaling() ? "Interface-only scale " + scale + "%"
+                : "Whole-game scale " + scale + "% (software fallback)");
+        }
         result.put("contextNextTap", contextNextTap);
         List<Map<String, Object>> choices = new ArrayList<>();
         for (Entry e : menu) { Map<String, Object> row = new LinkedHashMap<>(); row.put("id", e.index); row.put("label", e.label); choices.add(row); }

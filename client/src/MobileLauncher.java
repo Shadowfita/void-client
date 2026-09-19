@@ -43,14 +43,17 @@ public final class MobileLauncher {
     }
     static int[] hostSize() {
         JFrame frame = host;
+        if (!MobileConfig.browser()) {
+            Dimension size = StandaloneMobileHost.contentSize(); return new int[] {size.width, size.height};
+        }
         return frame == null ? new int[] {0, 0} : new int[] {frame.getContentPane().getWidth(), frame.getContentPane().getHeight()};
     }
     static void open(Loader loader) {
         Runnable build = () -> {
-            JFrame frame = new JFrame("Void — Mobile preview");
+            JFrame frame = new JFrame(Boolean.getBoolean("void.mobile.jarRunner") ? "Void — Android / Jar Runner JR1" : "Void — Mobile preview");
             host = frame; loader.aJFrame2 = frame;
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setUndecorated(MobileConfig.browser());
+            frame.setUndecorated(MobileConfig.browser() || Boolean.getBoolean("void.mobile.jarRunner"));
             frame.setMinimumSize(new Dimension(240, 240));
             if (MobileConfig.browser()) frame.setMinimumSize(new Dimension(1, 1));
             loader.setMinimumSize(new Dimension(1, 1));
@@ -65,7 +68,11 @@ public final class MobileLauncher {
                 dock.add(button("Text", MobileLauncher::textDialog));
                 dock.add(button("Inspect", MobileLauncher::inspectDialog));
                 frame.add(dock, BorderLayout.SOUTH);
-                new Timer(100, event -> refreshActions()).start();
+                StandaloneMobileHost.install(frame, dock);
+                Timer actionTimer = new Timer(100, event -> refreshActions()); actionTimer.start();
+                frame.addWindowListener(new WindowAdapter() {
+                    @Override public void windowClosed(WindowEvent e) { actionTimer.stop(); }
+                });
                 frame.addWindowStateListener(event -> MobileBridge.setSuspended((event.getNewState() & Frame.ICONIFIED) != 0));
                 frame.addWindowFocusListener(new WindowAdapter() {
                     @Override public void windowLostFocus(WindowEvent e) {
@@ -75,19 +82,14 @@ public final class MobileLauncher {
                     }
                 });
             }
-            frame.setSize(requestedWidth, MobileConfig.browser() ? requestedHeight : 560);
-            if (MobileConfig.browser()) frame.setLocation(0, 0);
+            if (MobileConfig.browser()) frame.setBounds(0, 0, requestedWidth, requestedHeight);
             frame.setVisible(true);
         };
         try { if (SwingUtilities.isEventDispatchThread()) build.run(); else SwingUtilities.invokeAndWait(build); }
         catch (Exception ex) { throw new IllegalStateException("Cannot create mobile host", ex); }
     }
     private static JButton button(String label, Runnable action) {
-        JButton b = new JButton(label);
-        b.setFont(b.getFont().deriveFont(16f));
-        b.setPreferredSize(new Dimension(112, 48)); b.setMinimumSize(new Dimension(48, 48));
-        b.getAccessibleContext().setAccessibleName(label);
-        b.addActionListener(event -> action.run()); return b;
+        return StandaloneMobileHost.makeButton(label, action);
     }
     private static void send(String name, int id) { MobileBridge.action(name, id, MobileBridge.revision()); }
     private static JDialog dialog(String name, JPanel content) {
@@ -96,9 +98,11 @@ public final class MobileLauncher {
         d.addWindowListener(new WindowAdapter() {
             @Override public void windowClosing(WindowEvent e) { MobileBridge.cancel(); }
         });
-        d.add(new JScrollPane(content));
-        d.setSize(Math.min(420, host.getWidth()), Math.min(440, host.getHeight()));
-        d.setLocationRelativeTo(host); d.setVisible(true); return d;
+        d.add(new JScrollPane(content), BorderLayout.CENTER);
+        d.add(button("Close", () -> { MobileBridge.cancel(); d.dispose(); }), BorderLayout.SOUTH);
+        int scale = StandaloneMobileHost.controlScale();
+        d.setSize(Math.min(420 * scale / 100, host.getWidth()), Math.min(440 * scale / 100, host.getHeight()));
+        d.setLocationRelativeTo(host); StandaloneMobileHost.track(d); d.setVisible(true); return d;
     }
     private static void cameraDialog() {
         MobileBridge.cancel();
@@ -110,7 +114,9 @@ public final class MobileLauncher {
     }
     private static void textDialog() {
         MobileBridge.cancel();
-        final long session = JsonParser.parseString(MobileBridge.snapshot()).getAsJsonObject().get("textSession").getAsLong();
+        JsonObject snapshot = JsonParser.parseString(MobileBridge.snapshot()).getAsJsonObject();
+        if (!snapshot.has("textSession")) return; // Client is still loading; do not throw on the EDT.
+        final long session = snapshot.get("textSession").getAsLong();
         MobileBridge.setTextFocus(true);
         JPanel panel = new JPanel(new BorderLayout(4, 4));
         JPasswordField field = new JPasswordField(); field.setFont(field.getFont().deriveFont(18f));

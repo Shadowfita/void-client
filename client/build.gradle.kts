@@ -133,3 +133,31 @@ val mobileTest by tasks.registering(JavaExec::class) {
     jvmArgs("-Djava.awt.headless=true")
 }
 tasks.test { dependsOn(mobileTest) }
+
+// Same verified release payload, a different explicit launch entry point.
+val jarRunnerJar by tasks.registering(Jar::class) {
+    dependsOn(proguardJar)
+    archiveFileName.set("void-client-jarrunner-mobile.jar")
+    destinationDirectory.set(layout.buildDirectory.dir("libs"))
+    from({ zipTree(layout.buildDirectory.file("libs/void-client-$version-release.jar").get().asFile) }) {
+        exclude("META-INF/MANIFEST.MF", "META-INF/*.SF", "META-INF/*.RSA", "META-INF/*.DSA")
+    }
+    manifest { attributes("Main-Class" to "JarRunnerLauncher", "Implementation-Version" to "JR1") }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Run separately under Xvfb; headless native/core tests remain usable without a display.
+val standaloneHostTest by tasks.registering(JavaExec::class) {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("StandaloneMobileRegression")
+    jvmArgs("-Djava.awt.headless=false")
+}
+
+val standaloneReleaseTest by tasks.registering(JavaExec::class) {
+    dependsOn(jarRunnerJar, tasks.testClasses)
+    // Deliberately exclude main output: these checks must exercise the obfuscated distribution.
+    classpath = files(sourceSets["test"].output, layout.buildDirectory.file("libs/void-client-jarrunner-mobile.jar"))
+    mainClass.set("ReleasedJarRunnerSmoke")
+    jvmArgs("-Djava.awt.headless=false")
+}

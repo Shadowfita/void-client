@@ -1076,6 +1076,24 @@ public abstract class Applet_Sub1 extends GameClient implements Runnable, FocusL
         return scalingFactor;
     }
 
+    /** Client-thread-only standalone policy; never alters RuneLite/desktop stored preferences. */
+    final boolean applyStandaloneMobileScale(int factor) {
+        if (!com.voidclient.mobile.MobileConfig.enabled() || com.voidclient.mobile.MobileConfig.browser()
+                || Class348_Sub8.aHa6654 == null || Class348_Sub42_Sub12.method3229(-86) != 2) return false;
+        factor = Math.max(100, Math.min(200, factor));
+        boolean nativeUi = Class348_Sub8.aHa6654.supportsNativeInterfaceScaling();
+        boolean stretch = !nativeUi && factor != 100;
+        int ui = nativeUi ? factor : 100, whole = stretch ? factor : 100;
+        if (stretchedEnabled == stretch && scalingFactor == whole && interfaceScalingFactor == ui) return false;
+        endInterfaceRenderScale(); interfaceInputScaleActive = false;
+        stretchedEnabled = stretch; stretchedIntegerScaling = false; stretchedKeepAspectRatio = false; stretchedFast = false;
+        scalingFactor = whole; interfaceScalingFactor = ui;
+        lastInterfaceLayoutWidth = lastInterfaceLayoutHeight = lastInterfaceLayoutFrame = -1;
+        RuntimeException_Sub1.aBoolean4604 = true; // Existing client-thread resize path reallocates renderer and reflows roots.
+        Class49.aBoolean4726 = true;
+        return true;
+    }
+
     @Override
     public void setInterfaceScalingFactor(int factor) {
         int clamped = Math.max(100, Math.min(300, factor));
