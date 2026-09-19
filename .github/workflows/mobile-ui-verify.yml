@@ -1,25 +1,23 @@
 name: Mobile UI verification
-
 on:
   push:
     branches: [feature/mobile-responsive-ui]
   pull_request:
     branches: [feature/mobile-responsive-ui]
   workflow_dispatch:
-
 permissions:
   contents: read
-
 concurrency:
   group: mobile-ui-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Export exact source snapshot
         run: git archive --format=zip --output=mobile-source.zip HEAD
       - uses: actions/upload-artifact@v4
@@ -36,22 +34,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Browser bridge unit tests
+      - name: Browser bridge regression tests
         run: node --test web/mobile/test/*.test.mjs
-      - name: Compile and test
+      - name: Compile and run core, native, adversarial and workflow fixtures
         run: bash ./gradlew :client:compileJava :client:test --stacktrace
-      - name: Test real standalone Swing host
-        run: xvfb-run -a -s '-screen 0 1920x1200x24' bash ./gradlew --no-daemon :client:standaloneHostTest --stacktrace
-      - name: Build obfuscated release and dedicated Jar Runner distribution
+      - name: Real standalone host and responsive Swing fixtures
+        run: xvfb-run -a -s '-screen 0 1920x1200x24' bash ./gradlew --no-daemon :client:standaloneHostTest :client:responsiveHostTest --stacktrace
+      - name: Build obfuscated desktop and dedicated Jar Runner distributions
         run: bash ./gradlew :client:proguardJar :client:jarRunnerJar --stacktrace
-      - name: Test obfuscated Jar Runner startup on portrait display
-        run: xvfb-run -a -s '-screen 0 390x844x24' bash ./gradlew --no-daemon :client:standaloneReleaseTest --stacktrace
-      - name: Check browser symbols in the obfuscated release
+      - name: Packaged portrait entry point and responsive UI
+        run: xvfb-run -a -s '-screen 0 390x844x24' bash ./gradlew --no-daemon :client:standaloneReleaseTest :client:releasedMobileUiTest --stacktrace
+      - name: Check preserved entry points and artifact integrity
         run: |
           javap -classpath client/build/libs/void-client-0.3.0-release.jar MobileLauncher | grep 'setDisplayScale'
           javap -classpath client/build/libs/void-client-0.3.0-release.jar com.voidclient.mobile.MobileBridge | grep 'insertText'
-          java -Djava.awt.headless=true -jar client/build/libs/void-client-jarrunner-mobile.jar --help | grep 'JR1'
+          java -Djava.awt.headless=true -jar client/build/libs/void-client-jarrunner-mobile.jar --help | grep 'JR2'
           unzip -p client/build/libs/void-client-0.3.0-release.jar META-INF/MANIFEST.MF | grep 'Main-Class: Loader'
+          unzip -t client/build/libs/void-client-jarrunner-mobile.jar
+          sha256sum client/build/libs/*.jar | tee client/build/reports/mobile/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -60,6 +60,7 @@ jobs:
             client/build/reports/tests/
             client/build/reports/mobile/
             client/build/test-results/
+            client/build/proguard/mapping.txt
             client/build/libs/*.jar
           if-no-files-found: warn
           retention-days: 7
