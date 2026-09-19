@@ -35,9 +35,14 @@ jobs:
           patch = gzip.decompress(compressed)
           assert len(patch) == 128977
           pathlib.Path('/tmp/native-candidate.patch').write_bytes(patch)
+          test_patch = (root / 'test-mapping.patch').read_bytes()
+          assert hashlib.sha256(test_patch).hexdigest() == '8d11f36eeda0b3bc762c2f24064c4dcb3719bae4affc2f33cf8808284ed5311f'
+          pathlib.Path('/tmp/test-mapping.patch').write_bytes(test_patch)
           PY
           git -c core.whitespace=cr-at-eol apply --check /tmp/native-candidate.patch
           git -c core.whitespace=cr-at-eol apply /tmp/native-candidate.patch
+          git apply --check /tmp/test-mapping.patch
+          git apply /tmp/test-mapping.patch
           git -c core.whitespace=cr-at-eol diff --check
       - uses: actions/setup-java@v4
         with:
