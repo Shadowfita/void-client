@@ -6,7 +6,7 @@ import java.util.*;
 /** Explicit mobile-only preferences. Display units are AWT units, not claimed Android dp. */
 public final class AccessibilityPreferences {
     public int textPercent=100, holdMillis=550, slop=10, scrollSpeed=100, cameraSensitivity=100, cellWidth=96;
-    public boolean nativeGrids=true, highContrast=false, reducedMotion=false, invertCamera=false, leftHanded=false;
+    public boolean nativeHud=true, nativeGrids=true, highContrast=false, reducedMotion=false, invertCamera=false, leftHanded=false;
     public String profile="auto";
     private static final java.util.concurrent.atomic.AtomicLong revision=new java.util.concurrent.atomic.AtomicLong();
     public static long revision(){return revision.get();}
@@ -15,7 +15,7 @@ public final class AccessibilityPreferences {
     public AccessibilityPreferences copy() {
         AccessibilityPreferences p=new AccessibilityPreferences(); p.textPercent=textPercent;p.holdMillis=holdMillis;p.slop=slop;
         p.scrollSpeed=scrollSpeed;p.cameraSensitivity=cameraSensitivity;p.cellWidth=cellWidth;p.highContrast=highContrast;
-        p.nativeGrids=nativeGrids;p.reducedMotion=reducedMotion;p.invertCamera=invertCamera;p.leftHanded=leftHanded;p.profile=profile;return p;
+        p.nativeHud=nativeHud;p.nativeGrids=nativeGrids;p.reducedMotion=reducedMotion;p.invertCamera=invertCamera;p.leftHanded=leftHanded;p.profile=profile;return p;
     }
     public void validate() {
         if(textPercent<100||textPercent>200||holdMillis<250||holdMillis>1500||slop<4||slop>40||scrollSpeed<25||scrollSpeed>300
@@ -34,11 +34,12 @@ public final class AccessibilityPreferences {
         a.scrollSpeed=number(p,"scrollSpeed",100);a.cameraSensitivity=number(p,"cameraSensitivity",100);a.cellWidth=number(p,"cellWidth",96);
         a.highContrast=Boolean.parseBoolean(p.getProperty("highContrast","false"));a.reducedMotion=Boolean.parseBoolean(p.getProperty("reducedMotion","false"));
         a.invertCamera=Boolean.parseBoolean(p.getProperty("invertCamera","false"));a.leftHanded=Boolean.parseBoolean(p.getProperty("leftHanded","false"));
-        a.nativeGrids=Boolean.parseBoolean(p.getProperty("nativeGrids","true"));a.profile=p.getProperty("profile","auto");a.validate();return a;
+        a.nativeHud=Boolean.parseBoolean(p.getProperty("nativeHud","true"));a.nativeGrids=Boolean.parseBoolean(p.getProperty("nativeGrids","true"));a.profile=p.getProperty("profile","auto");a.validate();return a;
     }
     private static int number(Properties p,String k,int d) { return Integer.parseInt(p.getProperty(k,Integer.toString(d))); }
     public static void apply(AccessibilityPreferences a,boolean persist) {
         a.validate(); current=a.copy();revision.incrementAndGet();
+        System.setProperty("void.mobile.nativeHud",Boolean.toString(a.nativeHud));
         System.setProperty("void.mobile.nativeGrids",Boolean.toString(a.nativeGrids));
         System.setProperty("void.mobile.holdMillis",Integer.toString(a.holdMillis));System.setProperty("void.mobile.slop",Integer.toString(a.slop));
         System.setProperty("void.mobile.scrollSpeed",Integer.toString(a.scrollSpeed));System.setProperty("void.mobile.cameraSensitivity",Integer.toString(a.cameraSensitivity));
@@ -48,7 +49,7 @@ public final class AccessibilityPreferences {
     }
     public void save(Path path) throws IOException {
         validate();Properties p=new Properties();
-        p.setProperty("nativeGrids",""+nativeGrids);p.setProperty("textPercent",""+textPercent);p.setProperty("holdMillis",""+holdMillis);p.setProperty("slop",""+slop);
+        p.setProperty("nativeHud",""+nativeHud);p.setProperty("nativeGrids",""+nativeGrids);p.setProperty("textPercent",""+textPercent);p.setProperty("holdMillis",""+holdMillis);p.setProperty("slop",""+slop);
         p.setProperty("scrollSpeed",""+scrollSpeed);p.setProperty("cameraSensitivity",""+cameraSensitivity);p.setProperty("cellWidth",""+cellWidth);
         p.setProperty("highContrast",""+highContrast);p.setProperty("reducedMotion",""+reducedMotion);p.setProperty("invertCamera",""+invertCamera);
         p.setProperty("leftHanded",""+leftHanded);p.setProperty("profile",profile);

@@ -9,7 +9,7 @@ final class MobileLayouts {
     }
     private static final WeakHashMap<Class46, Extent> extents = new WeakHashMap<>();
     static void size(Class46 w, int parentWidth, int parentHeight) {
-        if (MobileItemGridLayout.size(w)) return;
+        if (MobileNativeHud.size(w) || MobileNativeFlow.size(w) || MobileItemGridLayout.size(w) || MobileNativeHud.stretch(w,parentWidth,parentHeight)) return;
         if (!MobileConfig.enabled() || w.anInt774 != 0 || w.anInt834 != -1
                 || w.anInt765 != 0 || parentWidth < 1 || parentHeight < 1) return;
         MobileItemGridLayout.restoreContent(w);
@@ -31,7 +31,7 @@ final class MobileLayouts {
         e.appliedWidth = w.anInt698; e.appliedHeight = w.anInt791;
     }
     static void position(Class46 w, int width, int height) {
-        if (MobileItemGridLayout.position(w)) return;
+        if (MobileNativeHud.position(w) || MobileNativeFlow.position(w) || MobileItemGridLayout.position(w)) return;
         if (!MobileConfig.enabled()) return;
         Extent e = extents.get(w);
         if (e != null && e.constrained) {

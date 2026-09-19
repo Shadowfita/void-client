@@ -1974,7 +1974,8 @@ public final class client extends Applet_Sub1 {
                 }
             }
             if (Class348_Sub42_Sub16_Sub2.method3263(bool)) Class6.method207(Class348_Sub8.aHa6654, (byte) 124);
-            if (Class348_Sub23_Sub1.aClass297_8992.aBoolean3794 && Class260.method1977((byte) -79, Class240.anInt4674) && ha_Sub3.anInt8045 == 0 && Class348_Sub42_Sub12.method3229(-85) == 1 && !bool_120_) {
+            if (com.voidclient.mobile.MobileChrome.enabled()) MobileCanvasMenu.paint();
+            if (!com.voidclient.mobile.MobileChrome.enabled() && Class348_Sub23_Sub1.aClass297_8992.aBoolean3794 && Class260.method1977((byte) -79, Class240.anInt4674) && ha_Sub3.anInt8045 == 0 && Class348_Sub42_Sub12.method3229(-85) == 1 && !bool_120_) {
                 int i = 0;
                 for (int i_121_ = 0; (Class348_Sub38.anInt7008 > i_121_); i_121_++) {
                     if (Class268.aBooleanArray3438[i_121_]) {

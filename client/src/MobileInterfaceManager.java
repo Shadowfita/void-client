@@ -28,6 +28,7 @@ final class MobileInterfaceManager {
     }
     static Window top() { for(int i=stack.size()-1;i>=0;i--) if(stack.get(i).isDisplayable()) return stack.get(i);return null; }
     static void back() { Window top=top();if(top!=null) {MobileBridge.cancel();top.dispose();} }
+    static void closeAll() {for(Window w:new ArrayList<>(stack))if(w.isDisplayable())w.dispose();}
     static int depth() {return stack.size();}
     private MobileInterfaceManager() {}
 }

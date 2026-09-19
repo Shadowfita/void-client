@@ -31,7 +31,7 @@ public final class StandaloneMobileRegression {
         Files.createDirectories(Paths.get("build/reports/mobile"));
         Thread.setDefaultUncaughtExceptionHandler((t, error) -> { eventFailure = error; error.printStackTrace(); });
         StandaloneSettings s = new StandaloneSettings("example.invalid", 43594); s.validate();
-        check(s.touch && s.fit && s.gameScale == 125, "dedicated defaults");
+        check(s.touch && s.fit && s.gameScale == 100, "dedicated defaults");
         check(StandaloneSettings.fittingDockScale(250, 320, 480) == 150, "oversized tools fit manual window");
         check(StandaloneSettings.usable(new Rectangle(-1920, 0, 1920, 1080), new Insets(24, 0, 48, 0)).equals(new Rectangle(-1920, 24, 1920, 1008)), "monitor origin and reserved area");
         check(StandaloneSettings.usable(new Rectangle(0, 0, 320, 240), new Insets(300, 0, 0, 0)).height == 240, "invalid insets fallback");
@@ -56,20 +56,21 @@ public final class StandaloneMobileRegression {
         flush();
         check(host.isUndecorated(), "dedicated host borderless");
         check(host.getBounds().equals(new Rectangle(0, 0, 844, 390)), "startup uses display not hard-coded 844x560");
-        check(loader.getWidth() > 0 && loader.getHeight() > 0 && loader.getHeight() < 390, "actual applet fills remaining viewport");
-        for (String name : new String[] {"Actions", "Camera", "Text", "Panels", "More"}) check(button(host, name).getHeight() >= 48, "touch target " + name);
-        edt(() -> button(host, "Text").doClick()); flush(); // should be harmless before game ready
+        check(loader.getWidth() > 0 && loader.getHeight() > 0 && loader.getHeight() == 390, "actual applet receives full viewport height");
+        check(buttons(host).isEmpty(), "no persistent Swing toolbar or mode strip");
+        edt(MobileLauncher::textDialog); flush(); // harmless before game is ready
         check(eventFailure == null, "text during startup does not throw");
         for (int[] view : new int[][] {{320, 568}, {390, 844}, {844, 390}, {1024, 768}, {1920, 1080}}) {
             edt(() -> { size[0] = view[0]; size[1] = view[1]; }); Thread.sleep(900); flush();
             check(host.getWidth() == view[0] && host.getHeight() == view[1], "reported display change followed " + Arrays.toString(view));
+            check(loader.getHeight() == host.getContentPane().getHeight(), "canvas retains full height " + view[1]);
             check(loader.getWidth() == host.getContentPane().getWidth(), "applet width follows " + view[0]);
             for (JButton b : buttons(host)) {
                 Point p = SwingUtilities.convertPoint(b, 0, 0, host.getContentPane());
                 check(p.x >= 0 && p.y >= 0 && p.x + b.getWidth() <= host.getContentPane().getWidth() && p.y + b.getHeight() <= host.getContentPane().getHeight(), "dock not clipped " + b.getText());
             }
         }
-        edt(() -> { size[0] = 390; size[1] = 844; StandaloneMobileHost.fitNow(); button(host, "More").doClick(); }); flush();
+        edt(() -> { size[0] = 390; size[1] = 844; StandaloneMobileHost.fitNow(); MobileChrome.openMenu(); }); flush();
         JDialog tools=null;for(Window window:Window.getWindows())if(window instanceof JDialog&&window.isVisible()&&"Mobile tools".equals(((JDialog)window).getTitle()))tools=(JDialog)window;
         check(tools!=null,"More tools route reachable");final JDialog toolsDialog=tools;
         edt(()->button(toolsDialog,"Display and input").doClick());flush();
@@ -92,9 +93,8 @@ public final class StandaloneMobileRegression {
         check(!Boolean.getBoolean("void.mobile.emulateTouch"), "ordinary mouse profile applies without restart");
         check(StandaloneMobileHost.controlScale() == 100, "auto controls use manual window rather than virtual desktop");
         s.controlScale = 250; edt(() -> StandaloneMobileHost.applySettings(s, false)); flush();
-        check(StandaloneMobileHost.controlScale() < 250, "excessive toolbar scale capped to keep controls reachable");
-        Point displayPosition = SwingUtilities.convertPoint(button(host, "More"), 0, 0, host.getContentPane());
-        check(displayPosition.y + button(host, "More").getHeight() <= host.getContentPane().getHeight(), "Display accessible after large scale request");
+        check(StandaloneMobileHost.controlScale() < 250, "excessive tool scale capped to keep controls reachable");
+        check(buttons(host).isEmpty(), "large control scale does not restore a toolbar");
         MobileBridge.drain();
         edt(() -> host.setSize(300, 460)); flush();
         boolean cancelled = false; for (MobileBridge.Command c : MobileBridge.drain()) cancelled |= "cancel".equals(c.type);

@@ -10,7 +10,7 @@ import java.util.Properties;
 public final class StandaloneSettings {
     public boolean fit = true;
     public boolean touch = true;
-    public int width = 960, height = 540, gameScale = 125, controlScale = 0;
+    public int width = 960, height = 540, gameScale = 100, controlScale = 0;
     public String address;
     public int port;
     public StandaloneSettings(String address, int port) { this.address = address; this.port = port; }
@@ -75,7 +75,7 @@ public final class StandaloneSettings {
         s.address = p.getProperty("address", address); s.port = integer(p, "port", port);
         s.fit = Boolean.parseBoolean(p.getProperty("fit", "true")); s.touch = Boolean.parseBoolean(p.getProperty("touch", "true"));
         s.width = integer(p, "width", 960); s.height = integer(p, "height", 540);
-        s.gameScale = integer(p, "gameScale", 125); s.controlScale = integer(p, "controlScale", 0);
+        s.gameScale = integer(p, "gameScale", 100); s.controlScale = integer(p, "controlScale", 0);
         s.validate(); return s;
     }
     private static int integer(Properties p, String key, int fallback) {

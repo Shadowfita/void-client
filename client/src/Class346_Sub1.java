@@ -91,6 +91,7 @@ final class Class346_Sub1 extends Class346 implements KeyListener, FocusListener
     }
 
     public final synchronized void keyPressed(KeyEvent keyevent) {
+        if(keyevent.getKeyCode()==KeyEvent.VK_F10&&com.voidclient.mobile.MobileChrome.key(true)){keyevent.consume();return;}
         if (com.voidclient.mobile.MobileConfig.browser() || com.voidclient.mobile.MobileBridge.textFocused() || (com.voidclient.mobile.MobileConfig.enabled() && com.voidclient.mobile.MobileBridge.hostOverlayActive())) { keyevent.consume(); return; }
         anInt6526++;
         method2701(keyevent, 0, 0);
@@ -131,6 +132,7 @@ final class Class346_Sub1 extends Class346 implements KeyListener, FocusListener
     }
 
     public final synchronized void keyReleased(KeyEvent keyevent) {
+        if(keyevent.getKeyCode()==KeyEvent.VK_F10&&com.voidclient.mobile.MobileChrome.key(false)){keyevent.consume();return;}
         if (com.voidclient.mobile.MobileConfig.browser() || com.voidclient.mobile.MobileBridge.textFocused() || (com.voidclient.mobile.MobileConfig.enabled() && com.voidclient.mobile.MobileBridge.hostOverlayActive())) { keyevent.consume(); return; }
         anInt6529++;
         method2701(keyevent, 0, 1);

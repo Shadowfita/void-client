@@ -17,6 +17,8 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
     private final boolean aBoolean7424;
     private Component aComponent7425;
     private boolean mobilePointerDown;
+    private com.voidclient.mobile.MobileChrome.Capture chromeCapture;
+    private int chromeSuppressedButtons;
 
     final boolean method3588(int i) {
         int i_0_ = -59 % ((i - -38) / 48);
@@ -35,6 +37,14 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
     }
 
     public final synchronized void mouseReleased(MouseEvent mouseevent) {
+        int chromeBit=mouseevent.getButton()>0&&mouseevent.getButton()<4?1<<mouseevent.getButton():0;
+        boolean chromeSuppressed=(chromeSuppressedButtons&chromeBit)!=0;chromeSuppressedButtons&=~chromeBit;
+        if (chromeCapture != null && mouseevent.getButton() == MouseEvent.BUTTON1) {
+            com.voidclient.mobile.MobileChrome.Capture capture=chromeCapture;chromeCapture=null;
+            com.voidclient.mobile.MobileChrome.release(capture,mouseevent.getX(),mouseevent.getY(),aComponent7425.getWidth(),aComponent7425.getHeight());mouseevent.consume();return;
+        }
+        if(chromeSuppressed||chromeCapture!=null){mouseevent.consume();return;}
+        if(com.voidclient.mobile.MobileChrome.hit(mouseevent.getX(),mouseevent.getY(),aComponent7425.getWidth(),aComponent7425.getHeight())){com.voidclient.mobile.MobileBridge.cancel();mobilePointerDown=false;mouseevent.consume();return;}
         if (MobileRuntime.blocksMouse()) { mobilePointerDown = false; mouseevent.consume(); return; }
         if (mobilePointerDown && mouseevent.getButton() == MouseEvent.BUTTON1) {
             Point origin = MobileLauncher.canvasOrigin(aComponent7425);
@@ -74,6 +84,14 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
     }
 
     public final synchronized void mousePressed(MouseEvent mouseevent) {
+        if(chromeCapture!=null||com.voidclient.mobile.MobileChrome.hit(mouseevent.getX(),mouseevent.getY(),aComponent7425.getWidth(),aComponent7425.getHeight())) {
+            if(mouseevent.getButton()>0&&mouseevent.getButton()<4)chromeSuppressedButtons|=1<<mouseevent.getButton();
+            if(mouseevent.getButton()!=MouseEvent.BUTTON1){if(chromeCapture!=null)chromeCapture.cancel();mouseevent.consume();return;}
+        }
+        if(mouseevent.getButton()==MouseEvent.BUTTON1) {
+            chromeCapture=com.voidclient.mobile.MobileChrome.press(mouseevent.getX(),mouseevent.getY(),aComponent7425.getWidth(),aComponent7425.getHeight());
+            if(chromeCapture!=null){mobilePointerDown=false;mouseevent.consume();return;}
+        }
         if (MobileRuntime.blocksMouse()) { mouseevent.consume(); return; }
         if (MobileRuntime.touchPointerRequired() && mouseevent.getButton() == MouseEvent.BUTTON1) {
             Point origin = MobileLauncher.canvasOrigin(aComponent7425);
@@ -127,6 +145,7 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
     }
 
     public final synchronized void mouseMoved(MouseEvent mouseevent) {
+        if(com.voidclient.mobile.MobileChrome.hit(mouseevent.getX(),mouseevent.getY(),aComponent7425.getWidth(),aComponent7425.getHeight())){mouseevent.consume();return;}
         if (MobileRuntime.blocksMouse()) { mouseevent.consume(); return; }
         method3599(mouseevent.getX(), -1, mouseevent.getY());
     }
@@ -140,6 +159,7 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
 
     final synchronized void mobileCancel() {
         anInt7422 = anInt7419 = 0; mobilePointerDown = false;
+        if(chromeCapture!=null)chromeCapture.cancel();
         if (aClass262_7420 != null) aClass262_7420.method1996(127);
         if (aClass262_7418 != null) aClass262_7418.method1996(127);
         if (Class318_Sub1_Sub3.aClass262_8744 != null) Class318_Sub1_Sub3.aClass262_8744.method1996(127);
@@ -174,6 +194,7 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
     }
 
     public final synchronized void mouseWheelMoved(MouseWheelEvent mousewheelevent) {
+        if(chromeCapture!=null||com.voidclient.mobile.MobileChrome.hit(mousewheelevent.getX(),mousewheelevent.getY(),aComponent7425.getWidth(),aComponent7425.getHeight())){mousewheelevent.consume();return;}
         if (MobileRuntime.blocksMouse()) { mousewheelevent.consume(); return; }
         int i = Applet_Sub1.scaleMouseX(mousewheelevent.getX());
         int i_8_ = Applet_Sub1.scaleMouseY(mousewheelevent.getY());
@@ -188,6 +209,7 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
     }
 
     public final synchronized void mouseDragged(MouseEvent mouseevent) {
+        if(chromeCapture!=null){com.voidclient.mobile.MobileChrome.move(chromeCapture,mouseevent.getX(),mouseevent.getY(),aComponent7425.getWidth(),aComponent7425.getHeight());mouseevent.consume();return;}
         if (MobileRuntime.blocksMouse()) { mouseevent.consume(); return; }
         if (mobilePointerDown && (mouseevent.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) != 0) {
             Point origin = MobileLauncher.canvasOrigin(aComponent7425);

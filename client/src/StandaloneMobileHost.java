@@ -10,11 +10,10 @@ import javax.swing.*;
 final class StandaloneMobileHost {
     private static StandaloneSettings settings;
     private static JFrame frame;
-    private static JPanel dock;
     private static javax.swing.Timer monitor;
     private static Rectangle lastScreen;
     private static Dimension lastContent;
-    private static int toolScale = 100, lastColumns;
+    private static int toolScale = 100;
     private static String persistenceStatus = "";
     private static final Set<Window> overlays = new HashSet<>();
     private static volatile Dimension publishedSize = new Dimension();
@@ -42,7 +41,7 @@ final class StandaloneMobileHost {
     static boolean configureStartup(StandaloneSettings value) throws Exception {
         final boolean[] launch = {false};
         Runnable show = () -> {
-            JDialog d = new JDialog((Frame) null, "Void — Android / Jar Runner JR2–JR5 candidate", true);
+            JDialog d = new JDialog((Frame) null, "Void — Android / Jar Runner JR2–JR5 native-mobile candidate 2", true);
             Rectangle area = screens.bounds(null);
             int scale = value.effectiveControlScale(area);
             JPanel panel = new JPanel(new BorderLayout(8, 8)); panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
@@ -51,7 +50,7 @@ final class StandaloneMobileHost {
             JTextField port = new JTextField(Integer.toString(value.port)); port.getAccessibleContext().setAccessibleName("Server TCP port");
             fields.add(new JLabel("Server hostname / IP (not a URL)")); fields.add(address);
             fields.add(new JLabel("TCP port")); fields.add(port);
-            JTextArea hint = note("Mobile mode is automatic. Open More → Display in the game toolbar to adjust sizing and input.");
+            JTextArea hint = note("Mobile mode is automatic. Tap the in-game menu icon (or F10), then Display and input to adjust sizing and input.");
             fields.add(hint);
             JLabel error = new JLabel(persistenceStatus); fields.add(error);
             panel.add(new TouchScrollPane(fields), BorderLayout.CENTER);
@@ -72,8 +71,8 @@ final class StandaloneMobileHost {
         if (SwingUtilities.isEventDispatchThread()) show.run(); else SwingUtilities.invokeAndWait(show);
         return launch[0];
     }
-    static void install(JFrame owner, JPanel toolbar) {
-        frame = owner; dock = toolbar;
+    static void install(JFrame owner) {
+        frame = owner;
         if (settings == null) {
             // Ordinary --mobile retains explicit input/scale choices; the dedicated entry point supplies its own defaults.
             settings = new StandaloneSettings(Loader.address, Loader.port);
@@ -89,17 +88,16 @@ final class StandaloneMobileHost {
                 if (monitor != null) monitor.stop();
                 for (Window w : new ArrayList<>(overlays)) w.dispose();
                 overlays.clear(); MobileBridge.setHostOverlayActive(false); MobileBridge.cancel();
-                frame = null; dock = null; lastContent = null; lastScreen = null; publishedSize = new Dimension();
+                frame = null; lastContent = null; lastScreen = null; publishedSize = new Dimension();
             }
         });
-        toolbar.add(makeButton("More", MobileLauncher::moreDialog));
         fitNow();
         monitor = new javax.swing.Timer(750, e -> {
             if (frame == null || !frame.isDisplayable() || (frame.getExtendedState() & Frame.ICONIFIED) != 0) return;
             Rectangle current = screens.bounds(frame);
             if (!current.equals(lastScreen)) {
                 lastScreen = current;
-                if (settings.fit) fitNow(); else { updateDock(); constrainDialogs(); }
+                if (settings.fit) fitNow(); else { updateControlScale(); constrainDialogs(); }
             }
         });
         monitor.start();
@@ -108,23 +106,18 @@ final class StandaloneMobileHost {
     static void fitNow() {
         if (frame == null) return;
         lastScreen = screens.bounds(frame); Rectangle target = settings.windowBounds(lastScreen);
-        MobileBridge.cancel(); frame.setBounds(target); frame.validate(); updateDock(); contentChanged(); constrainDialogs();
+        MobileBridge.cancel(); frame.setBounds(target); frame.validate(); updateControlScale(); contentChanged(); constrainDialogs();
     }
     private static void contentChanged() {
         if (frame == null) return;
         Dimension size = frame.getContentPane().getSize(); publishedSize = new Dimension(size);
-        if (!size.equals(lastContent)) { lastContent = new Dimension(size); MobileBridge.cancel(); updateDock(); constrainDialogs(); }
+        if (!size.equals(lastContent)) { lastContent = new Dimension(size); MobileBridge.cancel(); updateControlScale(); constrainDialogs(); }
     }
-    private static void updateDock() {
-        if (frame == null || dock == null) return;
+    private static void updateControlScale() {
+        if (frame == null) return;
         Dimension current = frame.getContentPane().getSize();
         Rectangle available = new Rectangle(0, 0, Math.max(1, current.width), Math.max(1, current.height));
         toolScale = StandaloneSettings.fittingDockScale(settings.effectiveControlScale(available), available.width, available.height);
-        style(dock, toolScale);
-        int width = Math.max(1, frame.getContentPane().getWidth() - 8);
-        int columns = StandaloneSettings.dockColumns(width, toolScale);
-        if (columns != lastColumns) { lastColumns = columns; dock.setLayout(new GridLayout(0, columns, 4, 4)); }
-        dock.revalidate(); dock.repaint();
     }
     static int controlScale() { return toolScale; }
     static JButton makeButton(String label, Runnable action) {
@@ -209,7 +202,7 @@ final class StandaloneMobileHost {
         game.getAccessibleContext().setAccessibleName("Game interface size percent");
         JComboBox<String> controls = new JComboBox<>(new String[] {"Auto", "100%", "125%", "150%", "175%", "200%", "225%", "250%"});
         int controlIndex = edited.controlScale == 0 ? 0 : 1 + (edited.controlScale - 100) / 25; controls.setSelectedIndex(controlIndex);
-        controls.getAccessibleContext().setAccessibleName("Toolbar control size"); input.getAccessibleContext().setAccessibleName("Input profile");
+        controls.getAccessibleContext().setAccessibleName("Menu and tool control size"); input.getAccessibleContext().setAccessibleName("Input profile");
         Runnable enabled = () -> { width.setEnabled(!fit.isSelected()); height.setEnabled(!fit.isSelected()); };
         fit.addActionListener(e -> enabled.run()); enabled.run();
         form.add(fit); form.add(new JLabel("Manual window width / height (Java units)")); form.add(width); form.add(height);
