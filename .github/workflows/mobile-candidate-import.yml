@@ -17,7 +17,7 @@ jobs:
       - name: Verify baseline and integrity of locally tested source
         shell: bash
         run: |
-          test "$(git rev-parse HEAD^)" = 955ed7ae057af63a818175ed9657339252714b10
+          test "$(git rev-parse HEAD^)" = a429a8732cb6280a927d27349b02c2cb0809fa72
           python3 - <<'PY'
           import base64, hashlib, lzma, pathlib, subprocess
           data=b''.join(pathlib.Path('.maintenance/mobile-candidate',str(i)).read_bytes() for i in range(7))
@@ -66,13 +66,16 @@ jobs:
           unzip -p client/build/libs/void-client-0.3.0-release.jar META-INF/MANIFEST.MF | grep 'Main-Class: Loader'
           unzip -t client/build/libs/void-client-jarrunner-mobile.jar
           sha256sum client/build/libs/*.jar | tee client/build/reports/mobile/SHA256SUMS.txt
-      - name: Commit only tested source to the requested feature branch
+      - name: Commit only tested application source to the requested feature branch
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm .github/workflows/mobile-candidate-import.yml .github/workflows/mobile-public-catalogue.yml .maintenance/mobile-candidate/*
-          git add .github/workflows/mobile-ui-verify.yml README.md client/src client/test client/resources/mobile client/build.gradle.kts docs/mobile-jr2-jr5-candidate.md tools/mobile
+          # Workflow publication/cleanup is performed separately by the authorised GitHub connector.
+          # The build token writes application source only, within its contents permission.
+          git restore .github/workflows/mobile-ui-verify.yml
+          git rm .maintenance/mobile-candidate/*
+          git add README.md client/src client/test client/resources/mobile client/build.gradle.kts docs/mobile-jr2-jr5-candidate.md tools/mobile
           git -c core.whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol diff --cached --check
           git diff --cached --stat
           git fetch origin feature/mobile-responsive-ui
