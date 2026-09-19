@@ -8,6 +8,7 @@ final class MobileCanvasMenu {
         ha renderer=Class348_Sub8.aHa6654;
         UiFrameSnapshot ui=MobileBridge.ui();ViewportState v=ui.viewport;
         if(renderer==null||v==null||v.nativeWidth!=Class321.anInt4017||v.nativeHeight!=Class348_Sub42_Sub8_Sub2.anInt10432) {MobileChrome.clear();return;}
+        MobileActionOverlay.paint(renderer,v);
         MobileChrome.Frame f=MobileChrome.publish(v,ui.targetArmed||ui.moveArmed,ui.moveArmed,AccessibilityPreferences.current().leftHanded,StandaloneMobileHost.controlScale());
         if((previous==null)!=(f==null)||(previous!=null&&f!=null&&previous.generation!=f.generation))Class49.aBoolean4726=true;
         previous=f;

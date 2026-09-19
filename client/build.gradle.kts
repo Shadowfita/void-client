@@ -142,7 +142,7 @@ val jarRunnerJar by tasks.registering(Jar::class) {
     from({ zipTree(layout.buildDirectory.file("libs/void-client-$version-release.jar").get().asFile) }) {
         exclude("META-INF/MANIFEST.MF", "META-INF/*.SF", "META-INF/*.RSA", "META-INF/*.DSA")
     }
-    manifest { attributes("Main-Class" to "JarRunnerLauncher", "Implementation-Version" to "JR2-JR5-native-candidate.2") }
+    manifest { attributes("Main-Class" to "JarRunnerLauncher", "Implementation-Version" to "JR2-JR5-native-candidate.3") }
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
@@ -206,6 +206,28 @@ val releasedNativeCanvasTest by tasks.registering(JavaExec::class) {
     dependsOn(jarRunnerJar, tasks.testClasses)
     classpath = files(sourceSets["test"].output, layout.buildDirectory.file("libs/void-client-jarrunner-mobile.jar"))
     mainClass.set("NativeCanvasSmoke")
+    args(layout.buildDirectory.file("proguard/mapping.txt").get().asFile.absolutePath)
+    jvmArgs("-Djava.awt.headless=false")
+}
+
+// Native gameplay interactions must work without any Swing gameplay dialog.
+val nativeTouchTest by tasks.registering(JavaExec::class) {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("NativeTouchRegression")
+    jvmArgs("-Djava.awt.headless=true")
+}
+tasks.test { dependsOn(nativeTouchTest) }
+val nativeTouchCanvasTest by tasks.registering(JavaExec::class) {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("NativeTouchCanvasSmoke")
+    jvmArgs("-Djava.awt.headless=false")
+}
+val releasedNativeTouchTest by tasks.registering(JavaExec::class) {
+    dependsOn(jarRunnerJar, tasks.testClasses)
+    classpath = files(sourceSets["test"].output, layout.buildDirectory.file("libs/void-client-jarrunner-mobile.jar"))
+    mainClass.set("NativeTouchCanvasSmoke")
     args(layout.buildDirectory.file("proguard/mapping.txt").get().asFile.absolutePath)
     jvmArgs("-Djava.awt.headless=false")
 }

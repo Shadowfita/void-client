@@ -44,6 +44,28 @@ final class MobileRuntime implements GestureRecognizer.Sink {
     private int textAck;
     private boolean textAccepted;
     private volatile boolean contextNextTap;
+    private boolean menuDismissBarrier;
+    private String lastHint="";
+    private long hintUntil;
+    static int[] menuAnchor(){MobileRuntime r=INSTANCE;return r.viewport==null?new int[]{0,0}:new int[]{r.menuX*r.viewport.nativeWidth/r.viewport.logicalWidth,r.menuY*r.viewport.nativeHeight/r.viewport.logicalHeight};}
+    static java.awt.Rectangle moveHighlight(){
+        MobileRuntime r=INSTANCE;Widget source=r.moveSource;if(source==null||r.viewport==null)return null;
+        Widget w=r.find(source.nativeWidget);if(w==null||!r.eligibleNode(source))return null;
+        ViewportState v=r.viewport;return new java.awt.Rectangle(w.left*v.nativeWidth/v.logicalWidth,w.top*v.nativeHeight/v.logicalHeight,
+            (w.right-w.left)*v.nativeWidth/v.logicalWidth,(w.bottom-w.top)*v.nativeHeight/v.logicalHeight);
+    }
+    static String nativeHint(){
+        MobileRuntime r=INSTANCE;long now=System.nanoTime();
+        if(!r.status.equals(r.lastHint)){r.lastHint=r.status;r.hintUntil=now+4_000_000_000L;}
+        if(r.moveSource!=null)return "Move: tap a destination slot. X cancels.";
+        return now<r.hintUntil&&!r.status.equals("Mobile mode enabled")?r.status:"";
+    }
+    private void publishNativeMenu(){
+        java.util.List<String> labels=new java.util.ArrayList<>();for(Entry entry:menu)labels.add(entry.label);
+        CanvasActionMenu.open(menuSerial,labels);
+        if(!MobileConfig.browser()&&Class182.aClass346_2449 instanceof Class346_Sub1)
+            ((Class346_Sub1)Class182.aClass346_2449).mobileCancel();
+    }
 
     private static final class Widget {
         final Class46 nativeWidget;
@@ -88,8 +110,26 @@ final class MobileRuntime implements GestureRecognizer.Sink {
         double downX, downY, scrollX, scrollY;
         long chromeToken,chromeGeneration;
         boolean scrolling;
+        SliderCapture slider;
         Hit(long token, Widget target, Widget scroller, GestureRecognizer.Kind kind) {
             this.token = token; this.target = target; this.scroller = scroller; this.kind = kind;
+        }
+    }
+    /** A native settings handle retains its grab offset while its script moves the handle. */
+    private static final class SliderCapture {
+        final Widget source,parent;
+        final boolean horizontal;
+        final int x,y,range,flags;
+        final Object[] listener;
+        final Class46 explicitParent;
+        int lastX=Integer.MIN_VALUE,lastY=Integer.MIN_VALUE;
+        SliderCapture(Widget source,Widget parent) {
+            this.source=source;this.parent=parent;
+            Class46 w=source.nativeWidget,p=parent.nativeWidget;
+            horizontal=p.anInt709>=p.anInt789;
+            x=source.x-parent.x+p.anInt747;y=source.y-parent.y+p.anInt755;
+            range=horizontal?p.anInt709-w.anInt709:p.anInt789-w.anInt789;
+            flags=client.method105(w).anInt7098;listener=w.anObjectArray823.clone();explicitParent=w.aClass46_782;
         }
     }
     private static final class Entry {
@@ -98,16 +138,26 @@ final class MobileRuntime implements GestureRecognizer.Sink {
         final String label;
         final java.util.List<Object> signature;
         final Widget moveWidget;
+        final int localOperation;
+        Widget localWidget;
+        Object[] adjustListener;
         Entry(int index, Class348_Sub42_Sub12 nativeEntry) {
-            moveWidget=null; this.index = index; arg1 = nativeEntry.anInt9602; arg2 = nativeEntry.anInt9607;
+            localOperation=0;moveWidget=null; this.index = index; arg1 = nativeEntry.anInt9602; arg2 = nativeEntry.anInt9607;
             opcode = nativeEntry.anInt9608; identifier = nativeEntry.aLong9605;
             extra1 = nativeEntry.anInt9599; extra2 = nativeEntry.anInt9609;
             label = plain(Class316.method2367((byte) -126, nativeEntry));
             signature = signature(nativeEntry);
         }
         Entry(int index,Widget widget) {
-            this.index=index;moveWidget=widget;arg1=arg2=opcode=extra1=extra2=0;identifier=0;
+            localOperation=0;this.index=index;moveWidget=widget;arg1=arg2=opcode=extra1=extra2=0;identifier=0;
             label="Move item: tap a destination slot";signature=Collections.emptyList();
+        }
+        Entry(int index,String label,int localOperation) {
+            this.index=index;this.label=label;this.localOperation=localOperation;moveWidget=null;
+            arg1=arg2=opcode=extra1=extra2=0;identifier=0;signature=Collections.emptyList();
+        }
+        Entry(int index,String label,int operation,Widget knob) {
+            this(index,label,operation);localWidget=knob;adjustListener=knob.nativeWidget.anObjectArray823==null?null:knob.nativeWidget.anObjectArray823.clone();
         }
         static java.util.List<Object> signature(Class348_Sub42_Sub12 e) {
             return Arrays.asList(e.anInt9608, e.anInt9602, e.anInt9607, e.aLong9605, e.aLong9600,
@@ -220,7 +270,19 @@ final class MobileRuntime implements GestureRecognizer.Sink {
             MobileMetrics.queueAge(c.time);
             if ("cancel".equals(c.type)) { cancelAll(); continue; }
             if (MobileBridge.suspended()) continue;
+            if(c.type.startsWith("menu")) {
+                if(!menu.isEmpty()&&selected<0){
+                    int result=CanvasActionMenu.handle(c);
+                    if(result==CanvasActionMenu.DISMISS){closeMenu();gestures.cancel();menuDismissBarrier=true;status="";publish();}
+                    else if(result>=0&&result<menu.size())selected=result;
+                }
+                continue;
+            }
+            if("dismiss".equals(c.type)&&c.revision==menuSerial&&!menu.isEmpty()){
+                closeMenu();gestures.cancel();menuDismissBarrier=true;status="";publish();continue;
+            }
             if (c.target!=0 || "cancelMode".equals(c.type)) {
+                if(!menu.isEmpty()&&!"cancelMode".equals(c.type))continue;
                 handleNodeCommand(c); continue;
             }
             if ("select".equals(c.type)) {
@@ -330,14 +392,7 @@ final class MobileRuntime implements GestureRecognizer.Sink {
                 Class251.method1916(-9343,n);
             }
         } else if("adjustNode".equals(c.type)) {
-            Widget parent=parentOf(w);Class46 n=w.nativeWidget;
-            if(slider(w) && parent!=null && eligibleNode(parent)) {
-                boolean horizontal=parent.width>=parent.height;int range=Math.max(0,(horizontal?parent.width-n.anInt709:parent.height-n.anInt789));
-                int x=w.x-parent.x+parent.nativeWidget.anInt747,y=w.y-parent.y+parent.nativeWidget.anInt755;
-                int delta=Integer.signum(c.id)*Math.max(1,range/10);
-                if(horizontal)x=clamp(x+delta,parent.nativeWidget.anInt747,parent.nativeWidget.anInt747+range);else y=clamp(y+delta,parent.nativeWidget.anInt755,parent.nativeWidget.anInt755+range);
-                MobileNativeOperations.adjust(n,x,y);status="Native setting adjustment submitted";
-            }else status="This setting does not expose a supported drag control.";
+            nudgeSlider(w,Integer.signum(c.id));
         } else if("moveSource".equals(c.type)) {
             if(movable(w) && w.item>=0) { if(r.aBoolean9722)Class341.method2678(-2049);moveSource=w; gestures.cancel(); status="Move selected: choose a destination slot in the same container, or Cancel selection."; }
             else status="This component does not expose a supported native move operation.";
@@ -369,7 +424,7 @@ final class MobileRuntime implements GestureRecognizer.Sink {
             if(choices.isEmpty()) { status="No currently permitted native actions for this component."; publish(); return; }
             gestures.cancel(); proxyMenuWidget=w; menu=choices; selected=-1; menuSerial++;
             menuX=Math.max(0,w.x+w.width/2); menuY=Math.max(0,w.y+w.height/2);
-            menuGuard=guardGroup(w.nativeWidget.anInt830>>>16);
+            menuGuard=guardGroup(w.nativeWidget.anInt830>>>16);publishNativeMenu();
             if("nodeOp".equals(c.type)) {
                 for(int i=0;i<candidates.size();i++) {
                     Class348_Sub42_Sub12 candidate=candidates.get(i);
@@ -386,10 +441,59 @@ final class MobileRuntime implements GestureRecognizer.Sink {
         return w.item<0&&n.anInt774!=0&&n.anInt765==0&&n.anObjectArray763!=null
             &&n.anObjectArray742==null&&n.anObjectArray785==null&&n.anObjectArray805==null&&n.anObjectArray823==null;
     }
-    private boolean slider(Widget w) {
-        if(w==null||w.item>=0||w.nativeWidget.anObjectArray823==null||!"settings".equals(InterfaceRegistry.family(w.packedId>>>16)))return false;
-        String name=InterfaceRegistry.component(w.packedId).toLowerCase(Locale.ROOT);
-        return (name.contains("volume")||name.contains("slider")||name.contains("brightness")) && parentOf(w)!=null;
+    private boolean slider(Widget w) { return sliderCapture(w)!=null; }
+    /** Only simple one-axis drag handles in the native graphics/audio settings qualify.
+     * Custom interfaces and controls with completion/hold semantics are never approximated. */
+    private SliderCapture sliderCapture(Widget w) {
+        if(w==null||w.item>=0||w.childIndex>=0||w.nativeWidget.aBoolean813)return null;
+        Class46 n=w.nativeWidget;int group=w.packedId>>>16;
+        if((group!=742&&group!=743)||n.anInt765!=0||(n.anInt774!=3&&n.anInt774!=5)
+            ||n.anObjectArray823==null||n.anObjectArray692!=null||n.anObjectArray742!=null
+            ||n.anObjectArray785!=null||n.anObjectArray805!=null)return null;
+        Widget p=parentOf(w);if(p==null||p.scroll||p.scene||p.nativeWidget.anInt774!=0||p.nativeWidget.aBoolean813
+            ||(p.packedId>>>16)!=group||p.width<1||p.height<1||w.width<1||w.height<1)return null;
+        Class46 nativeParent=loadedDragParent(n);if(nativeParent==null)nativeParent=n.aClass46_782;
+        if(nativeParent!=p.nativeWidget||!w.geometryCurrent()||!p.geometryCurrent()||!eligibleNode(w)||!eligibleNode(p))return null;
+        boolean horizontal=p.width>=p.height;
+        int track=horizontal?p.width:p.height,across=horizontal?p.height:p.width;
+        int knob=horizontal?w.width:w.height,knobAcross=horizontal?w.height:w.width;
+        if(track<3*knob||track<3*across||across>2*knobAcross||knobAcross>across)return null;
+        if(w.x<p.x||w.y<p.y||w.x+w.width>p.x+p.width||w.y+w.height>p.y+p.height)return null;
+        for(Widget other:visible)if(other.nativeWidget!=n&&other.parent==p.nativeWidget
+            &&!other.nativeWidget.aBoolean813&&(other.item>=0||other.nativeWidget.anObjectArray823!=null))return null;
+        return new SliderCapture(w,p);
+    }
+    private boolean validSlider(SliderCapture c) {
+        if(c==null||viewport==null||root!=r.anInt9721||gameState!=Class240.anInt4674)return false;
+        Widget w=find(c.source.nativeWidget),p=find(c.parent.nativeWidget);
+        if(w==null||p==null||!eligibleNode(c.source)||!eligibleNode(c.parent)||!stillVisible(c.parent))return false;
+        Class46 n=w.nativeWidget;
+        Class46 nativeParent=loadedDragParent(n);if(nativeParent==null)nativeParent=n.aClass46_782;
+        if(nativeParent!=p.nativeWidget||n.aClass46_782!=c.explicitParent||w.parent!=c.source.parent
+            ||client.method105(n).anInt7098!=c.flags||!Arrays.deepEquals(n.anObjectArray823,c.listener)
+            ||n.anObjectArray692!=null||n.anObjectArray742!=null||n.anObjectArray785!=null||n.anObjectArray805!=null
+            ||n.anInt709!=c.source.nativeWidth||n.anInt789!=c.source.nativeHeight)return false;
+        if(p.nativeWidget.anInt747!=c.parent.nativeScrollX||p.nativeWidget.anInt755!=c.parent.nativeScrollY)return false;
+        // A script may move the knob on its axis, not replace or relocate its track.
+        return c.horizontal?n.anInt750==c.source.nativeY:n.anInt800==c.source.nativeX;
+    }
+    private void nudgeSlider(Widget w,int direction) {
+        SliderCapture capture=sliderCapture(w);
+        if(direction==0||!validSlider(capture)){status="This control no longer exposes a supported native adjustment.";return;}
+        applySlider(capture,capture.horizontal?direction*Math.max(1,capture.range/10):0,capture.horizontal?0:direction*Math.max(1,capture.range/10));
+    }
+    private void applySlider(SliderCapture c,double logicalDx,double logicalDy) {
+        if(!validSlider(c)||!Double.isFinite(logicalDx)||!Double.isFinite(logicalDy))return;
+        int x=c.x,y=c.y;Class46 p=c.parent.nativeWidget;
+        if(c.horizontal)x=clamp((int)Math.round(x+logicalDx),p.anInt747,p.anInt747+c.range);
+        else y=clamp((int)Math.round(y+logicalDy),p.anInt755,p.anInt755+c.range);
+        if(x==c.lastX&&y==c.lastY)return;
+        c.lastX=x;c.lastY=y;
+        MobileNativeOperations.adjust(c.source.nativeWidget,x,y);
+    }
+    public void adjust(GestureRecognizer.Target target,double dx,double dy) {
+        Hit h=owners.get(target.token);if(h==null||h.slider==null||viewport==null)return;
+        applySlider(h.slider,dx*viewport.logicalWidth/viewport.width,dy*viewport.logicalHeight/viewport.height);
     }
     private Class46 loadedDragParent(Class46 widget) {
         int levels=client.method105(widget).method3304((byte)125);
@@ -528,9 +632,9 @@ final class MobileRuntime implements GestureRecognizer.Sink {
         }
         GestureRecognizer.Kind kind = target != null && target.scene ? GestureRecognizer.Kind.WORLD
             : target != null && target.nativeWidget.anInt765 == Class348_Sub45.anInt7102 ? GestureRecognizer.Kind.MAP
-            : scroller != null ? GestureRecognizer.Kind.SCROLL : GestureRecognizer.Kind.CONTROL;
+            : slider(target) ? GestureRecognizer.Kind.SLIDER : scroller != null ? GestureRecognizer.Kind.SCROLL : GestureRecognizer.Kind.CONTROL;
         if (target == null && (gameState == 3 || gameState == 10)) return null;
-        Hit h = new Hit(++token, target, scroller, kind); h.downX = x; h.downY = y; owners.put(h.token, h);
+        Hit h = new Hit(++token, target, scroller, kind); if(kind==GestureRecognizer.Kind.SLIDER)h.slider=sliderCapture(target); h.downX = x; h.downY = y; owners.put(h.token, h);
         return new GestureRecognizer.Target(h.token, kind);
     }
     public boolean valid(GestureRecognizer.Target target) {
@@ -538,6 +642,7 @@ final class MobileRuntime implements GestureRecognizer.Sink {
         Hit h = owners.get(target.token);
         if (h == null || !viewport.contains(h.downX, h.downY)) return false;
         if(h.chromeToken!=0) {MobileChrome.Frame f=MobileChrome.frame();return f!=null&&f.generation==h.chromeGeneration&&f.viewport.sameGeometry(viewport);}
+        if(h.slider!=null)return validSlider(h.slider);
         Widget captured = h.scrolling ? h.scroller : h.target;
         if (!stillVisible(captured)) return false;
         // Scripts can move a surface between a paint and the next input cycle. Do not click stale coordinates.
@@ -661,7 +766,7 @@ final class MobileRuntime implements GestureRecognizer.Sink {
         mapXResidual=mapYResidual=mapZoomResidual=0;
     }
     private void cancelAll() { MobileMetrics.cancel(); contextNextTap = false; gestures.cancel(); closeMenu(); inspecting = false; owners.clear(); lastTarget = null; moveSource=null; }
-    private void closeMenu() { menu=Collections.emptyList(); selected=-1; proxyMenuWidget=null; menuGuard=Collections.emptyList(); }
+    private void closeMenu() { CanvasActionMenu.close();menu=Collections.emptyList(); selected=-1; proxyMenuWidget=null; menuGuard=Collections.emptyList(); }
     static boolean openMenu(int x, int y) {
         if (!MobileConfig.enabled()) return false;
         MobileRuntime rt = INSTANCE;
@@ -670,15 +775,26 @@ final class MobileRuntime implements GestureRecognizer.Sink {
         Collections.reverse(nativeEntries);
         for (Class348_Sub42_Sub12 entry : nativeEntries) {
             if (result.size() >= 500) break;
-            result.add(new Entry(result.size(), entry));
+            if(MobileConfig.browser()||entry.anInt9608!=1004)result.add(new Entry(result.size(), entry));
         }
         rt.gestures.cancel(); rt.contextNextTap = false;
         rt.proxyMenuWidget=null;
         Widget pointed=rt.viewport==null?null:rt.topAt(x,y);
         if(pointed!=null && rt.eligibleNode(pointed) && rt.movable(pointed) && pointed.item>=0)result.add(new Entry(result.size(),pointed));
         rt.menuGuard=pointed==null?Collections.emptyList():rt.guardGroup(pointed.nativeWidget.anInt830>>>16);
+        if(rt.slider(pointed)){
+            result.add(new Entry(result.size(),"Decrease setting",4,pointed));
+            result.add(new Entry(result.size(),"Increase setting",5,pointed));
+        }
+        if(pointed!=null&&pointed.nativeWidget.anInt765==Class348_Sub45.anInt7102&&rt.eligibleNode(pointed)){
+            result.add(new Entry(result.size(),"Zoom map in",6,pointed));result.add(new Entry(result.size(),"Zoom map out",7,pointed));
+        }
+        if(pointed!=null&&pointed.scene&&rt.gameState==10&&Class348_Sub40_Sub21.anInt9282==1){
+            result.add(new Entry(result.size(),"Zoom camera in",1));result.add(new Entry(result.size(),"Zoom camera out",2));
+            result.add(new Entry(result.size(),"Reset camera zoom",3));
+        }
         rt.menu = result; rt.menuX = x; rt.menuY = y; rt.selected = -1; rt.menuSerial++;
-        rt.menuDeadline = Long.MAX_VALUE;
+        rt.menuDeadline = Long.MAX_VALUE;rt.publishNativeMenu();
         rt.textPending = ""; rt.keysPending.clear();
         rt.publish(); return true;
     }
@@ -686,12 +802,37 @@ final class MobileRuntime implements GestureRecognizer.Sink {
     static boolean afterMenuBuild() {
         if (!MobileConfig.enabled()) return false;
         MobileRuntime rt = INSTANCE;
+        if(rt.menuDismissBarrier){rt.menuDismissBarrier=false;return true;}
         if (rt.menu.isEmpty()) return rt.inspecting || MobileBridge.suspended();
         if (rt.selected >= 0) {
             Widget proxy=rt.proxyMenuWidget;
             boolean guarded=rt.menuGuard!=null && (proxy==null || (rt.eligibleNode(proxy) && rt.guardValid(rt.menuGuard,proxy.nativeWidget.anInt830>>>16)));
             if(proxy==null && rt.menuGuard!=null && !rt.menuGuard.isEmpty()) guarded=rt.guardValid(rt.menuGuard,rt.menuGuard.get(0).widget.anInt830>>>16);
             Entry chosen = rt.menu.get(rt.selected);
+            if(chosen.localOperation==6||chosen.localOperation==7){
+                Widget map=chosen.localWidget;
+                boolean allowed=map!=null&&rt.eligibleNode(map)&&rt.mapSurface()!=null&&rt.mapSurface().nativeWidget==map.nativeWidget
+                    &&rt.root==r.anInt9721&&rt.gameState==Class240.anInt4674;
+                rt.closeMenu();if(allowed){rt.mapZoom(chosen.localOperation==6?24:-24);rt.status="";}else rt.status="The map changed. Touch it again.";
+                rt.publish();return true;
+            }
+            if(chosen.localOperation==4||chosen.localOperation==5){
+                Widget knob=chosen.localWidget;
+                Widget current=knob==null?null:rt.find(knob.nativeWidget);
+                boolean allowed=knob!=null&&rt.eligibleNode(knob)&&Arrays.deepEquals(knob.nativeWidget.anObjectArray823,chosen.adjustListener)&&rt.slider(current);
+                rt.closeMenu();
+                if(allowed)rt.nudgeSlider(current,chosen.localOperation==4?-1:1);
+                else rt.status="The setting changed. Touch its control again.";
+                rt.publish();return true;
+            }
+            if(chosen.localOperation!=0){
+                Widget scene=rt.topAt(rt.menuX,rt.menuY);
+                boolean allowed=scene!=null&&scene.scene&&Class348_Sub40_Sub21.anInt9282==1&&rt.eligibleNode(scene)&&rt.root==r.anInt9721&&rt.gameState==Class240.anInt4674;
+                rt.closeMenu();
+                if(allowed){if(chosen.localOperation==3){Class320.zoomStep=Loader.ZOOM_OFFSET_DEFAULT;rt.zoomRemainder=0;}else rt.zoom(chosen.localOperation==1?36:-36);rt.status="";}
+                else rt.status="The view changed. Touch the world again.";
+                rt.publish();return true;
+            }
             if(chosen.moveWidget!=null) {
                 Widget source=chosen.moveWidget;
                 boolean allowed=guarded&&rt.eligibleNode(source)&&rt.movable(source)&&rt.root==r.anInt9721&&rt.gameState==Class240.anInt4674;
@@ -703,8 +844,9 @@ final class MobileRuntime implements GestureRecognizer.Sink {
             Class348_Sub42_Sub12 matched = null;
             for (Class348_Sub42_Sub12 current : proxy==null?entries():MobileNativeActions.forWidget(proxy.nativeWidget)) if (chosen.signature.equals(Entry.signature(current))) { matched = current; break; }
             rt.closeMenu(); rt.textSession++;
-            if (guarded && matched != null && rt.root == r.anInt9721 && rt.gameState == Class240.anInt4674)
-                MobileNativeOperations.action(matched,rt.menuX,rt.menuY);
+            if (guarded && matched != null && rt.root == r.anInt9721 && rt.gameState == Class240.anInt4674) {
+                rt.status="";MobileNativeOperations.action(matched,rt.menuX,rt.menuY);
+            }
             else rt.status = "That action changed; open the menu again";
             rt.publish();
         }

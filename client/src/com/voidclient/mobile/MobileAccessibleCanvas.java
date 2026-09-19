@@ -17,12 +17,12 @@ public final class MobileAccessibleCanvas extends AccessibleContext implements A
     public static AccessibleContext forCanvas(Canvas c) {
         synchronized(roots){MobileAccessibleCanvas a=roots.get(c);if(a==null){a=new MobileAccessibleCanvas(c);roots.put(c,a);}return a;}
     }
-    private MobileAccessibleCanvas(Canvas c){canvas=new java.lang.ref.WeakReference<>(c);setAccessibleName("Void game interface");setAccessibleDescription("Open Mobile Panels for reflowed text and controls. Native game operations are revalidated before execution.");}
+    private MobileAccessibleCanvas(Canvas c){canvas=new java.lang.ref.WeakReference<>(c);setAccessibleName("Void game interface");setAccessibleDescription("Tap to act, hold for native game actions, drag the scene to rotate. Game operations are revalidated before execution.");}
     public static void changed(){
         if(roots.isEmpty()||!scheduled.compareAndSet(false,true))return;
         SwingUtilities.invokeLater(()->{scheduled.set(false);synchronized(roots){for(MobileAccessibleCanvas a:roots.values())a.firePropertyChange(ACCESSIBLE_VISIBLE_DATA_PROPERTY,null,MobileBridge.ui().layoutRevision);}});
     }
-    private List<UiFrameSnapshot.Node> nodes(){List<UiFrameSnapshot.Node> result=new ArrayList<>();for(UiFrameSnapshot.Node n:MobileBridge.ui().nodes)if(n.visible&&(n.role==UiFrameSnapshot.Role.ITEM||!n.actions.isEmpty()||!n.text.isEmpty()))result.add(n);result.addAll(MobileChrome.nodes());return result;}
+    private List<UiFrameSnapshot.Node> nodes(){if(CanvasActionMenu.active())return CanvasActionMenu.nodes();List<UiFrameSnapshot.Node> result=new ArrayList<>();for(UiFrameSnapshot.Node n:MobileBridge.ui().nodes)if(n.visible&&(n.role==UiFrameSnapshot.Role.ITEM||!n.actions.isEmpty()||!n.text.isEmpty()))result.add(n);result.addAll(MobileChrome.nodes());return result;}
     public AccessibleRole getAccessibleRole(){return AccessibleRole.CANVAS;}
     public AccessibleStateSet getAccessibleStateSet(){AccessibleStateSet s=new AccessibleStateSet();if(isEnabled())s.add(AccessibleState.ENABLED);if(isShowing())s.add(AccessibleState.SHOWING);s.add(AccessibleState.FOCUSABLE);return s;}
     public Accessible getAccessibleParent(){Canvas c=canvas.get();return c!=null&&c.getParent() instanceof Accessible?(Accessible)c.getParent():null;}
@@ -63,7 +63,7 @@ public final class MobileAccessibleCanvas extends AccessibleContext implements A
         final UiFrameSnapshot.Node node;final int index;
         Node(UiFrameSnapshot.Node n,int index){node=n;this.index=index;setAccessibleName(n.text.isEmpty()?n.label+(n.quantity>1?" quantity "+n.quantity:""):n.text);setAccessibleDescription(n.groupLabel+", "+n.role.toString().toLowerCase(Locale.ROOT));}
         public AccessibleContext getAccessibleContext(){return this;}
-        private boolean current(){if(MobileChrome.isChrome(node.token))return MobileChrome.current(node);UiFrameSnapshot.Node now=MobileBridge.ui().node(node.token);return now!=null&&now.version==node.version&&now.enabled;}
+        private boolean current(){if(CanvasActionMenu.isNode(node.token))return CanvasActionMenu.current(node);if(CanvasActionMenu.active())return false;if(MobileChrome.isChrome(node.token))return MobileChrome.current(node);UiFrameSnapshot.Node now=MobileBridge.ui().node(node.token);return now!=null&&now.version==node.version&&now.enabled;}
         public AccessibleRole getAccessibleRole(){return node.actions.isEmpty()&&node.role==UiFrameSnapshot.Role.TEXT?AccessibleRole.LABEL:AccessibleRole.PUSH_BUTTON;}
         public AccessibleStateSet getAccessibleStateSet(){AccessibleStateSet s=new AccessibleStateSet();if(isEnabled())s.add(AccessibleState.ENABLED);if(isVisible())s.add(AccessibleState.VISIBLE);if(isShowing())s.add(AccessibleState.SHOWING);s.add(AccessibleState.FOCUSABLE);if(focus==node.token)s.add(AccessibleState.FOCUSED);return s;}
         public Accessible getAccessibleParent(){return canvas.get();}
@@ -73,9 +73,9 @@ public final class MobileAccessibleCanvas extends AccessibleContext implements A
         public Locale getLocale(){return MobileAccessibleCanvas.this.getLocale();}
         public AccessibleAction getAccessibleAction(){return this;}
         public AccessibleComponent getAccessibleComponent(){return this;}
-        public int getAccessibleActionCount(){if(MobileChrome.isChrome(node.token))return 1;return node.actions.size()+(node.role==UiFrameSnapshot.Role.TEXT&&node.actions.isEmpty()?0:1);}
-        public String getAccessibleActionDescription(int i){return i==0&&MobileChrome.isChrome(node.token)?node.label:i==0?"Choose native actions":i>0&&i<=node.actions.size()?node.actions.get(i-1).label:null;}
-        public boolean doAccessibleAction(int i){if(!isEnabled()||i<0||i>=getAccessibleActionCount())return false;if(MobileChrome.isChrome(node.token))return MobileChrome.activate(node.token,node.version);MobileBridge.nodeAction(i==0?"nodeActions":"nodeOp",i==0?0:node.actions.get(i-1).operation,node.token,node.version);return true;}
+        public int getAccessibleActionCount(){if(CanvasActionMenu.isNode(node.token))return 1;if(MobileChrome.isChrome(node.token))return 1;return node.actions.size()+(node.role==UiFrameSnapshot.Role.TEXT&&node.actions.isEmpty()?0:1);}
+        public String getAccessibleActionDescription(int i){if(CanvasActionMenu.isNode(node.token))return i==0?node.label:null;return i==0&&MobileChrome.isChrome(node.token)?node.label:i==0?"Choose native actions":i>0&&i<=node.actions.size()?node.actions.get(i-1).label:null;}
+        public boolean doAccessibleAction(int i){if(!isEnabled()||i<0||i>=getAccessibleActionCount())return false;if(CanvasActionMenu.isNode(node.token))return CanvasActionMenu.activate(node);if(MobileChrome.isChrome(node.token))return MobileChrome.activate(node.token,node.version);MobileBridge.nodeAction(i==0?"nodeActions":"nodeOp",i==0?0:node.actions.get(i-1).operation,node.token,node.version);return true;}
         public Color getBackground(){return MobileAccessibleCanvas.this.getBackground();}public void setBackground(Color c){}
         public Color getForeground(){return MobileAccessibleCanvas.this.getForeground();}public void setForeground(Color c){}
         public Cursor getCursor(){return MobileAccessibleCanvas.this.getCursor();}public void setCursor(Cursor c){}

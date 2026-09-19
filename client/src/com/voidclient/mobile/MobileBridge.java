@@ -57,6 +57,12 @@ public final class MobileBridge {
         if (!Double.isFinite(x) || !Double.isFinite(y)) { cancel(); return; }
         offer(new Command("context".equals(phase) ? "contextAt" : phase, id, x, y, revision, ""));
     }
+    public static void menuInput(String type,int id,double x,double y,long menuId) {
+        if (!("menuDown".equals(type)||"menuMove".equals(type)||"menuUp".equals(type)||"menuWheel".equals(type)||"menuKey".equals(type)))
+            throw new IllegalArgumentException("Unknown native menu input");
+        if(!Double.isFinite(x)||!Double.isFinite(y)){cancel();return;}
+        offer(new Command(type,id,x,y,menuId,""));
+    }
     public static void wheel(double x, double y, int delta, long revision) {
         if (!Double.isFinite(x) || !Double.isFinite(y)) return;
         offer(new Command("wheel", Math.max(-120, Math.min(120, delta)), x, y, revision, ""));
@@ -89,7 +95,7 @@ public final class MobileBridge {
         if ("cancel".equals(c.type)) { EditReceipts.cancelPending("Input cancelled; draft retained"); queue.clear(); overflow = false; queue.add(c); return; }
         if (suspended || overflow) { reject(c, "Input suspended or queue overflow; draft retained"); return; }
         Command last = queue.peekLast();
-        if ("move".equals(c.type) && last != null && "move".equals(last.type)
+        if (("move".equals(c.type)||"menuMove".equals(c.type)) && last != null && c.type.equals(last.type)
                 && c.id == last.id && c.revision == last.revision) queue.removeLast();
         if (queue.size() >= CAPACITY) {
             EditReceipts.cancelPending("Input queue overflow; draft retained"); queue.clear(); queue.add(new Command("cancel", 0, 0, 0, 0, "")); overflow = true; return;

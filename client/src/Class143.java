@@ -338,6 +338,24 @@ final class Class143 {
         }
     }
 
+    /** Independent metrics for a mobile overlay font; never mutates cache font metrics. */
+    Class143 scaledForMobile(int percent) {
+        if (percent < 50 || percent > 400) throw new IllegalArgumentException("Font scale outside 50-400%");
+        return new Class143(this, percent);
+    }
+    private Class143(Class143 source, int percent) {
+        aByteArray1986 = new byte[256];
+        for (int i=0;i<256;i++) aByteArray1986[i]=(byte)Math.min(255, Math.round((source.aByteArray1986[i]&255)*percent/100f));
+        if (source.aByteArrayArray1979 != null) {
+            aByteArrayArray1979 = new byte[256][256];
+            for(int i=0;i<256;i++) for(int j=0;j<256;j++)
+                aByteArrayArray1979[i][j]=(byte)Math.max(-128,Math.min(127,Math.round(source.aByteArrayArray1979[i][j]*percent/100f)));
+        }
+        anInt1992=Math.max(1,Math.round(source.anInt1992*percent/100f));
+        anInt1988=Math.max(0,Math.round(source.anInt1988*percent/100f));
+        anInt1993=Math.max(0,Math.round(source.anInt1993*percent/100f));
+    }
+
     Class143(byte[] is) {
         Packet Packet = new Packet(is);
         int i = Packet.readUnsignedByte(255);

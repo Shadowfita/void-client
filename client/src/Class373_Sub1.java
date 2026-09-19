@@ -19,6 +19,7 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
     private boolean mobilePointerDown;
     private com.voidclient.mobile.MobileChrome.Capture chromeCapture;
     private int chromeSuppressedButtons;
+    private int menuSuppressedButtons;
 
     final boolean method3588(int i) {
         int i_0_ = -59 % ((i - -38) / 48);
@@ -37,6 +38,13 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
     }
 
     public final synchronized void mouseReleased(MouseEvent mouseevent) {
+        int menuBit=mouseevent.getButton()>0&&mouseevent.getButton()<4?1<<mouseevent.getButton():0;
+        boolean menuRelease=(menuSuppressedButtons&menuBit)!=0;menuSuppressedButtons&=~menuBit;
+        if(com.voidclient.mobile.CanvasActionMenu.active()) {
+            if(mouseevent.getButton()==MouseEvent.BUTTON1)com.voidclient.mobile.CanvasActionMenu.pointer("menuUp",1,mouseevent.getX(),mouseevent.getY(),aComponent7425.getWidth(),aComponent7425.getHeight());
+            mobilePointerDown=false;mouseevent.consume();return;
+        }
+        if(menuRelease){mouseevent.consume();return;}
         int chromeBit=mouseevent.getButton()>0&&mouseevent.getButton()<4?1<<mouseevent.getButton():0;
         boolean chromeSuppressed=(chromeSuppressedButtons&chromeBit)!=0;chromeSuppressedButtons&=~chromeBit;
         if (chromeCapture != null && mouseevent.getButton() == MouseEvent.BUTTON1) {
@@ -84,6 +92,12 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
     }
 
     public final synchronized void mousePressed(MouseEvent mouseevent) {
+        if(com.voidclient.mobile.CanvasActionMenu.active()) {
+            if(mouseevent.getButton()>0&&mouseevent.getButton()<4)menuSuppressedButtons|=1<<mouseevent.getButton();
+            if(mouseevent.getButton()==MouseEvent.BUTTON1)com.voidclient.mobile.CanvasActionMenu.pointer("menuDown",1,mouseevent.getX(),mouseevent.getY(),aComponent7425.getWidth(),aComponent7425.getHeight());
+            else com.voidclient.mobile.CanvasActionMenu.keyboard(java.awt.event.KeyEvent.VK_ESCAPE);
+            mobilePointerDown=false;mouseevent.consume();return;
+        }
         if(chromeCapture!=null||com.voidclient.mobile.MobileChrome.hit(mouseevent.getX(),mouseevent.getY(),aComponent7425.getWidth(),aComponent7425.getHeight())) {
             if(mouseevent.getButton()>0&&mouseevent.getButton()<4)chromeSuppressedButtons|=1<<mouseevent.getButton();
             if(mouseevent.getButton()!=MouseEvent.BUTTON1){if(chromeCapture!=null)chromeCapture.cancel();mouseevent.consume();return;}
@@ -194,6 +208,10 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
     }
 
     public final synchronized void mouseWheelMoved(MouseWheelEvent mousewheelevent) {
+        if(com.voidclient.mobile.CanvasActionMenu.active()) {
+            com.voidclient.mobile.CanvasActionMenu.pointer("menuWheel",Math.max(-120,Math.min(120,mousewheelevent.getWheelRotation())),mousewheelevent.getX(),mousewheelevent.getY(),aComponent7425.getWidth(),aComponent7425.getHeight());
+            mousewheelevent.consume();return;
+        }
         if(chromeCapture!=null||com.voidclient.mobile.MobileChrome.hit(mousewheelevent.getX(),mousewheelevent.getY(),aComponent7425.getWidth(),aComponent7425.getHeight())){mousewheelevent.consume();return;}
         if (MobileRuntime.blocksMouse()) { mousewheelevent.consume(); return; }
         int i = Applet_Sub1.scaleMouseX(mousewheelevent.getX());
@@ -209,6 +227,10 @@ final class Class373_Sub1 extends Class373 implements MouseListener, MouseMotion
     }
 
     public final synchronized void mouseDragged(MouseEvent mouseevent) {
+        if(com.voidclient.mobile.CanvasActionMenu.active()) {
+            if((mouseevent.getModifiersEx()&MouseEvent.BUTTON1_DOWN_MASK)!=0)com.voidclient.mobile.CanvasActionMenu.pointer("menuMove",1,mouseevent.getX(),mouseevent.getY(),aComponent7425.getWidth(),aComponent7425.getHeight());
+            mouseevent.consume();return;
+        }
         if(chromeCapture!=null){com.voidclient.mobile.MobileChrome.move(chromeCapture,mouseevent.getX(),mouseevent.getY(),aComponent7425.getWidth(),aComponent7425.getHeight());mouseevent.consume();return;}
         if (MobileRuntime.blocksMouse()) { mouseevent.consume(); return; }
         if (mobilePointerDown && (mouseevent.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) != 0) {

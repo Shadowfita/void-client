@@ -5,7 +5,7 @@ import java.util.Map;
 
 /** Deterministic, clock-injected recognizer. All calls occur on the client thread. */
 public final class GestureRecognizer {
-    public enum Kind { CONTROL, SCROLL, WORLD, MAP, BLOCKED }
+    public enum Kind { CONTROL, SCROLL, SLIDER, WORLD, MAP, BLOCKED }
     public static final class Target {
         public final long token;
         public final Kind kind;
@@ -19,11 +19,12 @@ public final class GestureRecognizer {
         void scroll(Target target, double dx, double dy);
         void camera(double dx, double dy);
         void zoom(double displayDelta);
+        default void adjust(Target target,double displacementX,double displacementY) {}
         default void map(double dx,double dy) {}
         default void mapZoom(double delta) {}
         void cancel();
     }
-    private enum State { IDLE, PENDING, SCROLL, CAMERA, MAP, MULTI, CONSUMED }
+    private enum State { IDLE, PENDING, SCROLL, SLIDER, CAMERA, MAP, MULTI, CONSUMED }
     private static final class Point {
         double x, y;
         Point(double x, double y) { this.x = x; this.y = y; }
@@ -75,10 +76,11 @@ public final class GestureRecognizer {
         if (id != primary || state == State.CONSUMED) return;
         double dx = x - lastX, dy = y - lastY;
         if (state == State.PENDING && Math.hypot(x - startX, y - startY) > slop) {
-            state = owner.kind == Kind.SCROLL ? State.SCROLL : owner.kind == Kind.WORLD ? State.CAMERA : owner.kind == Kind.MAP ? State.MAP : State.CONSUMED;
+            state = owner.kind == Kind.SCROLL ? State.SCROLL : owner.kind == Kind.SLIDER ? State.SLIDER : owner.kind == Kind.WORLD ? State.CAMERA : owner.kind == Kind.MAP ? State.MAP : State.CONSUMED;
             // Movement over a control cancels its tap; it never silently becomes a world drag.
         }
         if (state == State.SCROLL) sink.scroll(owner, dx, dy);
+        else if (state == State.SLIDER) sink.adjust(owner,x-startX,y-startY);
         else if (state == State.CAMERA) sink.camera(dx, dy);
         else if (state == State.MAP) sink.map(dx,dy);
         lastX = x; lastY = y;

@@ -78,15 +78,14 @@ public final class NativeCanvasSmoke {
         double x=chrome.menu.getCenterX(),y=chrome.menu.getCenterY();Object target=call("MobileRuntime","hit",rt,new Class<?>[]{double.class,double.class},x,y);
         call("MobileRuntime","tap",rt,new Class<?>[]{GestureRecognizer.Target.class,double.class,double.class},target,x,y);
         check(MobileBridge.hostOverlayActive(),"menu tap claims input before EDT dialog construction");flush();
-        JDialog tools=null;for(Window w:Window.getWindows())if(w instanceof JDialog&&w.isVisible()&&"Mobile tools".equals(((JDialog)w).getTitle()))tools=(JDialog)w;
+        JDialog tools=null;for(Window w:Window.getWindows())if(w instanceof JDialog&&w.isVisible()&&"Client settings".equals(((JDialog)w).getTitle()))tools=(JDialog)w;
         check(tools!=null,"native glyph opens real utility menu");final JDialog menu=tools;
         check(MobileChrome.frame()==null,"menu glyph cannot be reactivated behind host dialog");
-        MobileBridge.drain();SwingUtilities.invokeAndWait(()->button(menu,"Actions on next game tap").doClick());flush();
-        check(!MobileBridge.hostOverlayActive(),"return-to-game releases dialog input ownership");
-        List<MobileBridge.Command> commands=MobileBridge.drain();int armed=-1;for(int i=0;i<commands.size();i++)if("context".equals(commands.get(i).type))armed=i;
-        check(armed>=0,"return-to-game queues intended action after closing dialogs");
-        for(int i=armed+1;i<commands.size();i++)check(!"cancel".equals(commands.get(i).type),"windowClosed cannot cancel newly armed action");
-        MobileChrome.key(true);MobileChrome.key(true);flush();int count=0;for(Window w:Window.getWindows())if(w instanceof JDialog&&w.isVisible()&&"Mobile tools".equals(((JDialog)w).getTitle()))count++;
+        for(Component c:children(menu))if(c instanceof JButton){String text=((JButton)c).getText();check(!text.equals("Text entry")&&!text.equals("Camera controls")&&!text.equals("Alternative Panels")&&!text.equals("Actions on next game tap"),"settings have no helper gameplay routes");}
+        MobileBridge.drain();SwingUtilities.invokeAndWait(()->button(menu,"Close").doClick());flush();
+        check(!MobileBridge.hostOverlayActive(),"closing settings releases input ownership");
+        for(MobileBridge.Command command:MobileBridge.drain())check("cancel".equals(command.type),"closing settings creates no game command");
+        MobileChrome.key(true);MobileChrome.key(true);flush();int count=0;for(Window w:Window.getWindows())if(w instanceof JDialog&&w.isVisible()&&"Client settings".equals(((JDialog)w).getTitle()))count++;
         check(count==1,"F10 recovery opens exactly one menu despite key repeat");MobileChrome.key(false);
         check(children(frame).stream().noneMatch(c->c instanceof JButton),"toolbar stays absent after interactions");
         call("ha","method3635",renderer,new Class<?>[]{byte.class},(byte)-115);set("Class348_Sub8","aHa6654",null,null);

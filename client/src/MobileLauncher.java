@@ -10,8 +10,7 @@ public final class MobileLauncher {
     private static volatile int requestedWidth = 844, requestedHeight = 390;
     private static boolean started;
     private static volatile double displayScale = 1.0;
-    private static JDialog actions,panels,tools;
-    private static long shownMenu = -1;
+    private static JDialog panels,tools;
     private MobileLauncher() { }
 
     /** Kept stable for CheerpJ library-mode access in the obfuscated release. */
@@ -50,7 +49,7 @@ public final class MobileLauncher {
     }
     static void open(Loader loader) {
         Runnable build = () -> {
-            JFrame frame = new JFrame(Boolean.getBoolean("void.mobile.jarRunner") ? "Void — Android / Jar Runner JR2–JR5 native-mobile candidate 2" : "Void — Mobile preview");
+            JFrame frame = new JFrame(Boolean.getBoolean("void.mobile.jarRunner") ? "Void — Android / Jar Runner JR2–JR5 native-mobile candidate 3" : "Void — Mobile preview");
             host = frame; loader.aJFrame2 = frame;
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setUndecorated(MobileConfig.browser() || Boolean.getBoolean("void.mobile.jarRunner"));
@@ -64,9 +63,8 @@ public final class MobileLauncher {
                 // No host footer: the native game Canvas receives the complete content rectangle.
                 MobileChrome.install(MobileLauncher::moreDialog);
                 StandaloneMobileHost.install(frame);
-                Timer actionTimer = new Timer(100, event -> refreshActions()); actionTimer.start();
                 frame.addWindowListener(new WindowAdapter() {
-                    @Override public void windowClosed(WindowEvent e) { actionTimer.stop(); MobileChrome.clear(); MobileChrome.install(null); host=null; }
+                    @Override public void windowClosed(WindowEvent e) { CanvasActionMenu.close(); MobileChrome.clear(); MobileChrome.install(null); host=null; }
                 });
                 frame.addWindowStateListener(event -> MobileBridge.setSuspended((event.getNewState() & Frame.ICONIFIED) != 0));
                 frame.addWindowFocusListener(new WindowAdapter() {
@@ -142,20 +140,13 @@ public final class MobileLauncher {
         if(host==null||!host.isDisplayable()) {MobileBridge.setHostOverlayActive(false);return;}
         if(tools!=null&&tools.isDisplayable()) {tools.toFront();return;}
         MobileBridge.cancel();MobileWidgets.Vertical p=new MobileWidgets.Vertical();
-        p.row(MobileWidgets.text("Game controls — no permanent toolbar. Drag the world to turn the camera; hold a target for its actions. F10 reopens this menu."));
-        UiFrameSnapshot ui=MobileBridge.ui();
-        p.row(MobileWidgets.button("Game tabs and open interfaces",MobileLauncher::navigationDialog));
-        p.row(MobileWidgets.button("Actions on next game tap",()->returnToGame(()->send("context",0))));
-        p.row(MobileWidgets.button("Camera controls",MobileLauncher::cameraDialog));
-        p.row(MobileWidgets.button("Text entry",MobileLauncher::textDialog));
-        p.row(MobileWidgets.button("Alternative accessible panels",MobileLauncher::panelsDialog));
+        p.row(MobileWidgets.text("Client settings. Gameplay actions stay in the game: tap to act, hold for options, drag the scene to turn the camera."));
         p.row(MobileWidgets.button("Display and input",StandaloneMobileHost::displayDialog));
         p.row(MobileWidgets.button("Accessibility and gestures",()->MobileAccessibilityDialog.open(host)));
         p.row(MobileWidgets.button("Inspect current interface",MobileLauncher::inspectDialog));
         p.row(MobileWidgets.button("Export redacted catalogue",()->MobileDiagnostics.export(host)));
         p.row(MobileWidgets.button("Runtime capabilities",()->MobileDiagnostics.show(host)));
-        p.row(MobileWidgets.button("Cancel item / spell / Move mode",()->returnToGame(()->MobileBridge.nodeAction("cancelMode",0,0,0))));
-        tools=dialog("Mobile tools",p);
+        tools=dialog("Client settings",p);
         tools.addWindowListener(new WindowAdapter(){public void windowClosed(WindowEvent e){tools=null;}});
     }
     private static void returnToGame(Runnable command) {
@@ -177,23 +168,5 @@ public final class MobileLauncher {
         if(count==0)p.row(MobileWidgets.text("No currently painted game tabs are exposed. The original game controls remain active; hidden controls are not guessed."));
         p.row(MobileWidgets.button("Alternative accessible panels",MobileLauncher::panelsDialog));
         dialog("Game navigation",p);
-    }
-    private static void refreshActions() {
-        JsonObject state = JsonParser.parseString(MobileBridge.snapshot()).getAsJsonObject();
-        if (!state.has("menu")) return;
-        JsonArray entries = state.getAsJsonArray("menu");
-        if (entries.size() == 0) { if (actions != null) { actions.dispose(); actions = null; } return; }
-        long id = state.get("menuId").getAsLong();
-        if (shownMenu == id) return;
-        shownMenu = id;
-        if (actions != null) actions.dispose();
-        MobileWidgets.Vertical panel = new MobileWidgets.Vertical();
-        for (JsonElement element : entries) {
-            JsonObject row = element.getAsJsonObject();
-            int index = row.get("id").getAsInt();
-            panel.row(MobileWidgets.button(row.get("label").getAsString(), () -> MobileBridge.action("select", index, id)));
-        }
-        panel.row(MobileWidgets.button("Cancel", MobileBridge::cancel));
-        actions = dialog("Choose action", panel);
     }
 }

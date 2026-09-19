@@ -71,7 +71,7 @@ public final class StandaloneMobileRegression {
             }
         }
         edt(() -> { size[0] = 390; size[1] = 844; StandaloneMobileHost.fitNow(); MobileChrome.openMenu(); }); flush();
-        JDialog tools=null;for(Window window:Window.getWindows())if(window instanceof JDialog&&window.isVisible()&&"Mobile tools".equals(((JDialog)window).getTitle()))tools=(JDialog)window;
+        JDialog tools=null;for(Window window:Window.getWindows())if(window instanceof JDialog&&window.isVisible()&&"Client settings".equals(((JDialog)window).getTitle()))tools=(JDialog)window;
         check(tools!=null,"More tools route reachable");final JDialog toolsDialog=tools;
         edt(()->button(toolsDialog,"Display and input").doClick());flush();
         JDialog display = null; for (Window w : Window.getWindows()) if (w instanceof JDialog && w.isVisible() && "Display and input".equals(((JDialog) w).getTitle())) display = (JDialog) w;

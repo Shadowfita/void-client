@@ -31,6 +31,7 @@ final class Class346_Sub1 extends Class346 implements KeyListener, FocusListener
     private boolean[] aBooleanArray6543 = new boolean[112];
     private Component aComponent6544;
     private int mobileReceipt;
+    private final java.util.Set<Integer> menuKeys=new java.util.HashSet<>();
 
     final Interface6 method2697(int i) {
         if (i != 0) aBooleanArray6543 = null;
@@ -51,6 +52,7 @@ final class Class346_Sub1 extends Class346 implements KeyListener, FocusListener
         if (i == -104) {
             anInt6533++;
             if (aComponent6544 != null) {
+                menuKeys.clear();
                 aComponent6544.removeKeyListener(this);
                 aComponent6544.removeFocusListener(this);
                 aComponent6544 = null;
@@ -91,6 +93,7 @@ final class Class346_Sub1 extends Class346 implements KeyListener, FocusListener
     }
 
     public final synchronized void keyPressed(KeyEvent keyevent) {
+        if(com.voidclient.mobile.CanvasActionMenu.keyboard(keyevent.getKeyCode())){menuKeys.add(keyevent.getKeyCode());keyevent.consume();return;}
         if(keyevent.getKeyCode()==KeyEvent.VK_F10&&com.voidclient.mobile.MobileChrome.key(true)){keyevent.consume();return;}
         if (com.voidclient.mobile.MobileConfig.browser() || com.voidclient.mobile.MobileBridge.textFocused() || (com.voidclient.mobile.MobileConfig.enabled() && com.voidclient.mobile.MobileBridge.hostOverlayActive())) { keyevent.consume(); return; }
         anInt6526++;
@@ -132,6 +135,7 @@ final class Class346_Sub1 extends Class346 implements KeyListener, FocusListener
     }
 
     public final synchronized void keyReleased(KeyEvent keyevent) {
+        if(menuKeys.remove(keyevent.getKeyCode())||com.voidclient.mobile.CanvasActionMenu.active()){keyevent.consume();return;}
         if(keyevent.getKeyCode()==KeyEvent.VK_F10&&com.voidclient.mobile.MobileChrome.key(false)){keyevent.consume();return;}
         if (com.voidclient.mobile.MobileConfig.browser() || com.voidclient.mobile.MobileBridge.textFocused() || (com.voidclient.mobile.MobileConfig.enabled() && com.voidclient.mobile.MobileBridge.hostOverlayActive())) { keyevent.consume(); return; }
         anInt6529++;
@@ -139,6 +143,7 @@ final class Class346_Sub1 extends Class346 implements KeyListener, FocusListener
     }
 
     public final synchronized void keyTyped(KeyEvent keyevent) {
+        if(com.voidclient.mobile.CanvasActionMenu.active()||!menuKeys.isEmpty()){keyevent.consume();return;}
         if (com.voidclient.mobile.MobileConfig.browser() || com.voidclient.mobile.MobileBridge.textFocused() || (com.voidclient.mobile.MobileConfig.enabled() && com.voidclient.mobile.MobileBridge.hostOverlayActive())) { keyevent.consume(); return; }
         anInt6527++;
         char c = keyevent.getKeyChar();
@@ -211,7 +216,8 @@ final class Class346_Sub1 extends Class346 implements KeyListener, FocusListener
     }
 
     public final synchronized void focusLost(FocusEvent focusevent) {
-        anInt6537++;
+        anInt6537++;menuKeys.clear();
+        if(com.voidclient.mobile.MobileConfig.enabled())com.voidclient.mobile.MobileBridge.cancel();
         method2702(0, 128, '\0', -1);
     }
 

@@ -29,7 +29,7 @@ public final class MobileChrome {
         public void cancel() {cancelled=true;}
     }
     public static boolean enabled() {return MobileConfig.enabled()&&!MobileConfig.browser();}
-    public static boolean available() {return enabled()&&!MobileBridge.hostOverlayActive()&&!MobileBridge.suspended()&&!MobileBridge.textFocused();}
+    public static boolean available() {return enabled()&&!CanvasActionMenu.active()&&!MobileBridge.hostOverlayActive()&&!MobileBridge.suspended()&&!MobileBridge.textFocused();}
     public static synchronized void install(Runnable action) { menuAction=action; keyDown=false; if(action==null)clear(); }
     public static synchronized void clear() {if(frame!=null){frame=null;generation++;MobileAccessibleCanvas.changed();}}
     public static Frame frame() {return available()?frame:null;}
@@ -90,7 +90,7 @@ public final class MobileChrome {
     public static boolean current(UiFrameSnapshot.Node n) {Frame f=frame();return f!=null&&f.generation==n.version&&!f.bounds(n.token).isEmpty();}
     public static List<UiFrameSnapshot.Node> nodes() {
         Frame f=frame();if(f==null)return Collections.emptyList();List<UiFrameSnapshot.Node> out=new ArrayList<>(2);
-        add(out,f,MENU,"Mobile menu (F10)");if(!f.cancel.isEmpty())add(out,f,CANCEL,f.move?"Cancel item move":"Cancel item or spell target");return out;
+        add(out,f,MENU,"Client settings (F10)");if(!f.cancel.isEmpty())add(out,f,CANCEL,f.move?"Cancel item move":"Cancel item or spell target");return out;
     }
     private static void add(List<UiFrameSnapshot.Node> out,Frame f,long token,String label) {
         Rectangle r=f.bounds(token);ViewportState v=f.viewport;
