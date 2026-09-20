@@ -20,6 +20,7 @@ public final class InterfaceRegistry {
     private static String text(JsonObject o,String key,String fallback) { return o.has(key)&&o.get(key).isJsonPrimitive()?o.get(key).getAsString():fallback; }
     public static String name(int id) { return title(text(group(id),"name","Interface "+id)); }
     public static String family(int id) { return text(group(id),"family","generic"); }
+    public static String type(int id) { return text(group(id),"type",""); }
     public static String component(int packed) {
         JsonObject g=group(packed>>>16);
         if(!g.has("components")) return "";
