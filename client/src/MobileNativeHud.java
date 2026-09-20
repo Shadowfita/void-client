@@ -16,6 +16,7 @@ final class MobileNativeHud {
     private static final Set<Integer> dockedGroups=new HashSet<>();
     private static final Map<Integer,Rectangle> groupBounds=new HashMap<>();
     private static final Map<Integer,Role> groupRoles=new HashMap<>();
+    private static final Map<Integer,Class46> groupRoots=new HashMap<>();
     private static volatile String status="Waiting for a compatible native HUD";
     private static long observed=Long.MIN_VALUE;
 
@@ -88,6 +89,7 @@ final class MobileNativeHud {
         dockedGroups.clear();
         groupBounds.clear();
         groupRoles.clear();
+        groupRoots.clear();
     }
 
     static void prepareGroup(int id,int width,int height,Class46[] widgets) {
@@ -101,7 +103,7 @@ final class MobileNativeHud {
             if(only!=null){only=null;break;}
             only=w;
         }
-        if(only!=null)put(only,new Rectangle(0,0,width,height));
+        if(only!=null){groupRoots.put(id,only);put(only,new Rectangle(0,0,width,height));}
     }
 
     static void prepare(int root,int width,int height,Class46[] widgets,AttachmentLookup lookup) {
@@ -339,10 +341,39 @@ final class MobileNativeHud {
     }
 
     /**
-     * Generic child stretching caused the candidate-3 HUD breakage. Mobile layout now moves only
-     * known attachment roots; item grids and guarded dialogue/equipment flows own their children.
+     * Candidate 3 stretched arbitrary descendants. Candidate 4 permits only one narrow case:
+     * a passive, fixed-geometry frame that is a direct child of the single attached-group root.
+     * Its authored edge margins are retained inside the already-bounded mobile panel/modal.
      */
-    static boolean stretch(Class46 w,int parentWidth,int parentHeight) { return false; }
+    static boolean stretch(Class46 w,int parentWidth,int parentHeight) {
+        if(!enabled()||w==null||w.aBoolean813||w.anInt774!=0||w.anInt765!=0||w.anInt834<0
+            ||w.aByte817!=0||w.aByte681!=0||w.aByte778!=0||w.aByte724!=0
+            ||w.anObjectArray763!=null||w.anObjectArray822!=null||w.aStringArray833!=null)return false;
+        int group=w.anInt830>>>16;
+        Class46 root=groupRoots.get(group);
+        if(root==null||w.anInt834!=root.anInt830||!groupRoles.containsKey(group))return false;
+        if(root.anInt842<=0||root.anInt728<=0||parentWidth<1||parentHeight<1)return false;
+
+        int x=w.anInt788,y=w.anInt739,width=w.anInt842,height=w.anInt728;
+        boolean changed=false;
+        if(width*10L>=root.anInt842*7L) {
+            int right=root.anInt842-x-width;
+            if(x>=0&&right>=0) {
+                int candidate=parentWidth-x-right;
+                if(candidate>=unit(72)){width=candidate;changed=true;}
+            }
+        }
+        if(height*10L>=root.anInt728*7L) {
+            int bottom=root.anInt728-y-height;
+            if(y>=0&&bottom>=0) {
+                int candidate=parentHeight-y-bottom;
+                if(candidate>=unit(48)){height=candidate;changed=true;}
+            }
+        }
+        if(!changed)return false;
+        put(w,new Rectangle(Math.max(0,x),Math.max(0,y),width,height));
+        return size(w);
+    }
 
     static boolean position(Class46 w) {
         Placement p=placements.get(w);
