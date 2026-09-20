@@ -6,7 +6,7 @@ public final class JarRunnerLauncher {
     private JarRunnerLauncher() { }
     public static void main(String[] args) throws Exception {
         if (Arrays.asList(args).contains("--help")) {
-            System.out.println("Void Jar Runner native-mobile candidate 3 (JR2–JR5)\nOpen this JAR without arguments to configure server and display.\n"
+            System.out.println("Void Jar Runner native-mobile candidate 4 — bounded HUD shell (JR2–JR5)\nOpen this JAR without arguments to configure server and display.\n"
                 + "Optional: --address HOST --port PORT --skip-setup\nMobile mode is automatic. No Android APIs or raw multitouch are assumed.");
             return;
         }
