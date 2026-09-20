@@ -45,24 +45,76 @@ public final class MobileNativeNextRegression {
         MobileChrome.clear();MobileChrome.install(null);mouse.method3592(0);MobileBridge.setHostOverlayActive(false);MobileBridge.drain();
     }
     static void docking(){
-        Class46 root=widget(746,0,-1,0,0,0,765,503),holder=widget(746,1,746<<16,0,500,180,200,270),chat=widget(746,2,746<<16,0,0,350,500,150);
-        Class46[] group={root,holder,chat};MobileNativeHud.AttachmentLookup lookup=w->w==holder?149:w==chat?752:-1;
-        for(int width:new int[]{240,320,390,844,1024})for(int height:new int[]{320,390,844,1080}){
+        Class46 root=widget(746,0,-1,0,0,0,765,503),
+            holder=widget(746,1,root.anInt830,0,500,180,200,270),
+            chat=widget(746,2,root.anInt830,0,0,350,500,150),
+            bank=widget(746,3,root.anInt830,0,120,70,512,334);
+        Class46[] group={root,holder,chat,bank};
+        MobileNativeHud.AttachmentLookup lookup=w->w==holder?149:w==chat?752:w==bank?762:-1;
+        for(int width:new int[]{320,390,844,1024})for(int height:new int[]{390,844,1080}){
             MobileBridge.publishUi(new UiFrameSnapshot(1,1,new ViewportState(1,0,0,width,height,width,height,width,height),Collections.emptyList(),"",false,false));
-            MobileNativeHud.prepare(746,width,height,group,lookup);layout(root,width,height);layout(holder,width,height);layout(chat,width,height);
-            check(root.anInt709==width&&root.anInt789==height,"passive ancestors expand without reparenting");
-            for(Class46 w:new Class46[]{holder,chat}){check(w.anInt800>=0&&w.anInt750>=0&&w.anInt800+w.anInt709<=width&&w.anInt750+w.anInt789<=height,"docked native attachment in viewport");check(w.anInt834==(746<<16),"native parent identity retained");}
-            Rectangle a=new Rectangle(holder.anInt800,holder.anInt750,holder.anInt709,holder.anInt789),b=new Rectangle(chat.anInt800,chat.anInt750,chat.anInt709,chat.anInt789);check(!a.intersects(b),"chat and side panel do not overlap");
-            check(holder.anInt788==500&&holder.anInt739==180&&holder.anInt842==200&&holder.anInt728==270,"script-authored geometry untouched");
+            MobileNativeHud.prepare(746,width,height,group,lookup);
+            layout(root,width,height);layout(holder,width,height);layout(chat,width,height);layout(bank,width,height);
+            check(root.anInt709==width&&root.anInt789==height,"only the unambiguous game-frame shell expands to the viewport");
+            for(Class46 w:new Class46[]{holder,chat,bank}){
+                check(w.anInt800>=0&&w.anInt750>=0&&w.anInt800+w.anInt709<=width&&w.anInt750+w.anInt789<=height,"bounded mobile attachment stays in viewport");
+                check(w.anInt834==root.anInt830,"native parent identity retained");
+            }
+            int margin=MobileNativeHud.unit(8);
+            check(chat.anInt709<width-2*margin,"chat is never stretched across the viewport");
+            check(holder.anInt709<width-2*margin,"side panel is never viewport-wide");
+            Rectangle sideRect=new Rectangle(holder.anInt800,holder.anInt750,holder.anInt709,holder.anInt789);
+            Rectangle chatRect=new Rectangle(chat.anInt800,chat.anInt750,chat.anInt709,chat.anInt789);
+            Rectangle bankRect=new Rectangle(bank.anInt800,bank.anInt750,bank.anInt709,bank.anInt789);
+            check(!sideRect.intersects(chatRect),"bounded chat and side panel occupy independent HUD lanes");
+            check(!sideRect.intersects(bankRect),"central modal reserves the stable right-side panel lane");
+            if(width>=height) {
+                check(chat.anInt709<=Math.min(MobileNativeHud.unit(360),(width-2*margin)*45/100),"landscape chat respects OSRS-style width cap");
+                check(holder.anInt709<=Math.min(MobileNativeHud.unit(300),(width-2*margin)*35/100),"landscape side panel respects fixed right-rail cap");
+            }
+            check(holder.anInt788==500&&holder.anInt739==180&&holder.anInt842==200&&holder.anInt728==270,"script-authored side geometry untouched");
+            check(chat.anInt788==0&&chat.anInt739==350&&chat.anInt842==500&&chat.anInt728==150,"script-authored chat geometry untouched");
+            check(!MobileNativeHud.stretch(holder,width,height),"generic widget stretching is permanently disabled");
         }
-        holder.aBoolean813=true;MobileNativeHud.prepare(746,390,844,group,lookup);layout(holder,765,503);check(holder.anInt709==200&&holder.anInt800==500,"hidden tab is not revealed or docked");holder.aBoolean813=false;
-        root.anObjectArray763=new Object[]{123};MobileNativeHud.prepare(746,390,844,group,lookup);layout(holder,765,503);check(holder.anInt709==200,"interactive ancestor prevents unsafe expansion");root.anObjectArray763=null;
-        Class46 other=widget(746,3,746<<16,0,20,30,200,270);MobileNativeHud.prepare(746,390,844,new Class46[]{root,holder,other},w->w==root?-1:149);layout(holder,765,503);check(holder.anInt709==200,"multiple visible side owners fall back rather than overlap");
-        root.anInt834=holder.anInt830;MobileNativeHud.prepare(746,390,844,group,lookup);layout(holder,765,503);check(holder.anInt709==200,"cycles fail closed");root.anInt834=-1;
-        MobileNativeHud.prepare(746,390,844,group,lookup);holder.anInt788++;layout(holder,765,503);check(holder.anInt800==501,"new script coordinates invalidate old placement");holder.anInt788--;
-        System.setProperty("void.mobile.nativeHud","false");MobileNativeHud.prepare(746,390,844,group,lookup);layout(holder,765,503);check(holder.anInt800==500&&holder.anInt709==200&&holder.anInt698==0,"native layout rollback restores geometry and original extents");System.setProperty("void.mobile.nativeHud","true");
-        MobileNativeHud.prepare(999,390,844,group,lookup);layout(holder,765,503);check(holder.anInt709==200,"unknown root keeps legacy layout");MobileNativeHud.reset();
+
+        holder.aBoolean813=true;MobileNativeHud.prepare(746,390,844,group,lookup);layout(holder,765,503);
+        check(holder.anInt709==200&&holder.anInt800==500,"hidden tab is not revealed or docked");holder.aBoolean813=false;
+
+        root.anObjectArray763=new Object[]{123};MobileNativeHud.prepare(746,390,844,group,lookup);layout(holder,765,503);
+        check(holder.anInt709==200,"interactive game-frame shell fails closed instead of stretching descendants");root.anObjectArray763=null;
+
+        Class46 other=widget(746,4,root.anInt830,0,20,30,200,270);
+        MobileNativeHud.prepare(746,390,844,new Class46[]{root,holder,other},w->w==root?-1:149);layout(holder,765,503);
+        check(holder.anInt709==200,"multiple visible side owners retain authored layout rather than overlap");
+
+        root.anInt834=holder.anInt830;MobileNativeHud.prepare(746,390,844,group,lookup);layout(holder,765,503);
+        check(holder.anInt709==200,"cycles fail closed");root.anInt834=-1;
+
+        MobileNativeHud.prepare(746,390,844,group,lookup);holder.anInt788++;layout(holder,765,503);
+        check(holder.anInt800==501,"new script coordinates invalidate old placement");holder.anInt788--;
+
+        Class46 wrapper=widget(746,5,root.anInt830,0,0,0,765,503);
+        Class46 nested=widget(746,6,wrapper.anInt830,0,500,180,200,270);
+        MobileNativeHud.prepare(746,844,390,new Class46[]{root,wrapper,nested},w->w==nested?149:-1);layout(root,844,390);layout(wrapper,844,390);layout(nested,765,503);
+        check(nested.anInt800==500&&nested.anInt709==200,"fixed nested coordinate spaces are not mutated to fake viewport anchoring");
+        wrapper.aByte778=1;wrapper.anInt842=0;wrapper.aByte724=1;wrapper.anInt728=0;
+        MobileNativeHud.prepare(746,844,390,new Class46[]{root,wrapper,nested},w->w==nested?149:-1);layout(root,844,390);layout(wrapper,844,390);layout(nested,wrapper.anInt709,wrapper.anInt789);
+        check(nested.anInt800+ nested.anInt709<=844&&nested.anInt709<844,"parent-filling wrapper permits bounded native anchoring");
+
+        Class46 map=widget(746,7,root.anInt830,0,0,0,765,503);
+        MobileNativeHud.prepare(746,844,390,new Class46[]{root,map},w->w==map?755:-1);layout(root,844,390);layout(map,844,390);
+        check(map.anInt800>0&&map.anInt750>0&&map.anInt709<844&&map.anInt789<390,"world map uses a safe full-screen inset instead of altering the HUD shell");
+
+        check("inventory_tab".equals(InterfaceRegistry.type(149))&&"main_screen".equals(InterfaceRegistry.type(620)),"registry exposes native interface types for role classification");
+
+        System.setProperty("void.mobile.nativeHud","false");MobileNativeHud.prepare(746,390,844,group,lookup);layout(holder,765,503);
+        check(holder.anInt800==500&&holder.anInt709==200&&holder.anInt698==0,"native layout rollback restores geometry and original extents");System.setProperty("void.mobile.nativeHud","true");
+
+        MobileNativeHud.prepare(999,390,844,group,lookup);layout(holder,765,503);
+        check(holder.anInt709==200,"unknown root keeps legacy layout");
+        MobileNativeHud.reset();
     }
+
     static void recursiveNativeLayout() {
         Class46[][] oldGroups=Class348_Sub40_Sub33.aClass46ArrayArray9427;
         boolean[] oldLoaded=Class163.aBooleanArray2162;IterableHashTable oldAttachments=Class125.aClass356_4915;int oldRoot=r.anInt9721;
