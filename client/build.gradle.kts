@@ -142,7 +142,7 @@ val jarRunnerJar by tasks.registering(Jar::class) {
     from({ zipTree(layout.buildDirectory.file("libs/void-client-$version-release.jar").get().asFile) }) {
         exclude("META-INF/MANIFEST.MF", "META-INF/*.SF", "META-INF/*.RSA", "META-INF/*.DSA")
     }
-    manifest { attributes("Main-Class" to "JarRunnerLauncher", "Implementation-Version" to "JR2-JR5-native-candidate.3") }
+    manifest { attributes("Main-Class" to "JarRunnerLauncher", "Implementation-Version" to "JR2-JR5-native-candidate.4") }
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
