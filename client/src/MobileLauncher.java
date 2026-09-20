@@ -49,7 +49,7 @@ public final class MobileLauncher {
     }
     static void open(Loader loader) {
         Runnable build = () -> {
-            JFrame frame = new JFrame(Boolean.getBoolean("void.mobile.jarRunner") ? "Void — Android / Jar Runner JR2–JR5 native-mobile candidate 3" : "Void — Mobile preview");
+            JFrame frame = new JFrame(Boolean.getBoolean("void.mobile.jarRunner") ? "Void — Android / Jar Runner JR2–JR5 native-mobile candidate 4 — bounded HUD shell" : "Void — Mobile preview");
             host = frame; loader.aJFrame2 = frame;
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setUndecorated(MobileConfig.browser() || Boolean.getBoolean("void.mobile.jarRunner"));
